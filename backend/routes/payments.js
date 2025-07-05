@@ -212,28 +212,16 @@ router.get('/supported-methods', (req, res) => {
   res.json({
     methods: [
       {
+        id: 'moniepoint',
+        name: 'Moniepoint',
+        icon: 'moniepoint',
+        enabled: true
+      },
+      {
         id: 'card',
-        name: 'Credit/Debit Card',
+        name: 'Bank Card (Visa/MasterCard/Verve)',
         icon: 'credit-card',
         enabled: true
-      },
-      {
-        id: 'paypal',
-        name: 'PayPal',
-        icon: 'paypal',
-        enabled: true
-      },
-      {
-        id: 'apple_pay',
-        name: 'Apple Pay',
-        icon: 'apple',
-        enabled: false
-      },
-      {
-        id: 'google_pay',
-        name: 'Google Pay',
-        icon: 'google',
-        enabled: false
       }
     ]
   });

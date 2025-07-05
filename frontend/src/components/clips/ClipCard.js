@@ -10,9 +10,10 @@ import { DefaultAvatar } from '../layout/AFEXLogo';
 const ClipCard = ({ clip, onUpdate }) => {
   const { user } = useAuth();
   const [isLiked, setIsLiked] = useState(clip.likes?.some(like => like._id === user?._id) || false);
-  const [likeCount, setLikeCount] = useState(clip.likeCount || 0);
+  const [likeCount, setLikeCount] = useState(clip.likeCount || clip.likes?.length || 0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showOverlay, setShowOverlay] = useState(false);
+  const [isLiking, setIsLiking] = useState(false);
   const videoRef = useRef(null);
 
   const handleLike = async () => {
@@ -21,16 +22,22 @@ const ClipCard = ({ clip, onUpdate }) => {
       return;
     }
 
+    if (isLiking) return; // Prevent double clicking
+
     try {
+      setIsLiking(true);
       const response = await likesAPI.toggleClipLike(clip._id);
       setIsLiked(response.data.liked);
-      setLikeCount(prev => response.data.liked ? prev + 1 : prev - 1);
+      setLikeCount(response.data.likeCount || (response.data.liked ? likeCount + 1 : likeCount - 1));
       
       if (onUpdate) {
         onUpdate();
       }
     } catch (error) {
+      console.error('Like error:', error);
       toast.error('Failed to like clip');
+    } finally {
+      setIsLiking(false);
     }
   };
 
@@ -76,8 +83,8 @@ const ClipCard = ({ clip, onUpdate }) => {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-800 group">
-      {/* Video Container - Instagram-like aspect ratio */}
+    <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl overflow-hidden border border-gray-200 dark:border-gray-800 group hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+      {/* Enhanced Video Container - Instagram-like aspect ratio */}
       <div 
         className="relative bg-gray-100 dark:bg-gray-800 cursor-pointer" 
         style={{ aspectRatio: '9/16' }}
@@ -94,64 +101,70 @@ const ClipCard = ({ clip, onUpdate }) => {
           onPlay={handleVideoPlay}
           onPause={handleVideoPause}
           onEnded={() => setIsPlaying(false)}
+          onLoadedMetadata={(e) => {
+            // Fix video player issues
+            if (e.target.duration) {
+              e.target.currentTime = 0;
+            }
+          }}
           loop
           muted
         />
         
-        {/* Play/Pause Overlay */}
+        {/* Enhanced Play/Pause Overlay */}
         {showOverlay && (
           <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 transition-opacity">
-            <button className="bg-white bg-opacity-90 rounded-full p-4 hover:bg-opacity-100 transition-all transform scale-110">
+            <button className="bg-white bg-opacity-90 rounded-full p-5 hover:bg-opacity-100 transition-all transform scale-110 shadow-xl hover:shadow-2xl">
               {isPlaying ? (
-                <FiPause className="w-8 h-8 text-gray-900" />
+                <FiPause className="w-10 h-10 text-gray-900" />
               ) : (
-                <FiPlay className="w-8 h-8 text-gray-900" />
+                <FiPlay className="w-10 h-10 text-gray-900" />
               )}
             </button>
           </div>
         )}
 
-        {/* Play/Pause Button when video is playing */}
+        {/* Enhanced Play/Pause Button when video is playing */}
         {isPlaying && (
           <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
             <button 
-              className="bg-black bg-opacity-50 rounded-full p-3 hover:bg-opacity-70 transition-all"
+              className="bg-black bg-opacity-50 rounded-full p-4 hover:bg-opacity-70 transition-all shadow-lg hover:shadow-xl"
               onClick={(e) => {
                 e.stopPropagation();
                 handleVideoClick();
               }}
             >
-              <FiPause className="w-6 h-6 text-white" />
+              <FiPause className="w-8 h-8 text-white" />
             </button>
           </div>
         )}
 
-        {/* Duration Badge */}
+        {/* Enhanced Duration Badge */}
         {clip.duration && (
-          <div className="absolute bottom-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded">
+          <div className="absolute bottom-3 right-3 bg-black bg-opacity-80 text-white text-sm px-3 py-1 rounded-full font-medium">
             {formatDuration(clip.duration)}
           </div>
         )}
 
-        {/* Views Badge */}
-        <div className="absolute bottom-2 left-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded flex items-center space-x-1">
-          <FiEye className="w-3 h-3" />
+        {/* Enhanced Views Badge */}
+        <div className="absolute bottom-3 left-3 bg-black bg-opacity-80 text-white text-sm px-3 py-1 rounded-full flex items-center space-x-2 font-medium">
+          <FiEye className="w-4 h-4" />
           <span>{clip.views || 0}</span>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="p-4">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center space-x-3">
-            <Link to={`/user/${clip.author._id}`}>
+      {/* Enhanced Content */}
+      <div className="p-6">
+        {/* Enhanced Header */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-4">
+            <Link to={`/user/${clip.author._id}`} className="group">
               {clip.author.avatar ? (
                 <div className="relative">
                   <img
                     src={clip.author.avatar}
                     alt={clip.author.username}
-                    className="w-10 h-10 rounded-full object-cover border border-white dark:border-gray-800 shadow-sm"
+                    className="w-12 h-12 rounded-full object-cover border-2 border-white dark:border-gray-800 shadow-lg group-hover:scale-110 transition-transform duration-300"
                     onError={(e) => {
                       e.target.style.display = 'none';
                       e.target.nextSibling.style.display = 'flex';
@@ -159,52 +172,53 @@ const ClipCard = ({ clip, onUpdate }) => {
                   />
                   <DefaultAvatar 
                     user={clip.author} 
-                    size="sm" 
-                    className="hidden"
+                    size="md" 
+                    className="hidden group-hover:scale-110 transition-transform duration-300"
                   />
                 </div>
               ) : (
                 <DefaultAvatar 
                   user={clip.author} 
-                  size="sm"
+                  size="md"
+                  className="group-hover:scale-110 transition-transform duration-300"
                 />
               )}
             </Link>
             <div>
               <Link 
                 to={`/user/${clip.author._id}`}
-                className="font-semibold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                className="font-bold text-gray-900 dark:text-white hover:text-purple-600 dark:hover:text-purple-400 transition-colors text-lg"
               >
                 {clip.author.firstName} {clip.author.lastName}
               </Link>
-              <p className="text-xs text-gray-500 dark:text-gray-400">@{clip.author.username}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">@{clip.author.username}</p>
             </div>
           </div>
-          <div className="flex items-center space-x-1 text-xs text-gray-500 dark:text-gray-400">
-            <FiClock className="w-3 h-3" />
-            <span>{formatDate(clip.createdAt)}</span>
+          <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
+            <FiClock className="w-4 h-4" />
+            <span className="font-medium">{formatDate(clip.createdAt)}</span>
           </div>
         </div>
 
-        {/* Title and Description */}
-        <div className="mb-4">
-          <h3 className="font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2">
+        {/* Enhanced Title and Description */}
+        <div className="mb-6">
+          <h3 className="font-bold text-gray-900 dark:text-white mb-3 line-clamp-2 text-lg">
             {clip.title}
           </h3>
           {clip.description && (
-            <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
+            <p className="text-gray-600 dark:text-gray-400 line-clamp-2 text-base leading-relaxed">
               {clip.description}
             </p>
           )}
         </div>
 
-        {/* Tags */}
+        {/* Enhanced Tags */}
         {clip.tags && clip.tags.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-4">
+          <div className="flex flex-wrap gap-3 mb-6">
             {clip.tags.map((tag, index) => (
               <span
                 key={index}
-                className="px-2 py-1 bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 text-xs rounded-full font-medium"
+                className="px-4 py-2 bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900 dark:to-pink-900 text-purple-700 dark:text-purple-300 text-sm rounded-full font-medium shadow-sm hover:shadow-md transition-all duration-300"
               >
                 #{tag}
               </span>
@@ -212,39 +226,40 @@ const ClipCard = ({ clip, onUpdate }) => {
           </div>
         )}
 
-        {/* Actions */}
-        <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-800">
-          <div className="flex items-center space-x-4">
+        {/* Enhanced Actions */}
+        <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-800">
+          <div className="flex items-center space-x-6">
             <button
               onClick={handleLike}
-              className={`flex items-center space-x-2 transition-all duration-200 ${
+              disabled={isLiking}
+              className={`flex items-center space-x-3 transition-all duration-300 transform hover:scale-105 ${
                 isLiked 
                   ? 'text-red-500 hover:text-red-600' 
                   : 'text-gray-500 hover:text-red-500'
-              }`}
+              } ${isLiking ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {isLiked ? (
-                <FaHeart className="w-5 h-5" />
+                <FaHeart className="w-6 h-6" />
               ) : (
-                <FiHeart className="w-5 h-5" />
+                <FiHeart className="w-6 h-6" />
               )}
-              <span className="font-semibold">{likeCount}</span>
+              <span className="font-bold text-lg">{likeCount}</span>
             </button>
             
             <Link
               to={`/clip/${clip._id}`}
-              className="flex items-center space-x-2 text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+              className="flex items-center space-x-3 text-gray-500 hover:text-purple-600 dark:hover:text-purple-400 transition-colors transform hover:scale-105"
             >
-              <FiMessageCircle className="w-5 h-5" />
-              <span className="font-semibold">{clip.commentCount || 0}</span>
+              <FiMessageCircle className="w-6 h-6" />
+              <span className="font-bold text-lg">{clip.commentCount || 0}</span>
             </Link>
           </div>
 
           <button
             onClick={handleShare}
-            className="text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+            className="text-gray-500 hover:text-purple-600 dark:hover:text-purple-400 transition-colors p-3 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transform hover:scale-105"
           >
-            <FiShare className="w-5 h-5" />
+            <FiShare className="w-6 h-6" />
           </button>
         </div>
       </div>

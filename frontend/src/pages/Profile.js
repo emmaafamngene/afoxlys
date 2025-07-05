@@ -5,6 +5,7 @@ import { usersAPI, postsAPI, clipsAPI, followAPI } from '../services/api';
 import { usePageTitle } from '../hooks/usePageTitle';
 import PostCard from '../components/posts/PostCard';
 import ClipCard from '../components/clips/ClipCard';
+import { DefaultAvatar } from '../components/layout/AFEXLogo';
 import { FiEdit, FiSettings, FiGrid, FiVideo, FiUsers, FiUserPlus, FiUserCheck, FiMapPin, FiCalendar, FiLink, FiMail, FiCamera } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
@@ -213,14 +214,32 @@ const Profile = () => {
           <div className="flex flex-col md:flex-row items-start space-y-6 md:space-y-0 md:space-x-8">
             {/* Avatar */}
             <div className="relative">
-              <img
-                src={user.avatar || 'https://via.placeholder.com/150x150/6b7280/ffffff?text=U'}
-                alt={user.username}
-                className="w-32 h-32 rounded-full object-cover border-4 border-white dark:border-gray-700 shadow-lg"
-                onError={(e) => {
-                  e.target.src = 'https://via.placeholder.com/150x150/6b7280/ffffff?text=U';
-                }}
-              />
+              {user.avatar ? (
+                <div className="relative">
+                  <img
+                    src={user.avatar}
+                    alt={user.username}
+                    className="w-32 h-32 rounded-full object-cover border-4 border-white dark:border-gray-700 shadow-lg"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'flex';
+                    }}
+                  />
+                  <div className="hidden">
+                    <DefaultAvatar 
+                      user={user} 
+                      size="xl" 
+                      className="w-32 h-32 rounded-full border-4 border-white dark:border-gray-700 shadow-lg"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <DefaultAvatar 
+                  user={user} 
+                  size="xl" 
+                  className="w-32 h-32 rounded-full border-4 border-white dark:border-gray-700 shadow-lg"
+                />
+              )}
               {isOwnProfile && (
                 <button 
                   onClick={triggerAvatarUpload}

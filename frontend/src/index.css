@@ -312,6 +312,58 @@
     background-color: #1a1a1a;
   }
 
+  .nav-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    color: #6b7280;
+    text-decoration: none;
+    border-radius: 0.5rem;
+    transition: all 0.2s ease-in-out;
+    margin-bottom: 0.25rem;
+  }
+
+  .dark .nav-item {
+    color: #a3a3a3;
+  }
+
+  .nav-item:hover {
+    color: #2563eb;
+    background-color: #f3f4f6;
+    transform: translateX(4px);
+  }
+
+  .dark .nav-item:hover {
+    color: #3b82f6;
+    background-color: #1a1a1a;
+  }
+
+  .nav-item.active {
+    color: #2563eb;
+    background-color: #eff6ff;
+    font-weight: 600;
+  }
+
+  .dark .nav-item.active {
+    color: #3b82f6;
+    background-color: #1e3a8a;
+  }
+
+  .nav-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-right: 0.75rem;
+    flex-shrink: 0;
+  }
+
+  .nav-text {
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
   .search-input {
     width: 100%;
     padding: 0.5rem 1rem 0.5rem 2.5rem;

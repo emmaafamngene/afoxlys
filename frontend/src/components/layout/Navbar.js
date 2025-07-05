@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { FiSearch, FiHome, FiVideo, FiPlus, FiUser, FiLogOut, FiSettings } from 'react-icons/fi';
+import { FiSearch, FiHome, FiVideo, FiPlus, FiUser, FiLogOut, FiSettings, FiX, FiMessageCircle, FiBell, FiChevronDown } from 'react-icons/fi';
 import AFEXLogo, { DefaultAvatar } from './AFEXLogo';
 import NotificationMenu from '../notifications/NotificationMenu';
 
@@ -10,6 +10,10 @@ const Navbar = ({ darkMode = false }) => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notifications, setNotifications] = useState([]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -24,178 +28,194 @@ const Navbar = ({ darkMode = false }) => {
     navigate('/');
   };
 
+  const formatDate = (date) => {
+    const now = new Date();
+    const diff = Math.floor((now - new Date(date)) / 1000);
+
+    if (diff < 60) {
+      return 'Just now';
+    } else if (diff < 3600) {
+      return `${Math.floor(diff / 60)} minutes ago`;
+    } else if (diff < 86400) {
+      return `${Math.floor(diff / 3600)} hours ago`;
+    } else if (diff < 604800) {
+      return `${Math.floor(diff / 86400)} days ago`;
+    } else {
+      return new Date(date).toLocaleDateString();
+    }
+  };
+
   return (
-    <nav className="fixed top-0 left-0 right-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 z-50 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-lg backdrop-blur-lg bg-opacity-95 dark:bg-opacity-95 sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-6">
         <div className="flex justify-between items-center h-16">
-          {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
-            <AFEXLogo className="h-8 w-auto" darkMode={darkMode} />
+          {/* Enhanced Logo */}
+          <Link to="/" className="flex items-center space-x-3 group">
+            <div className="p-2 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-xl shadow-lg group-hover:shadow-xl transition-all duration-300 transform group-hover:scale-105">
+              <span className="text-white font-bold text-xl">AFEX</span>
+            </div>
           </Link>
 
-          {/* Search Bar */}
-          <form onSubmit={handleSearch} className="flex-1 max-w-lg mx-8">
+          {/* Enhanced Search */}
+          <div className="flex-1 max-w-2xl mx-8">
             <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <FiSearch className="h-5 w-5 text-gray-400" />
+              </div>
               <input
                 type="text"
                 placeholder="Search users, posts, clips..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-4 py-2 pl-10 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-750"
+                className="search-input w-full pl-12 pr-4 py-3 rounded-2xl border-2 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-300 shadow-sm hover:shadow-md focus:shadow-lg"
               />
-              <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                >
+                  <FiX className="h-5 w-5" />
+                </button>
+              )}
             </div>
-          </form>
+          </div>
 
-          {/* Navigation Links */}
-          <div className="flex items-center space-x-2">
-            {isAuthenticated ? (
-              <>
-                <Link
-                  to="/"
-                  className="p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-all duration-200 group"
-                  title="Home"
-                >
-                  <FiHome className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                </Link>
-                
-                <Link
-                  to="/clips"
-                  className="p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/10 transition-all duration-200 group"
-                  title="Fliks"
-                >
-                  <FiVideo className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                </Link>
+          {/* Enhanced Navigation */}
+          <div className="flex items-center space-x-6">
+            {/* Enhanced Create Buttons */}
+            <div className="flex items-center space-x-3">
+              <Link
+                to="/create-post"
+                className="p-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-105"
+                title="Create Post"
+              >
+                <FiPlus className="w-5 h-5" />
+              </Link>
+              <Link
+                to="/create-clip"
+                className="p-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-105"
+                title="Create Clip"
+              >
+                <FiVideo className="w-5 h-5" />
+              </Link>
+            </div>
 
-                <Link
-                  to="/create-post"
-                  className="p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/10 transition-all duration-200 group"
-                  title="Create Post"
-                >
-                  <FiPlus className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                </Link>
+            {/* Enhanced Chat Button */}
+            <Link
+              to="/chat"
+              className="relative p-3 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transform hover:scale-105"
+              title="Chat"
+            >
+              <FiMessageCircle className="w-6 h-6" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold animate-pulse">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </Link>
 
-                {/* Notification Menu */}
-                <NotificationMenu />
-
-                {/* User Menu */}
-                <div className="relative">
-                  <button
-                    onClick={() => setIsMenuOpen(!isMenuOpen)}
-                    className="flex items-center space-x-2 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 group"
-                  >
-                    {user?.avatar ? (
-                      <div className="relative">
-                        <img
-                          src={user.avatar}
-                          alt={user.username}
-                          className="w-8 h-8 rounded-full object-cover border-2 border-white dark:border-gray-800 shadow-sm group-hover:scale-105 transition-transform duration-200"
-                          onError={(e) => {
-                            e.target.style.display = 'none';
-                            e.target.nextSibling.style.display = 'flex';
-                          }}
-                        />
-                        <DefaultAvatar 
-                          user={user} 
-                          size="sm" 
-                          className="hidden"
-                        />
-                      </div>
-                    ) : (
-                      <DefaultAvatar 
-                        user={user} 
-                        size="sm"
-                        className="group-hover:scale-105 transition-transform duration-200"
-                      />
-                    )}
-                  </button>
-
-                  {isMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-2 overflow-hidden z-50">
-                      {/* User Info Header */}
-                      <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-                        <div className="flex items-center space-x-3">
-                          {user?.avatar ? (
-                            <div className="relative">
-                              <img
-                                src={user.avatar}
-                                alt={user.username}
-                                className="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-800 shadow-sm"
-                                onError={(e) => {
-                                  e.target.style.display = 'none';
-                                  e.target.nextSibling.style.display = 'flex';
-                                }}
-                              />
-                              <DefaultAvatar 
-                                user={user} 
-                                size="md" 
-                                className="hidden"
-                              />
-                            </div>
-                          ) : (
-                            <DefaultAvatar 
-                              user={user} 
-                              size="md"
-                            />
-                          )}
-                          <div>
-                            <p className="font-semibold text-gray-900 dark:text-white text-sm">
-                              {user?.firstName} {user?.lastName}
-                            </p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                              @{user?.username}
-                            </p>
-                          </div>
+            {/* Enhanced Notifications */}
+            <div className="relative">
+              <button
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="relative p-3 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transform hover:scale-105"
+                title="Notifications"
+              >
+                <FiBell className="w-6 h-6" />
+                {notifications.length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold animate-pulse">
+                    {notifications.length > 9 ? '9+' : notifications.length}
+                  </span>
+                )}
+              </button>
+              
+              {showNotifications && (
+                <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50">
+                  <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">Notifications</h3>
+                  </div>
+                  <div className="max-h-96 overflow-y-auto">
+                    {notifications.length > 0 ? (
+                      notifications.map((notification) => (
+                        <div
+                          key={notification._id}
+                          className="p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-b border-gray-100 dark:border-gray-800 last:border-b-0"
+                        >
+                          <p className="text-sm text-gray-900 dark:text-white">
+                            {notification.message}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            {formatDate(notification.createdAt)}
+                          </p>
                         </div>
+                      ))
+                    ) : (
+                      <div className="p-8 text-center">
+                        <FiBell className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-500 dark:text-gray-400">No notifications yet</p>
                       </div>
-
-                      {/* Menu Items */}
-                      <div className="py-1">
-                        <Link
-                          to={`/user/${user?._id}`}
-                          className="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group"
-                          onClick={() => setIsMenuOpen(false)}
-                        >
-                          <FiUser className="w-4 h-4 mr-3 group-hover:scale-110 transition-transform" />
-                          <span>Profile</span>
-                        </Link>
-                        <Link
-                          to="/settings"
-                          className="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group"
-                          onClick={() => setIsMenuOpen(false)}
-                        >
-                          <FiSettings className="w-4 h-4 mr-3 group-hover:scale-110 transition-transform" />
-                          <span>Settings</span>
-                        </Link>
-                        <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
-                        <button
-                          onClick={handleLogout}
-                          className="flex items-center w-full px-4 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors group"
-                        >
-                          <FiLogOut className="w-4 h-4 mr-3 group-hover:scale-110 transition-transform" />
-                          <span>Logout</span>
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
-              </>
-            ) : (
-              <div className="flex items-center space-x-4">
-                <Link
-                  to="/login"
-                  className="px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 hover:scale-105"
-                >
-                  Login
-                </Link>
-                <Link
-                  to="/register"
-                  className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all duration-200 hover:scale-105 shadow-md hover:shadow-lg"
-                >
-                  Sign Up
-                </Link>
-              </div>
-            )}
+              )}
+            </div>
+
+            {/* Enhanced Profile Menu */}
+            <div className="relative">
+              <button
+                onClick={() => setShowProfileMenu(!showProfileMenu)}
+                className="flex items-center space-x-3 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors transform hover:scale-105"
+              >
+                {user?.avatar ? (
+                  <img
+                    src={user.avatar}
+                    alt={user.username}
+                    className="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-800 shadow-lg"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'flex';
+                    }}
+                  />
+                ) : (
+                  <DefaultAvatar user={user} size="md" />
+                )}
+                <FiChevronDown className={`w-4 h-4 text-gray-600 dark:text-gray-400 transition-transform duration-300 ${showProfileMenu ? 'rotate-180' : ''}`} />
+              </button>
+
+              {showProfileMenu && (
+                <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50">
+                  <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                    <p className="font-bold text-gray-900 dark:text-white">
+                      {user?.firstName} {user?.lastName}
+                    </p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">@{user?.username}</p>
+                  </div>
+                  <div className="py-2">
+                    <Link
+                      to="/profile"
+                      className="flex items-center space-x-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      <FiUser className="w-5 h-5" />
+                      <span>Profile</span>
+                    </Link>
+                    <Link
+                      to="/settings"
+                      className="flex items-center space-x-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      <FiSettings className="w-5 h-5" />
+                      <span>Settings</span>
+                    </Link>
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors w-full text-left"
+                    >
+                      <FiLogOut className="w-5 h-5" />
+                      <span>Logout</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

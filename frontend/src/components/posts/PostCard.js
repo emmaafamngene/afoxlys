@@ -6,14 +6,16 @@ import { FiHeart, FiMessageCircle, FiShare, FiMoreHorizontal, FiPlay, FiEye } fr
 import { FaHeart } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { DefaultAvatar } from '../layout/AFEXLogo';
+import CommentSection from '../comments/CommentSection';
 
 const PostCard = ({ post, onUpdate }) => {
   const { user } = useAuth();
   const [isLiked, setIsLiked] = useState(post.likes?.some(like => like._id === user?._id) || false);
-  const [likeCount, setLikeCount] = useState(post.likeCount || 0);
+  const [likeCount, setLikeCount] = useState(post.likeCount || post.likes?.length || 0);
   const [commentCount, setCommentCount] = useState(post.commentCount || 0);
   const [showComments, setShowComments] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isLiking, setIsLiking] = useState(false);
 
   const handleLike = async () => {
     if (!user) {
@@ -21,17 +23,27 @@ const PostCard = ({ post, onUpdate }) => {
       return;
     }
 
+    if (isLiking) return; // Prevent double clicking
+
     try {
+      setIsLiking(true);
       const response = await likesAPI.togglePostLike(post._id);
       setIsLiked(response.data.liked);
-      setLikeCount(prev => response.data.liked ? prev + 1 : prev - 1);
+      setLikeCount(response.data.likeCount || (response.data.liked ? likeCount + 1 : likeCount - 1));
       
       if (onUpdate) {
         onUpdate();
       }
     } catch (error) {
+      console.error('Like error:', error);
       toast.error('Failed to like post');
+    } finally {
+      setIsLiking(false);
     }
+  };
+
+  const handleCommentCountChange = (newCount) => {
+    setCommentCount(newCount);
   };
 
   const handleShare = () => {
@@ -57,18 +69,18 @@ const PostCard = ({ post, onUpdate }) => {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-800">
-      {/* Header */}
-      <div className="p-4 border-b border-gray-200 dark:border-gray-800">
+    <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl overflow-hidden border border-gray-200 dark:border-gray-800 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
+      {/* Enhanced Header */}
+      <div className="p-6 border-b border-gray-200 dark:border-gray-800 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Link to={`/user/${post.author._id}`}>
+          <div className="flex items-center space-x-4">
+            <Link to={`/user/${post.author._id}`} className="group">
               {post.author.avatar ? (
                 <div className="relative">
                   <img
                     src={post.author.avatar}
                     alt={post.author.username}
-                    className="w-10 h-10 rounded-full object-cover border border-white dark:border-gray-800 shadow-sm"
+                    className="w-12 h-12 rounded-full object-cover border-2 border-white dark:border-gray-800 shadow-lg group-hover:scale-110 transition-transform duration-300"
                     onError={(e) => {
                       e.target.style.display = 'none';
                       e.target.nextSibling.style.display = 'flex';
@@ -76,92 +88,94 @@ const PostCard = ({ post, onUpdate }) => {
                   />
                   <DefaultAvatar 
                     user={post.author} 
-                    size="sm" 
-                    className="hidden"
+                    size="md" 
+                    className="hidden group-hover:scale-110 transition-transform duration-300"
                   />
                 </div>
               ) : (
                 <DefaultAvatar 
                   user={post.author} 
-                  size="sm"
+                  size="md"
+                  className="group-hover:scale-110 transition-transform duration-300"
                 />
               )}
             </Link>
             <div>
               <Link 
                 to={`/user/${post.author._id}`}
-                className="font-semibold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                className="font-bold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-lg"
               >
                 {post.author.firstName} {post.author.lastName}
               </Link>
-              <p className="text-xs text-gray-500 dark:text-gray-400">@{post.author.username}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">@{post.author.username}</p>
             </div>
           </div>
-          <button className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
-            <FiMoreHorizontal className="w-5 h-5" />
+          <button className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
+            <FiMoreHorizontal className="w-6 h-6" />
           </button>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="p-4">
-        <p className="text-gray-900 dark:text-white mb-4 leading-relaxed">
+      {/* Enhanced Content */}
+      <div className="p-6">
+        <p className="text-gray-900 dark:text-white mb-6 leading-relaxed text-lg">
           {post.content}
         </p>
 
-        {/* Media */}
+        {/* Enhanced Media */}
         {post.media && (
-          <div className="mb-4">
+          <div className="mb-6 max-w-md mx-auto">
             {post.media.type?.startsWith('image/') ? (
-              <img
-                src={post.media.url}
-                alt="Post media"
-                className="w-full rounded-lg shadow-sm"
-                onError={e => { e.target.style.display = 'none'; }}
-              />
+              <div className="relative group">
+                <img
+                  src={post.media.url}
+                  alt="Post media"
+                  className="w-full rounded-2xl shadow-lg group-hover:shadow-2xl transition-all duration-300"
+                  onError={e => { e.target.style.display = 'none'; }}
+                />
+                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 rounded-2xl transition-all duration-300"></div>
+              </div>
             ) : post.media.type?.startsWith('video/') ? (
-              <div className="relative">
+              <div className="relative group">
                 <video
                   src={post.media.url}
                   controls
-                  className="w-full rounded-lg shadow-sm"
+                  className="w-full rounded-2xl shadow-lg group-hover:shadow-2xl transition-all duration-300"
                   preload="metadata"
                   onPlay={() => setIsPlaying(true)}
                   onPause={() => setIsPlaying(false)}
+                  onLoadedMetadata={(e) => {
+                    // Fix video player issues
+                    if (e.target.duration) {
+                      e.target.currentTime = 0;
+                    }
+                  }}
                 />
                 {!isPlaying && (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <button className="bg-white bg-opacity-90 rounded-full p-3 hover:bg-opacity-100 transition-all">
-                      <FiPlay className="w-6 h-6 text-gray-900" />
+                    <button className="bg-white bg-opacity-90 rounded-full p-4 hover:bg-opacity-100 transition-all shadow-lg hover:shadow-xl">
+                      <FiPlay className="w-8 h-8 text-gray-900" />
                     </button>
                   </div>
                 )}
                 {post.media.duration && (
-                  <div className="absolute bottom-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded">
+                  <div className="absolute bottom-3 right-3 bg-black bg-opacity-80 text-white text-sm px-3 py-1 rounded-full font-medium">
                     {formatDuration(post.media.duration)}
                   </div>
                 )}
+                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-5 rounded-2xl transition-all duration-300"></div>
               </div>
-            ) : (
-              <div className="flex items-center gap-2 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
-                <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                </svg>
-                <span className="text-sm text-gray-600 dark:text-gray-400">
-                  {post.media.name || 'Attachment'}
-                </span>
-              </div>
-            )}
+            ) : null}
           </div>
         )}
 
-        {/* Tags */}
+        {/* Enhanced Tags */}
         {post.tags && post.tags.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-4">
+          <div className="flex flex-wrap gap-3 mb-6">
             {post.tags.map((tag, index) => (
               <span
                 key={index}
-                className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 text-xs rounded-full font-medium"
+                className="px-4 py-2 bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 text-blue-700 dark:text-blue-300 text-sm rounded-full font-medium shadow-sm hover:shadow-md transition-all duration-300"
               >
                 #{tag}
               </span>
@@ -169,52 +183,64 @@ const PostCard = ({ post, onUpdate }) => {
           </div>
         )}
 
-        {/* Stats */}
-        <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mb-4">
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-1">
-              <FiEye className="w-4 h-4" />
-              <span>{post.views || 0} views</span>
+        {/* Enhanced Stats */}
+        <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mb-6">
+          <div className="flex items-center space-x-6">
+            <div className="flex items-center space-x-2">
+              <FiEye className="w-5 h-5" />
+              <span className="font-medium">{post.views || 0} views</span>
             </div>
-            <span>{formatDate(post.createdAt)}</span>
+            <span className="font-medium">{formatDate(post.createdAt)}</span>
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-800">
-          <div className="flex items-center space-x-6">
+        {/* Enhanced Actions */}
+        <div className="flex items-center justify-between pt-6 border-t border-gray-200 dark:border-gray-800">
+          <div className="flex items-center space-x-8">
             <button
               onClick={handleLike}
-              className={`flex items-center space-x-2 transition-all duration-200 ${
+              disabled={isLiking}
+              className={`flex items-center space-x-3 transition-all duration-300 transform hover:scale-105 ${
                 isLiked 
                   ? 'text-red-500 hover:text-red-600' 
                   : 'text-gray-500 hover:text-red-500'
-              }`}
+              } ${isLiking ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {isLiked ? (
-                <FaHeart className="w-5 h-5" />
+                <FaHeart className="w-6 h-6" />
               ) : (
-                <FiHeart className="w-5 h-5" />
+                <FiHeart className="w-6 h-6" />
               )}
-              <span className="font-semibold">{likeCount}</span>
+              <span className="font-bold text-lg">{likeCount}</span>
             </button>
             
             <button
               onClick={() => setShowComments(!showComments)}
-              className="flex items-center space-x-2 text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+              className="flex items-center space-x-3 text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors transform hover:scale-105"
             >
-              <FiMessageCircle className="w-5 h-5" />
-              <span className="font-semibold">{commentCount}</span>
+              <FiMessageCircle className="w-6 h-6" />
+              <span className="font-bold text-lg">{commentCount}</span>
             </button>
           </div>
 
           <button
             onClick={handleShare}
-            className="text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+            className="text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors p-3 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transform hover:scale-105"
           >
-            <FiShare className="w-5 h-5" />
+            <FiShare className="w-6 h-6" />
           </button>
         </div>
+
+        {/* Enhanced Comment Section */}
+        {showComments && (
+          <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-800">
+            <CommentSection 
+              postId={post._id}
+              commentCount={commentCount}
+              onCommentCountChange={handleCommentCountChange}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

@@ -9,6 +9,7 @@ export default function NewChatModal({ isOpen, onClose, onStartChat }) {
   const [following, setFollowing] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [startingChat, setStartingChat] = useState(false);
 
   // Fetch user's following list
   useEffect(() => {
@@ -73,7 +74,10 @@ export default function NewChatModal({ isOpen, onClose, onStartChat }) {
   }, [searchTerm, following, user?._id]);
 
   const handleStartChat = async (selectedUser) => {
+    if (startingChat) return; // Prevent double clicking
+    
     try {
+      setStartingChat(true);
       // Create or get existing conversation
       const res = await chatAPI.createConversation(user._id, selectedUser._id);
       
@@ -81,6 +85,8 @@ export default function NewChatModal({ isOpen, onClose, onStartChat }) {
       onClose();
     } catch (err) {
       console.error('Error starting chat:', err);
+    } finally {
+      setStartingChat(false);
     }
   };
 
@@ -157,7 +163,10 @@ export default function NewChatModal({ isOpen, onClose, onStartChat }) {
                   <button
                     key={user._id}
                     onClick={() => handleStartChat(user)}
-                    className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+                    disabled={startingChat}
+                    className={`w-full flex items-center gap-3 p-3 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors ${
+                      startingChat ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
                   >
                     {user.avatar ? (
                       <div className="relative flex-shrink-0">

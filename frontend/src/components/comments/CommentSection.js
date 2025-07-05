@@ -4,6 +4,7 @@ import { commentsAPI, likesAPI } from '../../services/api';
 import { FiMessageCircle, FiHeart, FiTrash2, FiMoreVertical, FiSend, FiEdit2 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { DefaultAvatar } from '../layout/AFEXLogo';
+import { Link } from 'react-router-dom';
 
 const CommentSection = ({ postId, commentCount, onCommentCountChange }) => {
   const { user, isAuthenticated } = useAuth();
@@ -14,23 +15,34 @@ const CommentSection = ({ postId, commentCount, onCommentCountChange }) => {
   const [submitting, setSubmitting] = useState(false);
   const [editingComment, setEditingComment] = useState(null);
   const [editText, setEditText] = useState('');
+  const [commentsLoaded, setCommentsLoaded] = useState(false);
 
+  // Pre-load comments when component mounts
   useEffect(() => {
-    if (showComments) {
+    if (postId && !commentsLoaded) {
       fetchComments();
     }
-  }, [showComments, postId]);
+  }, [postId, commentsLoaded]);
 
   const fetchComments = async () => {
     try {
       setLoading(true);
       const response = await commentsAPI.getPostComments(postId);
       setComments(response.data.comments);
+      setCommentsLoaded(true);
     } catch (error) {
       console.error('Error fetching comments:', error);
       toast.error('Failed to load comments');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleToggleComments = () => {
+    setShowComments(!showComments);
+    // If comments haven't been loaded yet, load them now
+    if (!commentsLoaded && !loading) {
+      fetchComments();
     }
   };
 
@@ -140,190 +152,158 @@ const CommentSection = ({ postId, commentCount, onCommentCountChange }) => {
   };
 
   return (
-    <div className="border-t border-gray-200 dark:border-gray-800">
-      {/* Comment Toggle */}
-      <button
-        onClick={() => setShowComments(!showComments)}
-        className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors mb-4"
-      >
-        <FiMessageCircle className="w-5 h-5" />
-        <span className="font-medium">
-          {commentCount} {commentCount === 1 ? 'comment' : 'comments'}
-        </span>
-      </button>
-
-      {showComments && (
-        <>
-          {/* Comment Form */}
-          <div className="p-4">
-            <form onSubmit={handleSubmitComment} className="flex items-start space-x-3">
-              {user?.avatar ? (
-                <div className="relative flex-shrink-0">
-                  <img
-                    src={user.avatar}
-                    alt={user.username}
-                    className="w-8 h-8 rounded-full object-cover border border-white dark:border-gray-800 shadow-sm"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                      e.target.nextSibling.style.display = 'flex';
-                    }}
-                  />
-                  <DefaultAvatar 
-                    user={user} 
-                    size="xs" 
-                    className="hidden"
-                  />
-                </div>
-              ) : (
-                <DefaultAvatar 
-                  user={user} 
-                  size="xs"
-                />
-              )}
-              
-              <div className="flex-1">
-                <textarea
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  placeholder="Write a comment..."
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
-                  rows="2"
-                  disabled={submitting}
-                />
-                <div className="flex justify-end mt-2">
-                  <button
-                    type="submit"
-                    disabled={submitting || !newComment.trim()}
-                    className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    <FiSend className="w-4 h-4" />
-                    <span>Post</span>
-                  </button>
-                </div>
-              </div>
-            </form>
+    <div className="space-y-6">
+      {/* Enhanced Comment Input */}
+      <div className="flex space-x-4">
+        {user?.avatar ? (
+          <div className="relative">
+            <img
+              src={user.avatar}
+              alt={user.username}
+              className="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-800 shadow-lg"
+              onError={(e) => {
+                e.target.style.display = 'none';
+                e.target.nextSibling.style.display = 'flex';
+              }}
+            />
+            <DefaultAvatar 
+              user={user} 
+              size="md" 
+              className="hidden"
+            />
           </div>
+        ) : (
+          <DefaultAvatar user={user} size="md" />
+        )}
+        <div className="flex-1">
+          <div className="relative">
+            <textarea
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              placeholder="Write a comment..."
+              className="w-full p-4 pr-16 border-2 border-gray-200 dark:border-gray-700 rounded-2xl resize-none focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-300 shadow-sm hover:shadow-md focus:shadow-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+              rows="3"
+              maxLength="500"
+            />
+            <div className="absolute bottom-3 right-3 flex items-center space-x-2">
+              <span className="text-xs text-gray-400">
+                {newComment.length}/500
+              </span>
+              <button
+                onClick={handleSubmitComment}
+                disabled={!newComment.trim() || submitting}
+                className={`p-2 rounded-xl transition-all duration-300 transform hover:scale-105 ${
+                  newComment.trim() && !submitting
+                    ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg hover:shadow-xl'
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                {submitting ? (
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <FiSend className="w-5 h-5" />
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
 
-          {/* Comments List */}
-          <div className="max-h-96 overflow-y-auto">
-            {loading ? (
-              <div className="p-4 text-center">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto"></div>
-                <p className="text-gray-500 dark:text-gray-400 mt-2 text-sm">Loading comments...</p>
+      {/* Enhanced Comments List */}
+      {showComments && (
+        <div className="space-y-4">
+          {loading ? (
+            <div className="flex justify-center py-8">
+              <div className="relative">
+                <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-200 border-t-blue-600"></div>
+                <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-purple-600 animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
               </div>
-            ) : comments.length === 0 ? (
-              <div className="p-4 text-center">
-                <p className="text-gray-500 dark:text-gray-400 text-sm">No comments yet. Be the first to comment!</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-gray-200 dark:divide-gray-800">
-                {comments.map((comment) => (
-                  <div key={comment._id} className="p-4">
-                    <div className="flex items-start space-x-3">
-                      {comment.author.avatar ? (
-                        <div className="relative flex-shrink-0">
-                          <img
-                            src={comment.author.avatar}
-                            alt={comment.author.username}
-                            className="w-8 h-8 rounded-full object-cover border border-white dark:border-gray-800 shadow-sm"
-                            onError={(e) => {
-                              e.target.style.display = 'none';
-                              e.target.nextSibling.style.display = 'flex';
-                            }}
-                          />
-                          <DefaultAvatar 
-                            user={comment.author} 
-                            size="xs" 
-                            className="hidden"
-                          />
-                        </div>
-                      ) : (
+            </div>
+          ) : comments.length > 0 ? (
+            <div className="space-y-4">
+              {comments.map((comment, index) => (
+                <div 
+                  key={comment._id} 
+                  className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-300 animate-slide-up"
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                >
+                  <div className="flex space-x-4">
+                    {comment.author.avatar ? (
+                      <div className="relative">
+                        <img
+                          src={comment.author.avatar}
+                          alt={comment.author.username}
+                          className="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-800 shadow-lg"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'flex';
+                          }}
+                        />
                         <DefaultAvatar 
                           user={comment.author} 
-                          size="xs"
+                          size="md" 
+                          className="hidden"
                         />
-                      )}
-                      
-                      <div className="flex-1 min-w-0">
-                        {editingComment === comment._id ? (
-                          <div className="space-y-2">
-                            <textarea
-                              value={editText}
-                              onChange={(e) => setEditText(e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
-                              rows="2"
-                            />
-                            <div className="flex space-x-2">
-                              <button
-                                onClick={() => handleEditComment(comment._id)}
-                                className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
-                              >
-                                Save
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setEditingComment(null);
-                                  setEditText('');
-                                }}
-                                className="px-3 py-1 bg-gray-500 text-white text-sm rounded hover:bg-gray-600 transition-colors"
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <>
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <span className="font-semibold text-gray-900 dark:text-white text-sm">
-                                  {comment.author.firstName} {comment.author.lastName}
-                                </span>
-                                <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
-                                  @{comment.author.username}
-                                </span>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <span className="text-xs text-gray-500 dark:text-gray-400">
-                                  {formatTimeAgo(comment.createdAt)}
-                                </span>
-                                {comment.isEdited && (
-                                  <span className="text-xs text-gray-400">• Edited</span>
-                                )}
-                                {user && (user._id === comment.author._id || user.role === 'admin') && (
-                                  <div className="flex items-center space-x-1">
-                                    <button
-                                      onClick={() => {
-                                        setEditingComment(comment._id);
-                                        setEditText(comment.content);
-                                      }}
-                                      className="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                                    >
-                                      <FiEdit2 className="w-3 h-3" />
-                                    </button>
-                                    <button
-                                      onClick={() => handleDeleteComment(comment._id)}
-                                      className="text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                                    >
-                                      <FiTrash2 className="w-3 h-3" />
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                            <p className="text-gray-900 dark:text-white text-sm mt-1 leading-relaxed">
-                              {comment.content}
-                            </p>
-                          </>
-                        )}
                       </div>
+                    ) : (
+                      <DefaultAvatar user={comment.author} size="md" />
+                    )}
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <Link 
+                            to={`/user/${comment.author._id}`}
+                            className="font-bold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                          >
+                            {comment.author.firstName} {comment.author.lastName}
+                          </Link>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">@{comment.author.username}</p>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            {formatTimeAgo(comment.createdAt)}
+                          </span>
+                          {user?._id === comment.author._id && (
+                            <button
+                              onClick={() => handleDeleteComment(comment._id)}
+                              className="text-red-500 hover:text-red-600 transition-colors p-1 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20"
+                            >
+                              <FiTrash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      <p className="text-gray-900 dark:text-white leading-relaxed">
+                        {comment.content}
+                      </p>
                     </div>
                   </div>
-                ))}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <div className="mx-auto w-16 h-16 bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-full flex items-center justify-center mb-4">
+                <FiMessageCircle className="w-8 h-8 text-gray-400" />
               </div>
-            )}
-          </div>
-        </>
+              <p className="text-gray-500 dark:text-gray-400">No comments yet. Be the first to comment!</p>
+            </div>
+          )}
+        </div>
       )}
+
+      {/* Enhanced Toggle Button */}
+      <div className="flex justify-center">
+        <button
+          onClick={() => setShowComments(!showComments)}
+          className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:from-gray-200 hover:to-gray-300 dark:hover:from-gray-700 dark:hover:to-gray-600 transition-all duration-300 transform hover:scale-105 shadow-sm hover:shadow-md"
+        >
+          <FiMessageCircle className="w-5 h-5" />
+          <span className="font-semibold">
+            {showComments ? 'Hide' : 'Show'} Comments ({commentCount})
+          </span>
+        </button>
+      </div>
     </div>
   );
 };

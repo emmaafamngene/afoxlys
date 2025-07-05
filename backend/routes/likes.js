@@ -25,7 +25,14 @@ router.post('/post/:postId', auth, async (req, res) => {
       await Post.findByIdAndUpdate(req.params.postId, {
         $pull: { likes: userId }
       });
-      res.json({ message: 'Post unliked', liked: false });
+      
+      // Get updated post to return new like count
+      const updatedPost = await Post.findById(req.params.postId);
+      res.json({ 
+        message: 'Post unliked', 
+        liked: false,
+        likeCount: updatedPost.likes.length
+      });
     } else {
       // Like
       await Post.findByIdAndUpdate(req.params.postId, {
@@ -51,7 +58,13 @@ router.post('/post/:postId', auth, async (req, res) => {
         }
       }
 
-      res.json({ message: 'Post liked', liked: true });
+      // Get updated post to return new like count
+      const updatedPost = await Post.findById(req.params.postId);
+      res.json({ 
+        message: 'Post liked', 
+        liked: true,
+        likeCount: updatedPost.likes.length
+      });
     }
   } catch (error) {
     console.error('Toggle post like error:', error);
@@ -77,7 +90,14 @@ router.post('/clip/:clipId', auth, async (req, res) => {
       await Clip.findByIdAndUpdate(req.params.clipId, {
         $pull: { likes: userId }
       });
-      res.json({ message: 'Clip unliked', liked: false });
+      
+      // Get updated clip to return new like count
+      const updatedClip = await Clip.findById(req.params.clipId);
+      res.json({ 
+        message: 'Clip unliked', 
+        liked: false,
+        likeCount: updatedClip.likes.length
+      });
     } else {
       // Like
       await Clip.findByIdAndUpdate(req.params.clipId, {
@@ -103,7 +123,13 @@ router.post('/clip/:clipId', auth, async (req, res) => {
         }
       }
 
-      res.json({ message: 'Clip liked', liked: true });
+      // Get updated clip to return new like count
+      const updatedClip = await Clip.findById(req.params.clipId);
+      res.json({ 
+        message: 'Clip liked', 
+        liked: true,
+        likeCount: updatedClip.likes.length
+      });
     }
   } catch (error) {
     console.error('Toggle clip like error:', error);
@@ -129,7 +155,14 @@ router.post('/comment/:commentId', auth, async (req, res) => {
       await Comment.findByIdAndUpdate(req.params.commentId, {
         $pull: { likes: userId }
       });
-      res.json({ message: 'Comment unliked', liked: false });
+      
+      // Get updated comment to return new like count
+      const updatedComment = await Comment.findById(req.params.commentId);
+      res.json({ 
+        message: 'Comment unliked', 
+        liked: false,
+        likeCount: updatedComment.likes.length
+      });
     } else {
       // Like
       await Comment.findByIdAndUpdate(req.params.commentId, {
@@ -155,7 +188,13 @@ router.post('/comment/:commentId', auth, async (req, res) => {
         }
       }
 
-      res.json({ message: 'Comment liked', liked: true });
+      // Get updated comment to return new like count
+      const updatedComment = await Comment.findById(req.params.commentId);
+      res.json({ 
+        message: 'Comment liked', 
+        liked: true,
+        likeCount: updatedComment.likes.length
+      });
     }
   } catch (error) {
     console.error('Toggle comment like error:', error);
@@ -174,7 +213,7 @@ router.get('/post/:postId', auth, async (req, res) => {
     }
 
     const isLiked = post.likes.includes(req.user._id);
-    res.json({ liked: isLiked });
+    res.json({ liked: isLiked, likeCount: post.likes.length });
   } catch (error) {
     console.error('Check post like error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -192,10 +231,10 @@ router.get('/clip/:clipId', auth, async (req, res) => {
     }
 
     const isLiked = clip.likes.includes(req.user._id);
-    res.json({ liked: isLiked });
-  } catch (error) {Jjjn
+    res.json({ liked: isLiked, likeCount: clip.likes.length });
+  } catch (error) {
     console.error('Check clip like error:', error);
-    res.status(500).json({ message: 'Server erIninin jror' });
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
@@ -210,7 +249,7 @@ router.get('/comment/:commentId', auth, async (req, res) => {
     }
 
     const isLiked = comment.likes.includes(req.user._id);
-    res.json({ liked: isLiked });
+    res.json({ liked: isLiked, likeCount: comment.likes.length });
   } catch (error) {
     console.error('Check comment like error:', error);
     res.status(500).json({ message: 'Server error' });

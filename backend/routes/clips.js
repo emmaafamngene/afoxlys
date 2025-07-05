@@ -11,6 +11,7 @@ const fs = require('fs');
 const Post = require('../models/Post');
 const { upload } = require('../middlewares/upload');
 const { promisify } = require('util');
+const Payment = require('../models/Payment');
 
 const router = express.Router();
 
@@ -92,56 +93,48 @@ router.get('/categories', (req, res) => {
 });
 
 // @route   GET /api/clips
-// @desc    Get all clips (AFEXClips feed)
+// @desc    Get all clips (AFEXClips feed) - TEMPORARILY CLOSED
 // @access  Public
 router.get('/', optionalAuth, async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
-    const category = req.query.category;
-
-    let query = { isPublic: true };
-    
-    // Filter by category if provided
-    if (category && category !== 'all') {
-      query.category = category;
-    }
-
-    // If user is authenticated, show clips from followed users and public clips
-    if (req.user) {
-      const user = await User.findById(req.user._id).populate('following');
-      const followingIds = user.following.map(followed => followed._id);
-      followingIds.push(req.user._id); // Include user's own clips
-      
-      query = {
-        $or: [
-          { author: { $in: followingIds } },
-          { isPublic: true }
-        ]
-      };
-
-      if (category && category !== 'all') {
-        query.category = category;
-      }
-    }
-
-    const clips = await Clip.find(query)
-      .populate('author', 'username firstName lastName avatar')
-      .populate('likes', 'username firstName lastName avatar')
-      .skip(skip)
-      .limit(limit)
-      .sort({ createdAt: -1 });
-
-    const total = await Clip.countDocuments(query);
-
+    // Return fundraising information instead of clips
     res.json({
-      clips,
+      status: 'closed',
+      message: 'AFEXClips is temporarily closed for fundraising',
+      fundraising: {
+        goal: 100,
+        current: 0,
+        currency: 'USD',
+        reason: 'We need $100 to reopen AFEXClips with proper infrastructure',
+        breakdown: [
+          {
+            category: 'Server Infrastructure',
+            description: 'High-performance servers for video streaming and storage',
+            amount: 40
+          },
+          {
+            category: 'Video Processing',
+            description: 'Advanced video compression and optimization',
+            amount: 30
+          },
+          {
+            category: 'Payment System',
+            description: 'Secure payment processing and subscription management',
+            amount: 20
+          },
+          {
+            category: 'User Experience',
+            description: 'Smooth playback, fast loading, and reliable service',
+            amount: 10
+          }
+        ]
+      },
+      clips: [],
       pagination: {
-        current: page,
-        total: Math.ceil(total / limit),
-        hasNext: page * limit < total,
-        hasPrev: page > 1,
+        current: 1,
+        total: 0,
+        hasNext: false,
+        hasPrev: false,
       },
     });
   } catch (error) {
@@ -151,88 +144,21 @@ router.get('/', optionalAuth, async (req, res) => {
 });
 
 // @route   POST /api/clips
-// @desc    Create a new clip (AFEXClip)
+// @desc    Create a new clip (AFEXClip) - TEMPORARILY DISABLED
 // @access  Private
 router.post(
   '/',
   auth,
-  uploadClipVideo,
-  handleUploadError,
-  [
-    body('title')
-      .isLength({ min: 1, max: 100 })
-      .withMessage('Title must be between 1 and 100 characters'),
-    body('description')
-      .optional()
-      .isLength({ max: 500 })
-      .withMessage('Description must be less than 500 characters'),
-    body('category')
-      .optional()
-      .isIn(['entertainment', 'education', 'comedy', 'music', 'dance', 'food', 'travel', 'fitness', 'fashion', 'other'])
-      .withMessage('Invalid category'),
-  ],
   async (req, res) => {
     try {
-      // Check for validation errors
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
-
-      if (!req.file) {
-        return res.status(400).json({ message: 'No video file uploaded' });
-      }
-
-      const { title, description, category, tags, isPublic } = req.body;
-      const videoPath = req.file.path;
-      
-      // Check video duration
-      const duration = await getVideoDuration(videoPath);
-      if (duration > 90) {
-        // Delete uploaded file
-        fs.unlinkSync(videoPath);
-        return res.status(400).json({ message: 'Video must be 90 seconds or less' });
-      }
-
-      // Generate thumbnail
-      const thumbnailDir = path.join(__dirname, '../uploads/clips/thumbnails');
-      if (!fs.existsSync(thumbnailDir)) {
-        fs.mkdirSync(thumbnailDir, { recursive: true });
-      }
-      
-      const thumbnailFilename = `thumbnail-${Date.now()}.jpg`;
-      const thumbnailPath = path.join(thumbnailDir, thumbnailFilename);
-      
-      try {
-        await generateThumbnail(videoPath, thumbnailPath);
-      } catch (error) {
-        console.error('Thumbnail generation failed:', error);
-        // Continue without thumbnail
-      }
-
-      const videoUrl = `/uploads/clips/${req.file.filename}`;
-      const thumbnailUrl = `/uploads/clips/thumbnails/${thumbnailFilename}`;
-
-      const clip = new Clip({
-        author: req.user._id,
-        title,
-        description,
-        videoUrl,
-        thumbnailUrl,
-        duration: Math.round(duration),
-        tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
-        category: category || 'other',
-        isPublic: isPublic !== 'false',
-      });
-
-      await clip.save();
-
-      // Populate author info for response
-      await clip.populate('author', 'username firstName lastName avatar');
-
-      res.status(201).json({
-        message: 'Clip created successfully',
-        clip,
+      res.status(503).json({ 
+        message: 'AFEXClips is temporarily closed for fundraising',
+        fundraising: {
+          goal: 100,
+          current: 0,
+          currency: 'USD',
+          reason: 'We need $100 to reopen AFEXClips with proper infrastructure'
+        }
       });
     } catch (error) {
       console.error('Create clip error:', error);
@@ -472,6 +398,310 @@ router.get('/', async (req, res) => {
     });
   } catch (error) {
     console.error('Get clips error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/clips/fundraising
+// @desc    Get fundraising information
+// @access  Public
+router.get('/fundraising', (req, res) => {
+  res.json({
+    status: 'active',
+    goal: 100,
+    current: 0,
+    currency: 'USD',
+    reason: 'We need $100 to reopen AFEXClips with proper infrastructure',
+    breakdown: [
+      {
+        category: 'Server Infrastructure',
+        description: 'High-performance servers for video streaming and storage',
+        amount: 40,
+        percentage: 40
+      },
+      {
+        category: 'Video Processing',
+        description: 'Advanced video compression and optimization',
+        amount: 30,
+        percentage: 30
+      },
+      {
+        category: 'Payment System',
+        description: 'Secure payment processing and subscription management',
+        amount: 20,
+        percentage: 20
+      },
+      {
+        category: 'User Experience',
+        description: 'Smooth playback, fast loading, and reliable service',
+        amount: 10,
+        percentage: 10
+      }
+    ],
+    timeline: '2-3 weeks after goal is reached',
+    benefits: [
+      'Unlimited video uploads',
+      'High-quality streaming',
+      'Advanced video editing tools',
+      'Premium features for creators',
+      '24/7 support'
+    ]
+  });
+});
+
+// @route   POST /api/clips/donate
+// @desc    Handle donation with PayPal integration
+// @access  Public
+router.post('/donate', [
+  body('amount')
+    .isFloat({ min: 1, max: 1000 })
+    .withMessage('Donation amount must be between $1 and $1000'),
+  body('email')
+    .isEmail()
+    .withMessage('Valid email is required'),
+  body('name')
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Name must be between 2 and 100 characters')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { amount, email, name, message } = req.body;
+
+    // Create PayPal payment URL
+    const paypalUrl = `https://www.paypal.com/donate/?hosted_button_id=YOUR_PAYPAL_BUTTON_ID&amount=${amount}&currency_code=USD&item_name=AFEXClips%20Fundraising&return=https://yourdomain.com/donation-success&cancel_return=https://yourdomain.com/donation-cancelled`;
+    
+    res.json({
+      success: true,
+      message: 'Redirecting to PayPal for secure payment',
+      paymentUrl: paypalUrl,
+      donation: {
+        amount,
+        email,
+        name,
+        message,
+        timestamp: new Date(),
+        transactionId: `DON-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        status: 'pending'
+      }
+    });
+  } catch (error) {
+    console.error('Donation error:', error);
+    res.status(500).json({ message: 'Server error processing donation' });
+  }
+});
+
+// @route   POST /api/clips/payment-webhook
+// @desc    Handle PayPal webhook for payment confirmations
+// @access  Public
+router.post('/payment-webhook', async (req, res) => {
+  try {
+    const { 
+      payment_status, 
+      txn_id, 
+      mc_gross, 
+      payer_email, 
+      item_name,
+      custom 
+    } = req.body;
+
+    console.log('PayPal webhook received:', req.body);
+
+    // Verify PayPal webhook (in production, verify with PayPal)
+    if (payment_status === 'Completed') {
+      // Update donation status in database
+      // TODO: Save to database
+      console.log(`Payment completed: $${mc_gross} from ${payer_email}`);
+      
+      // Send confirmation email
+      // TODO: Implement email sending
+      
+      res.status(200).json({ message: 'Webhook processed successfully' });
+    } else {
+      console.log(`Payment status: ${payment_status}`);
+      res.status(200).json({ message: 'Webhook received' });
+    }
+  } catch (error) {
+    console.error('Webhook error:', error);
+    res.status(500).json({ message: 'Webhook processing failed' });
+  }
+});
+
+// @route   GET /api/clips/donations
+// @desc    Get all donations (admin only)
+// @access  Private
+router.get('/donations', auth, async (req, res) => {
+  try {
+    // TODO: Check if user is admin
+    const donations = await Payment.find({ isDonation: true })
+      .sort({ createdAt: -1 })
+      .populate('customer.userId', 'username firstName lastName')
+      .limit(50);
+
+    const total = donations.reduce((sum, d) => sum + d.amount, 0);
+    const count = donations.length;
+
+    res.json({
+      donations,
+      total,
+      count
+    });
+  } catch (error) {
+    console.error('Get donations error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST /api/clips/donations
+// @desc    Create a new donation record
+// @access  Public
+router.post('/donations', [
+  body('amount').isFloat({ min: 1 }),
+  body('name').isLength({ min: 2 }),
+  body('email').isEmail(),
+  body('message').optional().isLength({ max: 1000 })
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { amount, name, email, message, paymentMethod = 'paypal' } = req.body;
+
+    // Generate transaction ID
+    const transactionId = `DON-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+    // Create donation record
+    const donation = new Payment({
+      amount,
+      currency: 'USD',
+      paymentMethod,
+      transactionId,
+      customer: {
+        name,
+        email,
+        userId: req.user?._id
+      },
+      isDonation: true,
+      donationType: 'afexclips',
+      message,
+      status: 'pending'
+    });
+
+    await donation.save();
+
+    res.status(201).json({
+      success: true,
+      message: 'Donation recorded successfully',
+      donation: {
+        id: donation._id,
+        amount: donation.amount,
+        transactionId: donation.transactionId,
+        status: donation.status
+      }
+    });
+  } catch (error) {
+    console.error('Create donation error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   PUT /api/clips/donations/:id
+// @desc    Update donation status
+// @access  Private
+router.put('/donations/:id', auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const donation = await Payment.findById(id);
+    if (!donation) {
+      return res.status(404).json({ message: 'Donation not found' });
+    }
+
+    if (status === 'completed') {
+      await donation.markAsCompleted();
+    } else if (status === 'failed') {
+      await donation.markAsFailed({ code: 'MANUAL_UPDATE', message: 'Status updated manually' });
+    } else {
+      donation.status = status;
+      await donation.save();
+    }
+
+    res.json({
+      success: true,
+      message: 'Donation status updated',
+      donation: {
+        id: donation._id,
+        status: donation.status,
+        amount: donation.amount
+      }
+    });
+  } catch (error) {
+    console.error('Update donation error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/clips/fundraising-stats
+// @desc    Get fundraising statistics
+// @access  Public
+router.get('/fundraising-stats', async (req, res) => {
+  try {
+    const goal = 100; // $100 goal
+    
+    // Get donation statistics
+    const stats = await Payment.getDonationStats();
+    const recentDonations = await Payment.getRecentDonations(5);
+    
+    const progress = Math.min((stats.totalAmount / goal) * 100, 100);
+    
+    res.json({
+      goal,
+      current: stats.totalAmount,
+      currency: 'USD',
+      totalDonations: stats.totalCount,
+      donorCount: stats.totalCount, // Simplified - in real app, count unique donors
+      averageDonation: stats.averageAmount || 0,
+      recentDonations,
+      progress: Math.round(progress)
+    });
+  } catch (error) {
+    console.error('Get fundraising stats error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST /api/clips/contact
+// @desc    Contact form for fundraising inquiries
+// @access  Public
+router.post('/contact', [
+  body('name').isLength({ min: 2, max: 100 }),
+  body('email').isEmail(),
+  body('subject').isLength({ min: 5, max: 200 }),
+  body('message').isLength({ min: 10, max: 1000 })
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { name, email, subject, message } = req.body;
+
+    // TODO: Send email notification
+    console.log('Contact form submission:', { name, email, subject, message });
+
+    res.json({
+      success: true,
+      message: 'Thank you for your message. We will get back to you soon!'
+    });
+  } catch (error) {
+    console.error('Contact form error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

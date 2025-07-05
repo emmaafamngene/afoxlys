@@ -1,512 +1,330 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { clipsAPI, likesAPI } from '../services/api';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { 
   FiVideo, FiPlus, FiHeart, FiMessageCircle, FiShare, FiPlay, 
-  FiBookmark, FiVolume2, FiVolumeX, FiX 
+  FiBookmark, FiVolume2, FiVolumeX, FiX, FiDollarSign, FiTarget, FiUsers, FiZap, FiCreditCard, FiMail, FiUser
 } from 'react-icons/fi';
-import { FaHeart } from 'react-icons/fa';
 import toast from 'react-hot-toast';
-import { DefaultAvatar } from '../components/layout/AFEXLogo';
-
-const dummyComments = [
-  {
-    id: 1,
-    avatar: "/avatars/user1.jpg",
-    username: "Daisy7",
-    time: "5-21",
-    text: "Weti bi this rubbish?",
-    likes: 1679,
-    replies: 73,
-  },
-  {
-    id: 2,
-    avatar: "/avatars/user2.jpg",
-    username: "berospam0",
-    time: "5-21",
-    text: "wtf did I just watch...",
-    likes: 5835,
-    replies: 23,
-  },
-  // ...add more comments as needed
-];
 
 const AFEXClips = () => {
   const { isAuthenticated, user } = useAuth();
-  const [clips, setClips] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [showDonationModal, setShowDonationModal] = useState(false);
+  const [donationAmount, setDonationAmount] = useState(10);
+  const [donorName, setDonorName] = useState(user?.firstName ? `${user.firstName} ${user.lastName}` : '');
+  const [donorEmail, setDonorEmail] = useState(user?.email || '');
+  const [donorMessage, setDonorMessage] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
   
-  usePageTitle('AFEXClips');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [currentClipIndex, setCurrentClipIndex] = useState(0);
-  const [playingClips, setPlayingClips] = useState({});
-  const [mutedClips, setMutedClips] = useState({});
-  const [commentInputs, setCommentInputs] = useState({});
-  const [selectedClipForComments, setSelectedClipForComments] = useState(null);
-  const [showCommentPanel, setShowCommentPanel] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
-  const containerRef = useRef(null);
-  const videoRefs = useRef({});
-  const [commentInput, setCommentInput] = useState("");
-  const [userHasInteracted, setUserHasInteracted] = useState(false);
-  const [commentsPanelOpen, setCommentsPanelOpen] = useState(false);
+  usePageTitle('AFEXClips - Temporarily Closed');
 
-  useEffect(() => {
-    fetchClips();
-    
-    // Check if mobile
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    
-    // Check dark mode
-    const checkDarkMode = () => {
-      setDarkMode(document.documentElement.classList.contains('dark'));
-    };
-    
-    
-    checkMobile();
-    checkDarkMode();
-    window.addEventListener('resize', checkMobile);
-    
-    // Listen for theme changes
-    const observer = new MutationObserver(checkDarkMode);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-    
-    return () => {
-      window.removeEventListener('resize', checkMobile);
-      observer.disconnect();
-    };
-  }, [selectedCategory]);
+  const handleDonate = () => {
+    setShowDonationModal(true);
+  };
 
-  useEffect(() => {
-    // Auto-play the current clip when it comes into view (only if user has interacted)
-    if (clips[currentClipIndex] && videoRefs.current[currentClipIndex] && userHasInteracted) {
-      videoRefs.current[currentClipIndex].play().catch(err => {
-        console.log('Autoplay prevented:', err);
-      });
-      setPlayingClips(prev => ({ ...prev, [currentClipIndex]: true }));
-      setMutedClips(prev => ({ ...prev, [currentClipIndex]: true })); // Start muted like TikTok
-      
-      // Pause all other videos
-      Object.keys(videoRefs.current).forEach(index => {
-        if (parseInt(index) !== currentClipIndex && videoRefs.current[index]) {
-          videoRefs.current[index].pause();
-        }
-      });
+  const handlePayment = async () => {
+    if (!donorName.trim() || !donorEmail.trim()) {
+      toast.error('Please fill in your name and email');
+      return;
     }
-  }, [currentClipIndex, clips, userHasInteracted]);
 
-  const fetchClips = useCallback(async (pageNum = 1) => {
+    if (donationAmount < 1) {
+      toast.error('Please enter a valid donation amount');
+      return;
+    }
+
+    setIsProcessing(true);
+
     try {
-      setLoading(true);
-      const params = {
-        page: pageNum,
-        limit: 10,
-        ...(selectedCategory !== 'all' && { category: selectedCategory })
-      };
-      
-      const response = await clipsAPI.getAll(params);
-      
-      if (pageNum === 1) {
-        setClips(response.data.clips);
-        setCurrentClipIndex(0);
+      // Create PayPal payment
+      const response = await fetch('/api/clips/donate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: donationAmount,
+          name: donorName,
+          email: donorEmail,
+          message: donorMessage
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Redirect to PayPal or show payment form
+        const paypalUrl = `https://www.paypal.com/donate/?hosted_button_id=YOUR_PAYPAL_BUTTON_ID&amount=${donationAmount}&currency_code=USD&item_name=AFEXClips%20Fundraising`;
+        
+        // Open PayPal in new window
+        window.open(paypalUrl, '_blank');
+        
+        toast.success('Thank you for your support! Redirecting to payment...');
+        setShowDonationModal(false);
+        setDonorMessage('');
       } else {
-        setClips(prev => [...prev, ...response.data.clips]);
+        toast.error(data.message || 'Payment processing failed');
       }
-      
-      setHasMore(response.data.pagination.hasNext);
-      setPage(pageNum);
     } catch (error) {
-      console.error('Error fetching clips:', error);
-      toast.error('Failed to load clips');
+      console.error('Payment error:', error);
+      toast.error('Payment processing failed. Please try again.');
     } finally {
-      setLoading(false);
-    }
-  }, [selectedCategory]);
-
-  const loadMore = () => {
-    if (!loading && hasMore) {
-      fetchClips(page + 1);
+      setIsProcessing(false);
     }
   };
 
-  const handleScroll = (e) => {
-    const container = e.target;
-    const scrollTop = container.scrollTop;
-    const containerHeight = container.clientHeight;
-    const clipHeight = containerHeight;
-    
-    const newIndex = Math.round(scrollTop / clipHeight);
-    if (newIndex !== currentClipIndex && newIndex < clips.length) {
-      // Pause the current video
-      if (videoRefs.current[currentClipIndex]) {
-        videoRefs.current[currentClipIndex].pause();
-      }
-      
-      // Play the new video only if user has interacted
-      if (videoRefs.current[newIndex] && userHasInteracted) {
-        videoRefs.current[newIndex].play().catch(err => {
-          console.log('Autoplay prevented:', err);
-        });
-      }
-      
-      setCurrentClipIndex(newIndex);
-      // Update playing state
-      setPlayingClips(prev => {
-        const newState = {};
-        Object.keys(prev).forEach(key => {
-          newState[key] = false;
-        });
-        newState[newIndex] = userHasInteracted;
-        return newState;
-      });
-    }
-  };
-
-  const handleUserInteraction = () => {
-    setUserHasInteracted(true);
-    // Try to play the current video after user interaction
-    if (videoRefs.current[currentClipIndex]) {
-      videoRefs.current[currentClipIndex].play().catch(err => {
-        console.log('Autoplay prevented:', err);
-      });
-      setPlayingClips(prev => ({ ...prev, [currentClipIndex]: true }));
-    }
-  };
-
-  const handleVideoClick = (clipIndex) => {
-    setUserHasInteracted(true);
-    const video = videoRefs.current[clipIndex];
-    if (video) {
-      if (video.paused) {
-        video.play().catch(err => {
-          console.log('Play failed:', err);
-        });
-        setPlayingClips(prev => ({ ...prev, [clipIndex]: true }));
-      } else {
-        video.pause();
-        setPlayingClips(prev => ({ ...prev, [clipIndex]: false }));
-      }
-    }
-  };
-
-  const handleMuteToggle = (clipIndex, e) => {
-    e.stopPropagation();
-    setMutedClips(prev => ({
-      ...prev,
-      [clipIndex]: !prev[clipIndex]
-    }));
-  };
-
-  const handleLike = async (clip, e) => {
-    e.stopPropagation();
-    if (!user) {
-      toast.error('Please login to like clips');
-      return;
-    }
-
-    try {
-      const response = await likesAPI.toggleClipLike(clip._id);
-      setClips(prev => prev.map(c => 
-        c._id === clip._id 
-          ? { 
-              ...c, 
-              likes: response.data.liked 
-                ? [...(c.likes || []), { _id: user._id }]
-                : (c.likes || []).filter(like => like._id !== user._id),
-              likeCount: response.data.liked ? (c.likeCount || 0) + 1 : Math.max(0, (c.likeCount || 0) - 1)
-            }
-          : c
-      ));
-    } catch (error) {
-      toast.error('Failed to like clip');
-    }
-  };
-
-  const handleShare = (clip, e) => {
-    e.stopPropagation();
-    navigator.clipboard.writeText(`${window.location.origin}/clip/${clip._id}`);
-    toast.success('Link copied to clipboard!');
-  };
-
-  const handleBookmark = (clip, e) => {
-    e.stopPropagation();
-    toast.success('Added to bookmarks!');
-  };
-
-  const handleCommentInputChange = (clipIndex, value) => {
-    setCommentInputs(prev => ({
-      ...prev,
-      [clipIndex]: value
-    }));
-  };
-
-  const handleCommentSubmit = async (clip, clipIndex, e) => {
-    e.preventDefault();
-    const commentText = commentInputs[clipIndex]?.trim();
-    
-    if (!commentText) return;
-    
-    if (!user) {
-      toast.error('Please login to comment');
-      return;
-    }
-
-    try {
-      // Here you would call your comment API
-      // const response = await commentsAPI.createClipComment(clip._id, { content: commentText });
-      
-      // For now, just show a success message
-      toast.success('Comment posted!');
-      
-      // Clear the input
-      setCommentInputs(prev => ({
-        ...prev,
-        [clipIndex]: ''
-      }));
-      
-      // Update the comment count (you would get this from the API response)
-      setClips(prev => prev.map(c => 
-        c._id === clip._id 
-          ? { ...c, commentCount: (c.commentCount || 0) + 1 }
-          : c
-      ));
-    } catch (error) {
-      toast.error('Failed to post comment');
-    }
-  };
-
-  const handleCommentButtonClick = (clip, e) => {
-    e.stopPropagation();
-    setSelectedClipForComments(clip);
-    setCommentsPanelOpen(!commentsPanelOpen);
-  };
-
-  const closeCommentPanel = () => {
-    setCommentsPanelOpen(false);
-    setSelectedClipForComments(null);
-  };
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-        <div className="text-center max-w-md mx-auto px-6">
-          <div className="mx-auto mb-8">
-            <img 
-              src={darkMode ? "/logo1.png" : "/logo.png"}
-              alt="AFOXLY Logo" 
-              className="h-32 w-auto mx-auto"
-            />
-          </div>
-          <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
-            Discover amazing short-form videos from creators around the world
-          </p>
-          <Link 
-            to="/register" 
-            className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200"
-          >
-            <FiPlus className="w-5 h-5 mr-2" />
-            Join AFOXLY Today
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  if (loading && clips.length === 0) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-black">
-        <div className="text-white text-xl">Loading clips...</div>
-      </div>
-    );
-  }
+  const presetAmounts = [5, 10, 25, 50, 100];
 
   return (
-    <div className="flex h-screen">
-      {/* Video Feed Section */}
-      <div className={`flex-1 h-screen overflow-y-auto scroll-smooth snap-y snap-mandatory scrollbar-hide ${commentsPanelOpen ? 'mr-[400px]' : ''}`} onScroll={handleScroll} ref={containerRef}>
-        {clips.map((clip, index) => (
-          <div key={clip._id} className="h-screen snap-start flex items-center justify-center relative">
-            {/* Video */}
-            <div className="relative w-full h-full flex items-center justify-center">
-              <video
-                src={clip.videoUrl}
-                className="min-w-[350px] max-w-[400px] h-[80%] rounded-xl object-cover shadow-2xl mx-auto my-auto"
-                autoPlay={playingClips[index]}
-                loop
-                muted={mutedClips[index]}
-                controls={false}
-                onClick={() => handleVideoClick(index)}
-                ref={(el) => {
-                  videoRefs.current[index] = el;
-                }}
-              />
-              
-              {/* Play Button Overlay for non-interacted videos */}
-              {!userHasInteracted && index === currentClipIndex && (
-                <div 
-                  className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 cursor-pointer"
-                  onClick={handleUserInteraction}
-                >
-                  <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                    <FiPlay size={32} className="text-white ml-1" />
-                  </div>
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 dark:from-gray-900 dark:via-black dark:to-gray-900">
+      <div className="max-w-4xl mx-auto px-6 py-12">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <div className="mx-auto w-24 h-24 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center mb-6 shadow-2xl">
+            <FiVideo className="w-12 h-12 text-white" />
+          </div>
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
+            AFEXClips Temporarily Closed
+          </h1>
+          <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+            We're working hard to bring you an amazing video experience, but we need your help to get there!
+          </p>
+        </div>
+
+        {/* Fundraising Section */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 mb-8 border border-gray-200 dark:border-gray-700">
+          <div className="text-center mb-8">
+            <div className="flex items-center justify-center space-x-2 mb-4">
+              <FiTarget className="w-8 h-8 text-green-600" />
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Fundraising Goal</h2>
+            </div>
+            <div className="bg-gradient-to-r from-green-100 to-blue-100 dark:from-green-900 dark:to-blue-900 rounded-xl p-6 mb-6">
+              <div className="text-4xl font-bold text-green-600 dark:text-green-400 mb-2">$100</div>
+              <p className="text-gray-600 dark:text-gray-400">Target to Reopen AFEXClips</p>
+            </div>
+          </div>
+
+          {/* Progress Bar */}
+          <div className="mb-8">
+            <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-2">
+              <span>Current Progress</span>
+              <span>$0 / $100</span>
+            </div>
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4">
+              <div className="bg-gradient-to-r from-green-500 to-blue-500 h-4 rounded-full transition-all duration-500" style={{ width: '0%' }}></div>
+            </div>
+          </div>
+
+          {/* Why We Need Funding */}
+          <div className="mb-8">
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">
+              Why We Need Your Support
+            </h3>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="flex items-start space-x-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
+                <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-full">
+                  <FiZap className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                 </div>
-              )}
-              
-              {/* Video Controls Overlay - Floating on video */}
-              <div className="absolute bottom-4 right-4 flex flex-col items-center space-y-3">
-                {/* Mute/Unmute Button */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleUserInteraction();
-                    handleMuteToggle(index, e);
-                  }}
-                  className="w-8 h-8 bg-black bg-opacity-60 rounded-full flex items-center justify-center text-white hover:bg-opacity-80 transition-all"
-                >
-                  {mutedClips[index] ? <FiVolumeX size={14} /> : <FiVolume2 size={14} />}
-                </button>
-                
-                {/* Like Button */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleUserInteraction();
-                    handleLike(clip, e);
-                  }}
-                  className="w-8 h-8 bg-black bg-opacity-60 rounded-full flex flex-col items-center justify-center text-white hover:bg-opacity-80 transition-all"
-                >
-                  {clip.likes?.some(like => like._id === user?._id) ? (
-                    <FaHeart className="text-red-500" size={12} />
-                  ) : (
-                    <FiHeart size={12} />
-                  )}
-                  <span className="text-xs mt-0.5">{clip.likeCount || 0}</span>
-                </button>
-                
-                {/* Comment Button */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleUserInteraction();
-                    handleCommentButtonClick(clip, e);
-                  }}
-                  className={`w-8 h-8 rounded-full flex flex-col items-center justify-center transition-all ${
-                    commentsPanelOpen && selectedClipForComments?._id === clip._id 
-                      ? 'bg-blue-500 text-white' 
-                      : 'bg-black bg-opacity-60 text-white hover:bg-opacity-80'
-                  }`}
-                >
-                  <FiMessageCircle size={12} />
-                  <span className="text-xs mt-0.5">{clip.commentCount || 0}</span>
-                </button>
-                
-                {/* Share Button */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleUserInteraction();
-                    handleShare(clip, e);
-                  }}
-                  className="w-8 h-8 bg-black bg-opacity-60 rounded-full flex items-center justify-center text-white hover:bg-opacity-80 transition-all"
-                >
-                  <FiShare size={12} />
-                </button>
-                
-                {/* Bookmark Button */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleUserInteraction();
-                    handleBookmark(clip, e);
-                  }}
-                  className="w-8 h-8 bg-black bg-opacity-60 rounded-full flex items-center justify-center text-white hover:bg-opacity-80 transition-all"
-                >
-                  <FiBookmark size={12} />
-                </button>
+                <div>
+                  <h4 className="font-bold text-gray-900 dark:text-white mb-2">Server Infrastructure</h4>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">
+                    High-performance servers to handle video streaming and storage for all users.
+                  </p>
+                </div>
               </div>
               
-              {/* Video Info - Floating on video */}
-              <div className="absolute bottom-4 left-4 max-w-xs">
-                <div className="flex items-center space-x-2 mb-2">
-                  <img 
-                    src={clip.creator?.avatar || DefaultAvatar} 
-                    alt={clip.creator?.username} 
-                    className="w-8 h-8 rounded-full"
-                  />
-                  <div>
-                    <p className="text-white font-semibold text-xs">{clip.creator?.username}</p>
-                    <p className="text-gray-300 text-xs">{clip.title}</p>
-                  </div>
+              <div className="flex items-start space-x-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
+                <div className="p-3 bg-purple-100 dark:bg-purple-900 rounded-full">
+                  <FiUsers className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                 </div>
-                <p className="text-white text-xs mb-1">{clip.description}</p>
-                <div className="flex items-center space-x-2">
-                  <span className="text-gray-300 text-xs">#{clip.category}</span>
-                  <span className="text-gray-300 text-xs">•</span>
-                  <span className="text-gray-300 text-xs">{new Date(clip.createdAt).toLocaleDateString()}</span>
+                <div>
+                  <h4 className="font-bold text-gray-900 dark:text-white mb-2">User Experience</h4>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">
+                    Smooth video playback, fast loading times, and reliable service for everyone.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
+                <div className="p-3 bg-green-100 dark:bg-green-900 rounded-full">
+                  <FiVideo className="w-6 h-6 text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-gray-900 dark:text-white mb-2">Video Processing</h4>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">
+                    Advanced video compression and optimization for better quality and faster uploads.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
+                <div className="p-3 bg-pink-100 dark:bg-pink-900 rounded-full">
+                  <FiDollarSign className="w-6 h-6 text-pink-600 dark:text-pink-400" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-gray-900 dark:text-white mb-2">Payment System</h4>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">
+                    Secure payment processing and subscription management for premium features.
+                  </p>
                 </div>
               </div>
             </div>
           </div>
-        ))}
-        
-        {/* Load More Indicator */}
-        {hasMore && (
-          <div className="h-screen snap-start flex items-center justify-center">
-            <div className="text-gray-600 text-xl">Loading more clips...</div>
+
+          {/* Call to Action */}
+          <div className="text-center">
+            <button
+              onClick={handleDonate}
+              className="btn btn-primary text-lg px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 flex items-center space-x-3 mx-auto"
+            >
+              <FiDollarSign className="w-6 h-6" />
+              <span>Support AFEXClips</span>
+            </button>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
+              Every contribution helps us bring AFEXClips back to life!
+            </p>
           </div>
-        )}
+        </div>
+
+        {/* Alternative Actions */}
+        <div className="text-center">
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            While we work on reopening AFEXClips, you can still:
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              to="/"
+              className="btn btn-secondary flex items-center space-x-2"
+            >
+              <FiPlus className="w-4 h-4" />
+              <span>Create Posts</span>
+            </Link>
+            <Link
+              to="/chat"
+              className="btn btn-secondary flex items-center space-x-2"
+            >
+              <FiMessageCircle className="w-4 h-4" />
+              <span>Connect with Friends</span>
+            </Link>
+          </div>
+        </div>
       </div>
 
-      {/* Comments Panel */}
-      {commentsPanelOpen && (
-        <div className="fixed top-0 right-0 h-screen w-[400px] bg-zinc-900 flex flex-col border-l border-zinc-800 z-30">
-          {/* Header */}
-          <div className="p-4 border-b border-zinc-800 flex items-center justify-between">
-            <span className="text-white font-bold text-lg">Comments ({selectedClipForComments?.commentCount || 0})</span>
-            <button onClick={closeCommentPanel} className="text-gray-400 hover:text-white">
-              <FiX size={20} />
-            </button>
-          </div>
-          {/* Comments List */}
-          <div className="flex-1 h-0 overflow-y-auto p-4 space-y-6 pb-20">
-            {dummyComments.map((c) => (
-              <div key={c.id} className="flex items-start gap-3">
-                <img src={c.avatar} className="w-8 h-8 rounded-full" alt={c.username} />
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-white text-sm">{c.username}</span>
-                    <span className="text-xs text-gray-400">{c.time}</span>
-                    <button className="ml-2 text-xs text-blue-400 hover:underline">Reply</button>
-                  </div>
-                  <p className="text-sm text-gray-300">{c.text}</p>
-                  <div className="flex items-center gap-4 mt-1 text-xs text-gray-400">
-                    <button className="flex items-center gap-1 hover:text-pink-500">
-                      <span>❤️</span>
-                      <span>{c.likes}</span>
-                    </button>
-                    <button className="hover:underline">View {c.replies} replies</button>
-                  </div>
-                </div>
+      {/* Donation Modal */}
+      {showDonationModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Support AFEXClips</h3>
+              <button
+                onClick={() => setShowDonationModal(false)}
+                className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+              >
+                <FiX className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Donation Amount */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                Select Donation Amount
+              </label>
+              <div className="grid grid-cols-3 gap-3 mb-4">
+                {presetAmounts.map((amount) => (
+                  <button
+                    key={amount}
+                    onClick={() => setDonationAmount(amount)}
+                    className={`p-3 rounded-xl border-2 transition-all ${
+                      donationAmount === amount
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
+                        : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+                    }`}
+                  >
+                    ${amount}
+                  </button>
+                ))}
               </div>
-            ))}
-          </div>
-          {/* Input Bar */}
-          <div className="p-4 border-t border-zinc-800 flex items-center bg-zinc-900 w-full">
-            <input
-              className="flex-1 bg-zinc-800 rounded-full px-4 py-2 text-white text-sm outline-none"
-              placeholder="Add a comment..."
-              value={commentInput}
-              onChange={(e) => setCommentInput(e.target.value)}
-            />
-            <button className="ml-2 text-blue-500 font-bold">Post</button>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                <input
+                  type="number"
+                  value={donationAmount}
+                  onChange={(e) => setDonationAmount(parseFloat(e.target.value) || 0)}
+                  className="w-full pl-8 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  placeholder="Enter amount"
+                  min="1"
+                  max="1000"
+                />
+              </div>
+            </div>
+
+            {/* Donor Information */}
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <FiUser className="w-4 h-4 inline mr-2" />
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  value={donorName}
+                  onChange={(e) => setDonorName(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  placeholder="Your full name"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <FiMail className="w-4 h-4 inline mr-2" />
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  value={donorEmail}
+                  onChange={(e) => setDonorEmail(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  placeholder="your@email.com"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Message (Optional)
+                </label>
+                <textarea
+                  value={donorMessage}
+                  onChange={(e) => setDonorMessage(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  placeholder="Leave a message of support..."
+                  rows="3"
+                />
+              </div>
+            </div>
+
+            {/* Payment Button */}
+            <button
+              onClick={handlePayment}
+              disabled={isProcessing || !donorName.trim() || !donorEmail.trim() || donationAmount < 1}
+              className="w-full btn btn-primary text-lg py-4 rounded-xl flex items-center justify-center space-x-3 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isProcessing ? (
+                <>
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                  <span>Processing...</span>
+                </>
+              ) : (
+                <>
+                  <FiCreditCard className="w-6 h-6" />
+                  <span>Pay ${donationAmount} via PayPal</span>
+                </>
+              )}
+            </button>
+
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-4 text-center">
+              Secure payment processed by PayPal. Your information is protected.
+            </p>
           </div>
         </div>
       )}

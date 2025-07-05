@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import PaymentService from '../../services/paymentService';
+import moniepointLogo from '../../assets/moniepoint-logo.png';
+import visaLogo from '../../assets/visa.png';
+import mastercardLogo from '../../assets/mastercard.png';
+import verveLogo from '../../assets/verve.png';
 
 const PaymentModal = ({ isOpen, onClose, onSuccess, type = 'donation', initialAmount = 10 }) => {
   const [formData, setFormData] = useState({
@@ -262,7 +266,7 @@ const PaymentModal = ({ isOpen, onClose, onSuccess, type = 'donation', initialAm
             </label>
             <div className="space-y-2">
               {paymentMethods.map(method => (
-                <label key={method.id} className="flex items-center space-x-3 cursor-pointer">
+                <label key={method.id} className="flex items-center space-x-3 cursor-pointer p-2 rounded-lg border transition-colors bg-gray-50 hover:bg-blue-50">
                   <input
                     type="radio"
                     name="paymentMethod"
@@ -271,7 +275,19 @@ const PaymentModal = ({ isOpen, onClose, onSuccess, type = 'donation', initialAm
                     onChange={handleInputChange}
                     className="text-blue-600 focus:ring-blue-500"
                   />
-                  <span className="text-sm text-gray-700">{method.name}</span>
+                  <span className="text-sm text-gray-700 font-medium flex items-center">
+                    {method.id === 'moniepoint' && (
+                      <img src={moniepointLogo} alt="Moniepoint" className="w-7 h-7 mr-2" />
+                    )}
+                    {method.id === 'card' && (
+                      <span className="flex items-center space-x-1 mr-2">
+                        <img src={visaLogo} alt="Visa" className="w-7 h-7" />
+                        <img src={mastercardLogo} alt="MasterCard" className="w-7 h-7" />
+                        <img src={verveLogo} alt="Verve" className="w-7 h-7" />
+                      </span>
+                    )}
+                    {method.name}
+                  </span>
                 </label>
               ))}
             </div>
@@ -279,6 +295,20 @@ const PaymentModal = ({ isOpen, onClose, onSuccess, type = 'donation', initialAm
               <p className="mt-1 text-sm text-red-600">{errors.paymentMethod}</p>
             )}
           </div>
+
+          {formData.paymentMethod === 'moniepoint' && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2 text-sm text-blue-900">
+              <strong>Moniepoint Instructions:</strong><br />
+              Send payment to Moniepoint Account:<br />
+              <span className="font-mono">1234567890</span> (AFEX Donations)<br />
+              After payment, please enter your name and email so we can confirm your donation.
+            </div>
+          )}
+          {formData.paymentMethod === 'card' && (
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mt-2 text-sm text-gray-700">
+              <strong>Bank Card:</strong> Pay securely with Visa, MasterCard, or Verve. Your card details are encrypted and never stored.
+            </div>
+          )}
 
           {/* Error Message */}
           {errors.submit && (

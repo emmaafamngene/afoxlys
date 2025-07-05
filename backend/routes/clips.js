@@ -450,7 +450,7 @@ router.get('/fundraising', (req, res) => {
 });
 
 // @route   POST /api/clips/donate
-// @desc    Handle donation with PayPal integration
+// @desc    Handle donation with Moniepoint and Bank Card integration
 // @access  Public
 router.post('/donate', [
   body('amount')
@@ -461,7 +461,10 @@ router.post('/donate', [
     .withMessage('Valid email is required'),
   body('name')
     .isLength({ min: 2, max: 100 })
-    .withMessage('Name must be between 2 and 100 characters')
+    .withMessage('Name must be between 2 and 100 characters'),
+  body('paymentMethod')
+    .isIn(['moniepoint', 'card'])
+    .withMessage('Payment method must be moniepoint or card')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -469,22 +472,42 @@ router.post('/donate', [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { amount, email, name, message } = req.body;
+    const { amount, email, name, message, paymentMethod } = req.body;
 
-    // Create PayPal payment URL
-    const paypalUrl = `https://www.paypal.com/donate/?hosted_button_id=YOUR_PAYPAL_BUTTON_ID&amount=${amount}&currency_code=USD&item_name=AFEXClips%20Fundraising&return=https://yourdomain.com/donation-success&cancel_return=https://yourdomain.com/donation-cancelled`;
+    // Generate transaction ID
+    const transactionId = `DON-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+    // Create donation record
+    const donation = new Payment({
+      amount,
+      currency: 'USD',
+      paymentMethod,
+      transactionId,
+      customer: {
+        name,
+        email
+      },
+      isDonation: true,
+      donationType: 'afexclips',
+      message,
+      status: 'pending'
+    });
+
+    await donation.save();
     
     res.json({
       success: true,
-      message: 'Redirecting to PayPal for secure payment',
-      paymentUrl: paypalUrl,
+      message: paymentMethod === 'moniepoint' 
+        ? 'Please send payment to Moniepoint account: 1234567890 (AFEX Donations)'
+        : 'Please complete your card payment below',
+      paymentMethod,
       donation: {
         amount,
         email,
         name,
         message,
         timestamp: new Date(),
-        transactionId: `DON-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        transactionId,
         status: 'pending'
       }
     });
@@ -570,7 +593,7 @@ router.post('/donations', [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { amount, name, email, message, paymentMethod = 'paypal' } = req.body;
+    const { amount, name, email, message, paymentMethod = 'moniepoint' } = req.body;
 
     // Generate transaction ID
     const transactionId = `DON-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;

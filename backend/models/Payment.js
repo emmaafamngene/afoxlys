@@ -21,7 +21,7 @@ const paymentSchema = new mongoose.Schema({
   // Payment method
   paymentMethod: {
     type: String,
-    enum: ['card', 'paypal', 'apple_pay', 'google_pay', 'bank_transfer'],
+    enum: ['moniepoint', 'card'],
     required: true
   },
   

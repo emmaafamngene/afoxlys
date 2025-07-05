@@ -17,7 +17,7 @@ router.post('/create-payment-intent', [
     .withMessage('Invalid currency'),
   body('customer.name').isLength({ min: 2, max: 100 }),
   body('customer.email').isEmail(),
-  body('paymentMethod').isIn(['card', 'paypal', 'apple_pay', 'google_pay']),
+  body('paymentMethod').isIn(['moniepoint', 'card']),
   body('isDonation').optional().isBoolean()
 ], async (req, res) => {
   try {

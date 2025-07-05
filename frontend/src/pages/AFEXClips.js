@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { clipsAPI, likesAPI } from '../services/api';
+import { usePageTitle } from '../hooks/usePageTitle';
 import { 
   FiVideo, FiPlus, FiHeart, FiMessageCircle, FiShare, FiPlay, 
   FiBookmark, FiVolume2, FiVolumeX, FiX 
@@ -36,6 +37,8 @@ const AFEXClips = () => {
   const { isAuthenticated, user } = useAuth();
   const [clips, setClips] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  usePageTitle('AFEXClips');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);

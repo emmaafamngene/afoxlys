@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { usersAPI, postsAPI, clipsAPI, followAPI } from '../services/api';
+import { usePageTitle } from '../hooks/usePageTitle';
 import PostCard from '../components/posts/PostCard';
 import ClipCard from '../components/clips/ClipCard';
 import { FiEdit, FiSettings, FiGrid, FiVideo, FiUsers, FiUserPlus, FiUserCheck, FiMapPin, FiCalendar, FiLink, FiMail, FiCamera } from 'react-icons/fi';
@@ -11,6 +12,8 @@ const Profile = () => {
   const { userId } = useParams();
   const { user: currentUser, isAuthenticated, updateUser } = useAuth();
   const [user, setUser] = useState(null);
+  
+  usePageTitle(user ? `${user.username}'s Profile` : 'Profile');
   const [posts, setPosts] = useState([]);
   const [clips, setClips] = useState([]);
   const [followers, setFollowers] = useState([]);

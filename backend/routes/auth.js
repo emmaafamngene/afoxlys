@@ -8,7 +8,11 @@ const router = express.Router();
 
 // Generate JWT token
 const generateToken = (userId) => {
-  return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
+  const jwtSecret = process.env.JWT_SECRET || 'fallback_secret_for_development_only';
+  if (!process.env.JWT_SECRET) {
+    console.warn('JWT_SECRET not set, using fallback secret');
+  }
+  return jwt.sign({ userId }, jwtSecret, { expiresIn: '7d' });
 };
 
 // @route   POST /api/auth/register
@@ -77,7 +81,30 @@ router.post(
       });
     } catch (error) {
       console.error('Registration error:', error);
-      res.status(500).json({ message: 'Server error' });
+      
+      // Check for specific MongoDB errors
+      if (error.code === 11000) {
+        const field = Object.keys(error.keyPattern)[0];
+        return res.status(400).json({
+          message: `${field.charAt(0).toUpperCase() + field.slice(1)} already exists`
+        });
+      }
+      
+      // Check for validation errors
+      if (error.name === 'ValidationError') {
+        const messages = Object.values(error.errors).map(err => err.message);
+        return res.status(400).json({
+          message: messages.join(', ')
+        });
+      }
+      
+      // Check for JWT secret missing
+      if (error.message && error.message.includes('JWT_SECRET')) {
+        console.error('JWT_SECRET environment variable is missing');
+        return res.status(500).json({ message: 'Server configuration error' });
+      }
+      
+      res.status(500).json({ message: 'Server error', details: error.message });
     }
   }
 );

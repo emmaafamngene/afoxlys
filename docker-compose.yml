@@ -46,7 +46,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - REACT_APP_API_URL=http://localhost:5000/api
+      - REACT_APP_API_URL=https://afoxlys.onrender.com/api
     depends_on:
       - backend
     volumes:

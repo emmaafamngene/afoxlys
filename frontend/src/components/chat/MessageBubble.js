@@ -34,7 +34,7 @@ export default function MessageBubble({
   }, [message.viewed, isOwn, showDeleteTimer]);
 
   const handleView = () => {
-    if (onView && !message.viewed && !isOwn) {
+    if (onView && !message.viewed && !isOwn && !message.isTemp) {
       onView(message._id);
     }
   };

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { FiHome, FiSearch, FiMessageCircle, FiUser, FiPlus, FiBell, FiSettings, FiMoreHorizontal, FiSun, FiMoon, FiEdit } from 'react-icons/fi';
 import { MdExplore, MdVideoLibrary } from 'react-icons/md';
+import AFEXLogo from './AFEXLogo';
 
 const navLinks = [
   { to: '/', label: 'Home', icon: <FiHome /> },
@@ -30,6 +31,14 @@ export default function Sidebar({ darkMode, setDarkMode }) {
         onMouseLeave={() => setHovered(false)}
         style={{ minWidth: hovered ? '14rem' : '4rem', borderRadius: 0, margin: 0 }}
       >
+        {/* Logo Section */}
+        <div className={`flex items-center ${hovered ? 'px-3 py-4' : 'justify-center py-4'} border-b border-gray-200 dark:border-gray-800`}>
+          <AFEXLogo className="h-8 w-auto" darkMode={darkMode} />
+          {hovered && (
+            <span className="ml-3 text-lg font-bold text-gray-900 dark:text-white">AFEX</span>
+          )}
+        </div>
+        
         {/* Main nav: all icons (no labels) when not hovered, all icons+labels when hovered */}
         <div className={`flex flex-col w-full transition-all duration-300 ${hovered ? '' : 'items-center'}`} style={{ flex: 1 }}>
           <nav className={`flex flex-col gap-1 w-full mt-4 ${hovered ? '' : 'items-center'}`}>

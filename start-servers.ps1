@@ -69,6 +69,6 @@ Start-Sleep -Seconds 3
 Start-FrontendServer
 
 Write-Host "Servers are starting..." -ForegroundColor Green
-Write-Host "Backend: http://localhost:5000" -ForegroundColor Cyan
+Write-Host "Backend: https://afoxlys.onrender.com" -ForegroundColor Cyan
 Write-Host "Frontend: http://localhost:3000" -ForegroundColor Cyan
 Write-Host "Press Ctrl+C to stop all servers" -ForegroundColor Yellow 

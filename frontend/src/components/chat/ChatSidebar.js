@@ -66,6 +66,11 @@ export default function ChatSidebar({ conversations = [], selectedConversationId
               const participants = conv.participants || [];
               const currentUserId = conv.currentUserId;
               const other = participants.find((u) => u._id !== currentUserId);
+              
+              // Skip if no other participant found
+              if (!other) {
+                return null;
+              }
               const isSelected = selectedConversationId === conv._id;
               
               return (

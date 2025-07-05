@@ -6,6 +6,7 @@ import PostCard from '../components/posts/PostCard';
 import ClipCard from '../components/clips/ClipCard';
 import { FiPlus, FiVideo } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 const Home = () => {
   const { isAuthenticated } = useAuth();
@@ -13,6 +14,8 @@ const Home = () => {
   const [clips, setClips] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('posts');
+  
+  usePageTitle('Home');
 
   useEffect(() => {
     fetchFeed();

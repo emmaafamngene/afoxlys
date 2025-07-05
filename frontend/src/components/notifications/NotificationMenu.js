@@ -18,7 +18,7 @@ const NotificationMenu = () => {
 
   useEffect(() => {
     // Initialize socket connection
-    const newSocket = io(process.env.REACT_APP_API_URL || 'http://localhost:5000');
+    const newSocket = io(process.env.REACT_APP_API_URL || 'https://afoxlys.onrender.com');
     setSocket(newSocket);
 
     // Socket event listeners

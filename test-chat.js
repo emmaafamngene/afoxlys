@@ -34,7 +34,7 @@ function testSendMessage() {
 
 // Test 4: Check API endpoints
 async function testAPIEndpoints() {
-  const baseURL = 'http://localhost:5000/api';
+  const baseURL = 'https://afoxlys.onrender.com/api';
   
   try {
     // Test health endpoint

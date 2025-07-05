@@ -104,8 +104,8 @@ A modern, real-time chat system inspired by Snapchat and Instagram DMs, built wi
 
 2. **Set environment variables**:
    ```env
-   REACT_APP_API_URL=http://localhost:5000/api
-   REACT_APP_SOCKET_URL=http://localhost:5000
+   REACT_APP_API_URL=https://afoxlys.onrender.com/api
+REACT_APP_SOCKET_URL=https://afoxlys.onrender.com
    ```
 
 3. **Import and use**:

@@ -99,7 +99,7 @@ AFEX/
 
 2. **Access the application**
    - Frontend: http://localhost:3000
-   - Backend API: http://localhost:5000
+   - Backend API: https://afoxlys.onrender.com
 
 ## API Endpoints
 

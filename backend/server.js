@@ -10,14 +10,22 @@ require('dotenv').config();
 const Conversation = require('./models/Conversation');
 const Message = require('./models/Message');
 const { router: notificationRoutes, createNotification } = require('./routes/notifications');
+const chatRoutes = require('./routes/chat');
+const bodyParser = require('body-parser');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: '*',
-    methods: ['GET', 'POST'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization']
   },
+  transports: ['websocket', 'polling'],
+  allowEIO3: true,
+  pingTimeout: 60000,
+  pingInterval: 25000
 });
 
 // Middleware
@@ -32,7 +40,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Database connection
 mongoose
-  .connect(process.env.MONGODB_URI, {
+  .connect(process.env.MONGODB_URI || process.env.MONGO_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
@@ -48,12 +56,51 @@ app.use('/api/comments', require('./routes/comments'));
 app.use('/api/likes', require('./routes/likes'));
 app.use('/api/follow', require('./routes/follow'));
 app.use('/api/search', require('./routes/search'));
-app.use('/api/chat', require('./routes/chat'));
+
+// Patch the POST /api/chat/conversations route to emit a socket event
+app.post('/api/chat/conversations', require('./middlewares/auth').auth, async (req, res) => {
+  const { userId1, userId2 } = req.body;
+  try {
+    if (req.user._id.toString() !== userId1 && req.user._id.toString() !== userId2) {
+      return res.status(403).json({ message: 'Not authorized to create this conversation' });
+    }
+    let convo = await Conversation.findOne({
+      participants: { $all: [userId1, userId2], $size: 2 },
+    }).populate('participants', 'username firstName lastName avatar');
+    let isNew = false;
+    if (!convo) {
+      convo = await Conversation.create({ participants: [userId1, userId2] });
+      await convo.populate('participants', 'username firstName lastName avatar');
+      isNew = true;
+    }
+    res.json(convo);
+    // Emit to the other participant if new
+    if (isNew) {
+      const recipientId = req.user._id.toString() === userId1 ? userId2 : userId1;
+      const recipientSocket = onlineUsers.get(recipientId);
+      if (recipientSocket) {
+        io.to(recipientSocket).emit('newConversation', convo);
+      }
+    }
+  } catch (err) {
+    console.error('Error creating conversation:', err);
+    res.status(500).json({ message: 'Error creating conversation' });
+  }
+});
+
+app.use('/api/chat', chatRoutes);
 app.use('/api/notifications', notificationRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'AFEX API is running' });
+  res.json({ 
+    status: 'OK', 
+    message: 'AFEX API is running',
+    socket: {
+      onlineUsers: onlineUsers.size,
+      transports: ['websocket', 'polling']
+    }
+  });
 });
 
 // Error handling middleware
@@ -73,7 +120,9 @@ const PORT = process.env.PORT || 5000;
 const onlineUsers = new Map();
 
 io.on('connection', (socket) => {
-  console.log('Socket.IO: User connected', socket.id);
+  console.log('✅ Socket.IO: User connected', socket.id);
+  console.log('🔍 Socket transport:', socket.conn.transport.name);
+  console.log('🔍 Socket remote address:', socket.handshake.address);
 
   // User joins chat (register userId)
   socket.on('join', (userId) => {
@@ -274,11 +323,12 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('disconnect', () => {
+  socket.on('disconnect', (reason) => {
+    console.log('❌ Socket.IO: User disconnected', socket.id, 'Reason:', reason);
     if (socket.userId) {
       onlineUsers.delete(socket.userId);
+      console.log(`User ${socket.userId} removed from online users`);
     }
-    console.log('Socket.IO: User disconnected', socket.id);
   });
 });
 

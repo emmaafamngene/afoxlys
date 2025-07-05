@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { searchAPI } from '../services/api';
+import { usePageTitle } from '../hooks/usePageTitle';
 import PostCard from '../components/posts/PostCard';
 import ClipCard from '../components/clips/ClipCard';
 import { FiSearch, FiUsers, FiFileText, FiVideo } from 'react-icons/fi';
@@ -12,6 +13,8 @@ const Search = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
   const [activeTab, setActiveTab] = useState('all');
+  
+  usePageTitle(searchQuery ? `Search: ${searchQuery}` : 'Search');
   const [results, setResults] = useState({
     users: [],
     posts: [],

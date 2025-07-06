@@ -124,30 +124,7 @@ router.post(
   }
 );
 
-// @route   GET /api/posts/:id
-// @desc    Get a specific post
-// @access  Public
-router.get('/:id', optionalAuth, async (req, res) => {
-  try {
-    const post = await Post.findById(req.params.id)
-      .populate('author', 'username firstName lastName avatar')
-      .populate('likes', 'username firstName lastName avatar');
 
-    if (!post) {
-      return res.status(404).json({ message: 'Post not found' });
-    }
-
-    // Check if user can view private post
-    if (post.isPrivate && (!req.user || post.author._id.toString() !== req.user._id.toString())) {
-      return res.status(403).json({ message: 'Access denied' });
-    }
-
-    res.json({ post });
-  } catch (error) {
-    console.error('Get post error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
 
 // @route   PUT /api/posts/:id
 // @desc    Update a post
@@ -277,6 +254,31 @@ router.get('/feed', optionalAuth, async (req, res) => {
     });
   } catch (error) {
     console.error('Get feed error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/posts/:id
+// @desc    Get a specific post
+// @access  Public
+router.get('/:id', optionalAuth, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id)
+      .populate('author', 'username firstName lastName avatar')
+      .populate('likes', 'username firstName lastName avatar');
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    // Check if user can view private post
+    if (post.isPrivate && (!req.user || post.author._id.toString() !== req.user._id.toString())) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    res.json({ post });
+  } catch (error) {
+    console.error('Get post error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

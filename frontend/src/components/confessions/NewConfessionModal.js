@@ -25,7 +25,7 @@ const NewConfessionModal = ({ isOpen, onClose, onConfessionPosted }) => {
     setIsSubmitting(true);
     try {
       const response = await api.post('/confessions', {
-        content: content.trim()
+        text: content.trim()
       });
       
       setContent('');

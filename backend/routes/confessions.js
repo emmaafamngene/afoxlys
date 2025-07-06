@@ -47,7 +47,8 @@ router.post('/', auth, async (req, res) => {
     }
     
     const confession = await Confession.create({
-      text: text.trim()
+      text: text.trim(),
+      userId: req.user._id
     });
     
     console.log('✅ New confession posted:', confession._id);
@@ -56,6 +57,68 @@ router.post('/', auth, async (req, res) => {
   } catch (err) {
     console.error('Error posting confession:', err);
     res.status(500).json({ message: 'Error posting confession' });
+  }
+});
+
+// Update a confession
+router.put('/:confessionId', auth, async (req, res) => {
+  try {
+    const { confessionId } = req.params;
+    const { text } = req.body;
+    
+    if (!text || text.trim().length === 0) {
+      return res.status(400).json({ message: 'Confession text is required' });
+    }
+    
+    if (text.length > 1000) {
+      return res.status(400).json({ message: 'Confession is too long (max 1000 characters)' });
+    }
+    
+    const confession = await Confession.findById(confessionId);
+    if (!confession) {
+      return res.status(404).json({ message: 'Confession not found' });
+    }
+    
+    // Check if user owns the confession
+    if (confession.userId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to edit this confession' });
+    }
+    
+    confession.text = text.trim();
+    await confession.save();
+    
+    console.log('✅ Confession updated:', confessionId);
+    
+    res.json(confession);
+  } catch (err) {
+    console.error('Error updating confession:', err);
+    res.status(500).json({ message: 'Error updating confession' });
+  }
+});
+
+// Delete a confession
+router.delete('/:confessionId', auth, async (req, res) => {
+  try {
+    const { confessionId } = req.params;
+    
+    const confession = await Confession.findById(confessionId);
+    if (!confession) {
+      return res.status(404).json({ message: 'Confession not found' });
+    }
+    
+    // Check if user owns the confession
+    if (confession.userId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to delete this confession' });
+    }
+    
+    await Confession.findByIdAndDelete(confessionId);
+    
+    console.log('✅ Confession deleted:', confessionId);
+    
+    res.json({ message: 'Confession deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting confession:', err);
+    res.status(500).json({ message: 'Error deleting confession' });
   }
 });
 

@@ -6,11 +6,11 @@ import toast from 'react-hot-toast';
 
 const ConfessionCard = ({ confession, onUpdate }) => {
   const { user } = useAuth();
-  const [isLiked, setIsLiked] = useState(confession.likes?.includes(user?._id));
-  const [likeCount, setLikeCount] = useState(confession.likes?.length || 0);
+  const [isLiked, setIsLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(confession.emojiReactions?.heart || 0);
   const [showMenu, setShowMenu] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [editContent, setEditContent] = useState(confession.content);
+  const [editContent, setEditContent] = useState(confession.text);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleLike = async () => {
@@ -20,15 +20,16 @@ const ConfessionCard = ({ confession, onUpdate }) => {
     }
 
     try {
-      const response = await api.post(`/confessions/${confession._id}/like`);
-      setIsLiked(response.data.liked);
-      setLikeCount(response.data.likeCount);
+      const response = await api.post(`/confessions/${confession._id}/react`, {
+        reactionType: 'heart'
+      });
+      
+      // Update local state
+      setIsLiked(!isLiked);
+      setLikeCount(response.data.emojiReactions.heart);
       
       if (onUpdate) {
-        onUpdate({
-          ...confession,
-          likes: response.data.likes
-        });
+        onUpdate(response.data);
       }
     } catch (error) {
       console.error('Error liking confession:', error);
@@ -45,7 +46,7 @@ const ConfessionCard = ({ confession, onUpdate }) => {
     setIsSubmitting(true);
     try {
       const response = await api.put(`/confessions/${confession._id}`, {
-        content: editContent
+        text: editContent
       });
       
       if (onUpdate) {
@@ -163,7 +164,7 @@ const ConfessionCard = ({ confession, onUpdate }) => {
               <button
                 onClick={() => {
                   setIsEditing(false);
-                  setEditContent(confession.content);
+                  setEditContent(confession.text);
                 }}
                 className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
               >
@@ -173,7 +174,7 @@ const ConfessionCard = ({ confession, onUpdate }) => {
           </div>
         ) : (
           <p className="text-gray-800 dark:text-gray-200 text-sm leading-relaxed">
-            {confession.content}
+            {confession.text}
           </p>
         )}
       </div>

@@ -14,7 +14,9 @@ const SwipeCard = ({ post, onVote, onNext }) => {
     setShowVoteAnimation(voteType);
     
     try {
-      await onVote(voteType, post);
+      // Map frontend voteType to backend
+      const backendVoteType = voteType === 'like' ? 'hot' : 'not';
+      await onVote(backendVoteType, post);
     } catch (error) {
       console.error('Error voting:', error);
     } finally {

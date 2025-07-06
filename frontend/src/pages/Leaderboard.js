@@ -12,11 +12,11 @@ const Leaderboard = () => {
   const [sortBy, setSortBy] = useState('xp');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const { user } = useAuth();
+  const { user: currentUser } = useAuth();
 
   useEffect(() => {
     fetchLeaderboard();
-  }, [sortBy, page]);
+  }, [sortBy, page, fetchLeaderboard]);
 
   const fetchLeaderboard = async () => {
     try {

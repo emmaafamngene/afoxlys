@@ -36,107 +36,63 @@ const Profile = () => {
   
   usePageTitle(user ? `${user.username}'s Profile` : 'Profile');
   
-  // Debug logging
-  console.log('🔍 Profile component rendered with userId:', userId);
-  console.log('🔍 Current user:', currentUser);
-  console.log('🔍 Loading state:', loading);
-  console.log('🔍 User state:', user);
+
 
   const fetchUserProfile = useCallback(async () => {
     try {
       setLoading(true);
-      console.log('🔍 Fetching profile for userId:', userId);
-      console.log('🔍 API_BASE_URL:', API_BASE_URL);
-      
-      // Test API connection first
-      console.log('🔍 Testing API connection...');
-      try {
-        const testResponse = await fetch(`${API_BASE_URL}/health`);
-        console.log('🔍 API health check response:', testResponse.status);
-      } catch (error) {
-        console.error('🔍 API health check failed:', error);
-      }
-      
-      console.log('🔍 Making individual API calls...');
       
       // Make API calls individually to see which one fails
       try {
-        console.log('🔍 Calling usersAPI.getById...');
         const userResponse = await usersAPI.getById(userId);
-        console.log('🔍 User response:', userResponse);
         setUser(userResponse.data.user);
       } catch (error) {
-        console.error('🔍 Error fetching user:', error);
+        console.error('Error fetching user:', error);
         setUser(null);
       }
       
       try {
-        console.log('🔍 Calling usersAPI.getPosts...');
         const postsResponse = await usersAPI.getPosts(userId);
-        console.log('🔍 Posts response:', postsResponse);
         setPosts(postsResponse.data.posts);
       } catch (error) {
-        console.error('🔍 Error fetching posts:', error);
+        console.error('Error fetching posts:', error);
         setPosts([]);
       }
       
       try {
-        console.log('🔍 Calling usersAPI.getClips...');
         const clipsResponse = await usersAPI.getClips(userId);
-        console.log('🔍 Clips response:', clipsResponse);
         setClips(clipsResponse.data.clips);
       } catch (error) {
-        console.error('🔍 Error fetching clips:', error);
+        console.error('Error fetching clips:', error);
         setClips([]);
       }
       
       try {
-        console.log('🔍 Calling followAPI.getFollowers...');
         const followersResponse = await followAPI.getFollowers(userId);
-        console.log('🔍 Followers response:', followersResponse);
         setFollowers(followersResponse.data.followers);
       } catch (error) {
-        console.error('🔍 Error fetching followers:', error);
+        console.error('Error fetching followers:', error);
         setFollowers([]);
       }
       
       try {
-        console.log('🔍 Calling followAPI.getFollowing...');
         const followingResponse = await followAPI.getFollowing(userId);
-        console.log('🔍 Following response:', followingResponse);
         setFollowing(followingResponse.data.following);
       } catch (error) {
-        console.error('🔍 Error fetching following:', error);
+        console.error('Error fetching following:', error);
         setFollowing([]);
       }
       
       try {
-        console.log('🔍 Calling badges API...');
         const badgesResponse = await fetch(`${API_BASE_URL}/users/${userId}/badges`).then(res => res.json());
-        console.log('🔍 Badges response:', badgesResponse);
         setBadges(badgesResponse.badges || []);
       } catch (error) {
-        console.error('🔍 Error fetching badges:', error);
+        console.error('Error fetching badges:', error);
         setBadges([]);
       }
       
-      console.log('🔍 Profile data set successfully');
     } catch (error) {
       console.error('❌ Error fetching profile:', error);
-      console.error('❌ Error details:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status,
-        userId: userId
-      });
-      
-      if (error.response?.status === 404) {
-        console.log('User not found');
-      } else if (error.response?.status === 401) {
-        console.log('Please login to view profiles');
-      } else {
-        console.log(`Failed to load profile: ${error.message}`);
-      }
     } finally {
       setLoading(false);
     }
@@ -154,13 +110,9 @@ const Profile = () => {
   }, [userId, isAuthenticated, isOwnProfile]);
 
   useEffect(() => {
-    console.log('🔍 useEffect triggered with userId:', userId);
     if (userId) {
-      console.log('🔍 Calling fetchUserProfile and checkFollowStatus');
       fetchUserProfile();
       checkFollowStatus();
-    } else {
-      console.log('🔍 No userId provided, skipping API calls');
     }
   }, [userId, fetchUserProfile, checkFollowStatus]);
 

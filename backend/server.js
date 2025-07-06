@@ -122,7 +122,7 @@ mongoose
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', require('./routes/users'));
-app.use('/api/posts', xpAwarder, require('./routes/posts'));
+app.use('/api/posts', require('./routes/posts'));
 app.use('/api/clips', xpAwarder, require('./routes/clips'));
 app.use('/api/comments', xpAwarder, require('./routes/comments'));
 app.use('/api/likes', xpAwarder, require('./routes/likes'));

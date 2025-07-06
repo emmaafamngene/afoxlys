@@ -99,7 +99,7 @@ const Home = () => {
   const fetchConfessions = async (pageNum = 1, retryCount = 0) => {
     try {
       setConfessionsLoading(true);
-      const response = await postsAPI.getConfessions(pageNum);
+      const response = await confessionsAPI.getAll(pageNum);
       if (pageNum === 1) {
         setConfessions(response.data.confessions || []);
       } else {
@@ -133,7 +133,7 @@ const Home = () => {
   const fetchRandomSwipePost = async (retryCount = 0) => {
     try {
       setSwipeLoading(true);
-      const response = await postsAPI.getRandomSwipePost();
+      const response = await swipeAPI.getRandomPost();
       setCurrentSwipePost(response.data.post || response.data);
       setNoMoreSwipePosts(false);
     } catch (error) {
@@ -153,7 +153,7 @@ const Home = () => {
 
   const handleSwipeVote = async (voteType, post) => {
     try {
-      await postsAPI.voteSwipe(post._id, voteType);
+      await swipeAPI.vote(post._id, voteType);
       
       // Get next post
       fetchRandomSwipePost();

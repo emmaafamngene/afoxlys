@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const Confession = require('../models/Confession');
 const { auth } = require('../middlewares/auth');
+const Post = require('../models/Post');
+const { optionalAuth } = require('../middlewares/auth');
 
 // Get all confessions (most recent first)
 router.get('/', async (req, res) => {
@@ -196,6 +198,48 @@ router.get('/trending', async (req, res) => {
   } catch (err) {
     console.error('Error fetching trending confessions:', err);
     res.status(500).json({ message: 'Error fetching trending confessions' });
+  }
+});
+
+// @route   GET /api/confessions
+// @desc    Get confessions (posts with confession tag)
+// @access  Public
+router.get('/posts', optionalAuth, async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+
+    // Find posts that are confessions (you can add a specific field or use tags)
+    const query = {
+      $or: [
+        { tags: { $in: ['confession', 'confessions'] } },
+        { content: { $regex: /confession/i } }
+      ],
+      isPrivate: false
+    };
+
+    const confessions = await Post.find(query)
+      .populate('author', 'username firstName lastName avatar')
+      .populate('likes', 'username firstName lastName avatar')
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
+
+    const total = await Post.countDocuments(query);
+
+    res.json({
+      confessions,
+      pagination: {
+        current: page,
+        total: Math.ceil(total / limit),
+        hasNext: page * limit < total,
+        hasPrev: page > 1,
+      },
+    });
+  } catch (error) {
+    console.error('Get confessions error:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 

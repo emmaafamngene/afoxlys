@@ -67,7 +67,9 @@ export default function Sidebar({ darkMode, setDarkMode }) {
                   >
                     {link.label}
                   </motion.span>
-                  {({ isActive }) => isActive && (
+                </NavLink>
+                <AnimatePresence>
+                  {window.location.pathname === link.to && (
                     <motion.div
                       layoutId="activeTab"
                       className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg -z-10"
@@ -75,7 +77,7 @@ export default function Sidebar({ darkMode, setDarkMode }) {
                       transition={{ type: "spring", stiffness: 500, damping: 30 }}
                     />
                   )}
-                </NavLink>
+                </AnimatePresence>
               </motion.div>
             ))}
             

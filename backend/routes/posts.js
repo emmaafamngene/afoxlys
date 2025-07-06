@@ -234,23 +234,28 @@ router.delete('/:id', auth, async (req, res) => {
 
 // @route   GET /api/posts/feed
 // @desc    Get user's personalized feed
-// @access  Private
-router.get('/feed', auth, async (req, res) => {
+// @access  Public (temporarily for testing)
+router.get('/feed', optionalAuth, async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const user = await User.findById(req.user._id).populate('following');
-    const followingIds = user.following.map(followed => followed._id);
-    followingIds.push(req.user._id); // Include user's own posts
+    let query = { isPrivate: false };
     
-    const query = {
-      $or: [
-        { author: { $in: followingIds } },
-        { isPrivate: false }
-      ]
-    };
+    // If user is authenticated, show posts from followed users and public posts
+    if (req.user) {
+      const user = await User.findById(req.user._id).populate('following');
+      const followingIds = user.following.map(followed => followed._id);
+      followingIds.push(req.user._id); // Include user's own posts
+      
+      query = {
+        $or: [
+          { author: { $in: followingIds } },
+          { isPrivate: false }
+        ]
+      };
+    }
 
     const posts = await Post.find(query)
       .populate('author', 'username firstName lastName avatar')

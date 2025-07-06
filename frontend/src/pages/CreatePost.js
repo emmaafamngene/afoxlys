@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { postsAPI } from '../services/api';
 import { FiImage, FiVideo, FiX, FiUpload } from 'react-icons/fi';
@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 
 const CreatePost = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const [content, setContent] = useState('');
   const [media, setMedia] = useState(null);
@@ -14,6 +15,9 @@ const CreatePost = () => {
   const [mediaPreview, setMediaPreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef(null);
+
+  // Check if this post is for the swipe game
+  const isForSwipeGame = searchParams.get('for') === 'swipe';
 
   const handleContentChange = (e) => {
     setContent(e.target.value);
@@ -83,8 +87,18 @@ const CreatePost = () => {
 
       await postsAPI.create(formData);
       
-      toast.success('Post created successfully!');
-      navigate('/');
+      const successMessage = isForSwipeGame 
+        ? 'Post submitted to Swipe Game successfully! 🔥' 
+        : 'Post created successfully!';
+      
+      toast.success(successMessage);
+      
+      // Navigate back to appropriate page
+      if (isForSwipeGame) {
+        navigate('/swipe');
+      } else {
+        navigate('/');
+      }
     } catch (error) {
       console.error('Error creating post:', error);
       toast.error(error.response?.data?.message || 'Failed to create post');
@@ -111,9 +125,18 @@ const CreatePost = () => {
     <div className="max-w-2xl mx-auto px-4 py-8">
       <div className="card p-6">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Create Post</h1>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">
+              {isForSwipeGame ? '🔥 Submit to Swipe Game' : 'Create Post'}
+            </h1>
+            {isForSwipeGame && (
+              <p className="text-sm text-gray-600 mt-1">
+                Your post will be available for others to vote on in the Swipe Game!
+              </p>
+            )}
+          </div>
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate(isForSwipeGame ? '/swipe' : '/')}
             className="text-gray-500 hover:text-gray-700"
           >
             <FiX className="w-6 h-6" />
@@ -144,7 +167,7 @@ const CreatePost = () => {
             <textarea
               value={content}
               onChange={handleContentChange}
-              placeholder="What's on your mind?"
+              placeholder={isForSwipeGame ? "What's your post for the Swipe Game?" : "What's on your mind?"}
               className="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
               rows="4"
               maxLength="1000"
@@ -171,7 +194,9 @@ const CreatePost = () => {
                 <div>
                   <FiUpload className="w-8 h-8 text-gray-400 mx-auto mb-3" />
                   <p className="text-gray-600 mb-2">
-                    Drag and drop an image or video here, or{' '}
+                    {isForSwipeGame 
+                      ? 'Upload an image or video for the Swipe Game! ' 
+                      : 'Drag and drop an image or video here, or '}
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
@@ -209,7 +234,6 @@ const CreatePost = () => {
                 </div>
               )}
             </div>
-            
             <input
               ref={fileInputRef}
               type="file"
@@ -219,40 +243,21 @@ const CreatePost = () => {
             />
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center justify-between">
-            <div className="flex space-x-2">
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
-              >
-                <FiImage className="w-5 h-5" />
-                <span>Image</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
-              >
-                <FiVideo className="w-5 h-5" />
-                <span>Video</span>
-              </button>
-            </div>
-            
+          {/* Submit Button */}
+          <div className="flex justify-end space-x-3">
+            <button
+              type="button"
+              onClick={() => navigate(isForSwipeGame ? '/swipe' : '/')}
+              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+            >
+              Cancel
+            </button>
             <button
               type="submit"
               disabled={loading || (!content.trim() && !media)}
-              className="btn btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? (
-                <div className="flex items-center space-x-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  <span>Creating...</span>
-                </div>
-              ) : (
-                'Create Post'
-              )}
+              {loading ? 'Creating...' : (isForSwipeGame ? 'Submit to Swipe Game 🔥' : 'Create Post')}
             </button>
           </div>
         </form>

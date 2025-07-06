@@ -1,68 +1,64 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
-import { api } from '../../services/api';
+import { Link } from 'react-router-dom';
+import { FiHeart, FiX, FiUser } from 'react-icons/fi';
 import DefaultAvatar from '../DefaultAvatar';
 
 const SwipeCard = ({ post, onVote, onNext }) => {
-  const { user } = useAuth();
   const [isVoting, setIsVoting] = useState(false);
-  const [voteDirection, setVoteDirection] = useState(null);
+  const [showVoteAnimation, setShowVoteAnimation] = useState(null);
 
   const handleVote = async (voteType) => {
     if (isVoting) return;
     
     setIsVoting(true);
-    setVoteDirection(voteType);
+    setShowVoteAnimation(voteType);
     
     try {
-      await api.post('/swipe/vote', {
-        postId: post._id,
-        voteType
-      });
-      
-      // Call parent callback
-      if (onVote) {
-        onVote(voteType, post);
-      }
-      
-      // Show vote animation briefly
-      setTimeout(() => {
-        if (onNext) {
-          onNext();
-        }
-      }, 500);
-      
+      await onVote(voteType, post);
     } catch (error) {
       console.error('Error voting:', error);
+    } finally {
       setIsVoting(false);
-      setVoteDirection(null);
+      setShowVoteAnimation(null);
     }
   };
 
-  const formatTime = (dateString) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
-    
-    if (diffInHours < 1) return 'Just now';
-    if (diffInHours < 24) return `${diffInHours}h ago`;
-    if (diffInHours < 48) return 'Yesterday';
-    return date.toLocaleDateString();
+  const handleKeyPress = (e) => {
+    if (e.key === 'ArrowLeft') {
+      handleVote('dislike');
+    } else if (e.key === 'ArrowRight') {
+      handleVote('like');
+    }
   };
 
+  React.useEffect(() => {
+    document.addEventListener('keydown', handleKeyPress);
+    return () => document.removeEventListener('keydown', handleKeyPress);
+  }, []);
+
+  if (!post) return null;
+
   return (
-    <div className="relative w-full max-w-sm mx-auto">
-      {/* Post Card */}
-      <div className={`bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden transition-all duration-300 ${
-        voteDirection === 'hot' ? 'transform -translate-x-full opacity-0' :
-        voteDirection === 'not' ? 'transform translate-x-full opacity-0' : ''
-      }`}>
+    <div className="relative max-w-md mx-auto">
+      {/* Vote Animation Overlay */}
+      {showVoteAnimation && (
+        <div className={`absolute inset-0 z-20 flex items-center justify-center text-6xl font-bold ${
+          showVoteAnimation === 'like' 
+            ? 'bg-green-500 bg-opacity-80 text-white' 
+            : 'bg-red-500 bg-opacity-80 text-white'
+        }`}>
+          {showVoteAnimation === 'like' ? '❤️' : '❌'}
+        </div>
+      )}
+
+      {/* Card */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700">
         {/* Media */}
         <div className="relative aspect-square bg-gray-100 dark:bg-gray-700">
-          {post.mediaUrl ? (
+          {post.media && post.media.length > 0 ? (
             <img
-              src={post.mediaUrl}
-              alt="Post media"
+              src={post.media[0]}
+              alt="Post content"
               className="w-full h-full object-cover"
               onError={(e) => {
                 e.target.style.display = 'none';
@@ -70,104 +66,83 @@ const SwipeCard = ({ post, onVote, onNext }) => {
               }}
             />
           ) : null}
-          <div className="hidden w-full h-full items-center justify-center text-gray-400">
-            <span className="text-4xl">📷</span>
+          <div className="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-500" style={{ display: post.media && post.media.length > 0 ? 'none' : 'flex' }}>
+            <div className="text-center">
+              <div className="text-6xl mb-2">📝</div>
+              <p className="text-sm">Text Post</p>
+            </div>
           </div>
         </div>
-        
-        {/* Post Info */}
+
+        {/* Content */}
         <div className="p-4">
           {/* User Info */}
           <div className="flex items-center mb-3">
-            <div className="w-10 h-10 rounded-full overflow-hidden mr-3">
-              {post.userId?.avatar ? (
+            <Link to={`/profile/${post.author.username}`} className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
+              {post.author.avatar ? (
                 <img
-                  src={post.userId.avatar}
-                  alt="Profile"
-                  className="w-full h-full object-cover"
+                  src={post.author.avatar}
+                  alt={post.author.username}
+                  className="w-8 h-8 rounded-full object-cover"
                   onError={(e) => {
                     e.target.style.display = 'none';
-                    e.target.nextSibling.style.display = 'flex';
+                    e.target.nextSibling.style.display = 'block';
                   }}
                 />
               ) : null}
-              <div className="hidden w-full h-full items-center justify-center bg-gray-200 dark:bg-gray-600">
-                <DefaultAvatar 
-                  username={post.userId?.username || 'User'} 
-                  size={40}
-                />
-              </div>
-            </div>
-            <div>
-              <p className="font-medium text-gray-900 dark:text-gray-100">
-                {post.userId?.firstName || post.userId?.username || 'Anonymous'}
-              </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {formatTime(post.createdAt)}
-              </p>
-            </div>
-          </div>
-          
-          {/* Caption */}
-          {post.caption && (
-            <p className="text-gray-700 dark:text-gray-300 mb-3 line-clamp-3">
-              {post.caption}
-            </p>
-          )}
-          
-          {/* Score */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">🔥</span>
+              <DefaultAvatar 
+                username={post.author.username} 
+                size={32}
+                style={{ display: post.author.avatar ? 'none' : 'block' }}
+              />
               <span className="font-medium text-gray-900 dark:text-gray-100">
-                {post.score || 0}
+                {post.author.username}
               </span>
-            </div>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Hot votes
+            </Link>
+          </div>
+
+          {/* Post Content */}
+          <div className="mb-4">
+            <p className="text-gray-800 dark:text-gray-200 text-sm leading-relaxed">
+              {post.content}
             </p>
           </div>
-        </div>
-      </div>
-      
-      {/* Vote Buttons */}
-      <div className="flex justify-between items-center mt-6 px-4">
-        <button
-          onClick={() => handleVote('not')}
-          disabled={isVoting}
-          className="w-16 h-16 rounded-full bg-red-500 text-white text-3xl flex items-center justify-center hover:bg-red-600 disabled:opacity-50 transition-all duration-200 shadow-lg hover:scale-110"
-        >
-          👎
-        </button>
-        
-        <div className="text-center">
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-            Swipe to vote
-          </p>
-          <p className="text-xs text-gray-500 dark:text-gray-500">
-            🔥 Hot or 👎 Not
-          </p>
-        </div>
-        
-        <button
-          onClick={() => handleVote('hot')}
-          disabled={isVoting}
-          className="w-16 h-16 rounded-full bg-green-500 text-white text-3xl flex items-center justify-center hover:bg-green-600 disabled:opacity-50 transition-all duration-200 shadow-lg hover:scale-110"
-        >
-          🔥
-        </button>
-      </div>
-      
-      {/* Vote Animation Overlay */}
-      {voteDirection && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className={`text-8xl animate-bounce ${
-            voteDirection === 'hot' ? 'text-green-500' : 'text-red-500'
-          }`}>
-            {voteDirection === 'hot' ? '🔥' : '👎'}
+
+          {/* Stats */}
+          <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-4">
+            <div className="flex items-center space-x-4">
+              <span>❤️ {post.likes?.length || 0}</span>
+              <span>💬 {post.comments?.length || 0}</span>
+            </div>
+            <span>{new Date(post.createdAt).toLocaleDateString()}</span>
+          </div>
+
+          {/* Vote Buttons */}
+          <div className="flex space-x-3">
+            <button
+              onClick={() => handleVote('dislike')}
+              disabled={isVoting}
+              className="flex-1 flex items-center justify-center space-x-2 py-3 px-4 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <FiX className="w-5 h-5" />
+              <span>Not Hot</span>
+            </button>
+            <button
+              onClick={() => handleVote('like')}
+              disabled={isVoting}
+              className="flex-1 flex items-center justify-center space-x-2 py-3 px-4 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <FiHeart className="w-5 h-5" />
+              <span>Hot!</span>
+            </button>
           </div>
         </div>
-      )}
+      </div>
+
+      {/* Instructions */}
+      <div className="text-center mt-4 text-sm text-gray-500 dark:text-gray-400">
+        <p>Use arrow keys: ← Not Hot | → Hot!</p>
+      </div>
     </div>
   );
 };

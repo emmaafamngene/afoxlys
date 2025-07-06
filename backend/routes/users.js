@@ -5,6 +5,7 @@ const Post = require('../models/Post');
 const Clip = require('../models/Clip');
 const { auth, optionalAuth } = require('../middlewares/auth');
 const { uploadAvatar, uploadCoverPhoto, handleUploadError } = require('../middlewares/upload');
+const Badge = require('../models/Badge');
 
 const router = express.Router();
 
@@ -313,6 +314,21 @@ router.get('/:id/following', optionalAuth, async (req, res) => {
   } catch (error) {
     console.error('Get following error:', error);
     res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get user badges
+router.get('/:userId/badges', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    const badges = await Badge.find({ userId })
+      .sort({ earnedAt: -1 });
+    
+    res.json({ badges });
+  } catch (err) {
+    console.error('Error fetching user badges:', err);
+    res.status(500).json({ message: 'Error fetching badges' });
   }
 });
 

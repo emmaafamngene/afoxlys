@@ -57,6 +57,10 @@ const postSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    score: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,

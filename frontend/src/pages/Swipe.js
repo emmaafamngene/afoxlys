@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { api } from '../services/api';
+import { useNavigate } from 'react-router-dom';
+import api from '../services/api';
 import SwipeCard from '../components/swipe/SwipeCard';
 
 const Swipe = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [currentPost, setCurrentPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ totalVotes: 0, hotVotes: 0, notVotes: 0 });
@@ -70,6 +72,10 @@ const Swipe = () => {
     fetchRandomPost();
   };
 
+  const handleSubmitToSwipe = () => {
+    navigate('/create-post?for=swipe');
+  };
+
   const formatTime = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -95,6 +101,13 @@ const Swipe = () => {
                 Swipe to vote on posts
               </p>
             </div>
+            <button
+              onClick={handleSubmitToSwipe}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+            >
+              <span>📤</span>
+              Submit to Swipe
+            </button>
           </div>
 
           {/* Tabs */}
@@ -147,14 +160,22 @@ const Swipe = () => {
                   You've seen all posts!
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-4">
-                  Check back later for more content to vote on.
+                  Submit your own post to keep the game going!
                 </p>
-                <button
-                  onClick={fetchRandomPost}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  Refresh
-                </button>
+                <div className="flex gap-3 justify-center">
+                  <button
+                    onClick={fetchRandomPost}
+                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                  >
+                    Refresh
+                  </button>
+                  <button
+                    onClick={handleSubmitToSwipe}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Submit Your Post
+                  </button>
+                </div>
               </div>
             ) : currentPost ? (
               <SwipeCard

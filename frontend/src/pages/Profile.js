@@ -5,6 +5,7 @@ import { usersAPI, postsAPI, clipsAPI, followAPI } from '../services/api';
 import { usePageTitle } from '../hooks/usePageTitle';
 import PostCard from '../components/posts/PostCard';
 import ClipCard from '../components/clips/ClipCard';
+import Badge from '../components/Badge';
 import { DefaultAvatar } from '../components/layout/AFEXLogo';
 import { FiEdit, FiSettings, FiGrid, FiVideo, FiUsers, FiUserPlus, FiUserCheck, FiMapPin, FiCalendar, FiLink, FiMail, FiCamera } from 'react-icons/fi';
 import toast from 'react-hot-toast';
@@ -19,6 +20,7 @@ const Profile = () => {
   const [clips, setClips] = useState([]);
   const [followers, setFollowers] = useState([]);
   const [following, setFollowing] = useState([]);
+  const [badges, setBadges] = useState([]);
   const [activeTab, setActiveTab] = useState('posts');
   const [loading, setLoading] = useState(true);
   const [isFollowing, setIsFollowing] = useState(false);
@@ -44,12 +46,13 @@ const Profile = () => {
       setLoading(true);
       console.log('🔍 Fetching profile for userId:', userId);
       
-      const [userResponse, postsResponse, clipsResponse, followersResponse, followingResponse] = await Promise.all([
+      const [userResponse, postsResponse, clipsResponse, followersResponse, followingResponse, badgesResponse] = await Promise.all([
         usersAPI.getById(userId),
         usersAPI.getPosts(userId),
         usersAPI.getClips(userId),
         followAPI.getFollowers(userId),
-        followAPI.getFollowing(userId)
+        followAPI.getFollowing(userId),
+        fetch(`/api/users/${userId}/badges`).then(res => res.json())
       ]);
 
       console.log('🔍 User response:', userResponse);
@@ -57,12 +60,14 @@ const Profile = () => {
       console.log('🔍 Clips response:', clipsResponse);
       console.log('🔍 Followers response:', followersResponse);
       console.log('🔍 Following response:', followingResponse);
+      console.log('🔍 Badges response:', badgesResponse);
 
       setUser(userResponse.data.user);
       setPosts(postsResponse.data.posts);
       setClips(clipsResponse.data.clips);
       setFollowers(followersResponse.data.followers);
       setFollowing(followingResponse.data.following);
+      setBadges(badgesResponse.badges || []);
       
       console.log('🔍 Profile data set successfully');
     } catch (error) {
@@ -304,6 +309,20 @@ const Profile = () => {
                       <span className="text-gray-500 dark:text-gray-400">clips</span>
                     </div>
                   </div>
+
+                  {/* Badges */}
+                  {badges.length > 0 && (
+                    <div className="mt-4">
+                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        🏆 Achievements ({badges.length})
+                      </h3>
+                      <div className="flex flex-wrap gap-2">
+                        {badges.map((badge) => (
+                          <Badge key={badge._id} badge={badge} size="sm" />
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Action Buttons */}

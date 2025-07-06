@@ -28,7 +28,7 @@ export default function Sidebar({ darkMode, setDarkMode }) {
     <>
       {/* Desktop Sidebar */}
       <aside
-        className={`hidden lg:flex flex-col fixed top-0 left-0 h-screen z-50 border-r border-gray-200 dark:border-gray-800 transition-all duration-300 bg-white dark:bg-gray-900 ${hovered ? 'w-56' : 'w-16'}`}
+        className={`hidden lg:flex flex-col fixed top-0 left-0 h-screen z-[60] border-r border-gray-200 dark:border-gray-800 transition-all duration-300 bg-white dark:bg-gray-900 ${hovered ? 'w-56' : 'w-16'}`}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         style={{ minWidth: hovered ? '14rem' : '4rem', borderRadius: 0, margin: 0 }}

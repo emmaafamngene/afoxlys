@@ -17,9 +17,9 @@ router.get('/post', auth, async (req, res) => {
     // Find a random post that user hasn't voted on and has media
     const randomPost = await Post.findOne({
       _id: { $nin: votedPosts },
-      mediaUrl: { $exists: true, $ne: null, $ne: '' }
+      'media.0': { $exists: true } // Check if media array has at least one item
     })
-    .populate('userId', 'username firstName lastName avatar')
+    .populate('author', 'username firstName lastName avatar')
     .sort({ createdAt: -1 })
     .limit(1);
     
@@ -30,7 +30,15 @@ router.get('/post', auth, async (req, res) => {
       });
     }
     
-    res.json(randomPost);
+    // Transform the post to match expected format for frontend
+    const transformedPost = {
+      ...randomPost.toObject(),
+      userId: randomPost.author, // Map author to userId for frontend compatibility
+      mediaUrl: randomPost.media[0]?.url, // Use first media item's URL
+      score: randomPost.score || 0
+    };
+    
+    res.json(transformedPost);
   } catch (err) {
     console.error('Error fetching random post:', err);
     res.status(500).json({ message: 'Error fetching post' });
@@ -104,9 +112,16 @@ router.get('/leaderboard', async (req, res) => {
       ...dateFilter,
       score: { $gt: 0 }
     })
-    .populate('userId', 'username firstName lastName avatar')
+    .populate('author', 'username firstName lastName avatar')
     .sort({ score: -1, createdAt: -1 })
     .limit(10);
+    
+    // Transform posts to match frontend expectations
+    const transformedTopPosts = topPosts.map(post => ({
+      ...post.toObject(),
+      userId: post.author,
+      mediaUrl: post.media[0]?.url
+    }));
     
     // Get top voters (users who voted the most)
     const topVoters = await Vote.aggregate([
@@ -145,7 +160,7 @@ router.get('/leaderboard', async (req, res) => {
     ]);
     
     res.json({
-      topPosts,
+      topPosts: transformedTopPosts,
       topVoters
     });
   } catch (err) {
@@ -191,11 +206,11 @@ async function checkBadgeUnlocks(voterId, postId) {
     const post = await Post.findById(postId);
     if (!post) return;
     
-    const postCreatorId = post.userId;
+    const postCreatorId = post.author;
     
     // Check Hot Shot badge (50 🔥 votes received)
     const hotVotesReceived = await Vote.countDocuments({
-      postId: { $in: await Post.find({ userId: postCreatorId }).distinct('_id') },
+      postId: { $in: await Post.find({ author: postCreatorId }).distinct('_id') },
       voteType: 'hot'
     });
     

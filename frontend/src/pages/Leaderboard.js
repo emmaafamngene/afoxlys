@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiTrophy, FiAward, FiUsers, FiTrendingUp } from 'react-icons/fi';
+import { FiAward, FiUsers, FiTrendingUp } from 'react-icons/fi';
 import { getAvatarUrl } from '../utils/avatarUtils';
 import { DefaultAvatar } from '../components/layout/AFEXLogo';
 
@@ -30,7 +30,7 @@ const Leaderboard = () => {
   };
 
   const getRankIcon = (rank) => {
-    if (rank === 1) return <FiTrophy className="w-5 h-5 text-yellow-500" />;
+    if (rank === 1) return <FiAward className="w-5 h-5 text-yellow-500" />;
     if (rank === 2) return <FiAward className="w-5 h-5 text-gray-400" />;
     if (rank === 3) return <FiAward className="w-5 h-5 text-orange-500" />;
     return <span className="text-sm font-bold text-gray-500">#{rank}</span>;

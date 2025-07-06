@@ -11,10 +11,7 @@ const { auth, optionalAuth } = require('../middlewares/auth');
 // @access  Public (temporarily for testing)
 router.get('/post', optionalAuth, async (req, res) => {
   try {
-    // Get posts that the user hasn't voted on yet
-    const user = await User.findById(req.user._id);
-    
-    // For now, get a random public post
+    // Get a random public post
     // In a full implementation, you'd track which posts the user has already voted on
     const post = await Post.aggregate([
       { $match: { isPrivate: false } },
@@ -29,6 +26,18 @@ router.get('/post', optionalAuth, async (req, res) => {
     const populatedPost = await Post.findById(post[0]._id)
       .populate('author', 'username firstName lastName avatar')
       .populate('likes', 'username firstName lastName avatar');
+
+    console.log('Swipe post data:', {
+      id: populatedPost._id,
+      content: populatedPost.content,
+      author: populatedPost.author ? {
+        id: populatedPost.author._id,
+        username: populatedPost.author.username,
+        firstName: populatedPost.author.firstName,
+        lastName: populatedPost.author.lastName,
+        avatar: populatedPost.author.avatar
+      } : 'No author'
+    });
 
     res.json({ post: populatedPost });
   } catch (error) {

@@ -1,52 +1,72 @@
-const axios = require('axios');
+const https = require('https');
 
-const BASE_URL = 'https://afoxlys.onrender.com';
+console.log('🔍 Testing backend health...');
 
-async function testBackendHealth() {
-  console.log('🔍 Testing Backend Health...\n');
-  
-  try {
-    // Test 1: Health endpoint
-    console.log('=== Test 1: Health Endpoint ===');
-    const healthResponse = await axios.get(`${BASE_URL}/api/health`, {
-      timeout: 10000
+const testEndpoints = [
+  '/api/health',
+  '/api/posts/feed',
+  '/api/confessions',
+  '/api/swipe/post'
+];
+
+async function testEndpoint(path) {
+  return new Promise((resolve) => {
+    const options = {
+      hostname: 'afoxlys.onrender.com',
+      port: 443,
+      path: path,
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'AFEX-Test/1.0'
+      }
+    };
+
+    console.log(`📡 Testing: ${path}`);
+    
+    const req = https.request(options, (res) => {
+      let data = '';
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+      
+      res.on('end', () => {
+        console.log(`✅ ${path}: Status ${res.statusCode}`);
+        try {
+          const jsonData = JSON.parse(data);
+          if (path === '/api/posts/feed' && jsonData.posts) {
+            console.log(`   📝 Found ${jsonData.posts.length} posts`);
+          }
+        } catch (e) {
+          console.log(`   📄 Response: ${data.substring(0, 100)}...`);
+        }
+        resolve();
+      });
     });
-    console.log('✅ Health check passed!');
-    console.log('   Status:', healthResponse.status);
-    console.log('   Response:', healthResponse.data);
-    
-    // Test 2: Socket.IO endpoint
-    console.log('\n=== Test 2: Socket.IO Endpoint ===');
-    const socketResponse = await axios.get(`${BASE_URL}/socket.io/`, {
-      timeout: 10000
+
+    req.on('error', (e) => {
+      console.log(`❌ ${path}: ${e.message}`);
+      resolve();
     });
-    console.log('✅ Socket.IO endpoint accessible!');
-    console.log('   Status:', socketResponse.status);
-    
-    // Test 3: CORS headers
-    console.log('\n=== Test 3: CORS Headers ===');
-    const corsResponse = await axios.options(`${BASE_URL}/api/health`, {
-      timeout: 10000
+
+    req.on('timeout', () => {
+      console.log(`⏰ ${path}: Timeout`);
+      req.destroy();
+      resolve();
     });
-    console.log('✅ CORS headers present!');
-    console.log('   Access-Control-Allow-Origin:', corsResponse.headers['access-control-allow-origin']);
-    console.log('   Access-Control-Allow-Methods:', corsResponse.headers['access-control-allow-methods']);
-    
-    console.log('\n✅ All backend tests passed!');
-    return true;
-    
-  } catch (error) {
-    console.log('❌ Backend test failed!');
-    console.log('   Error:', error.message);
-    
-    if (error.response) {
-      console.log('   Status:', error.response.status);
-      console.log('   Data:', error.response.data);
-      console.log('   Headers:', error.response.headers);
-    }
-    
-    return false;
-  }
+
+    req.setTimeout(10000);
+    req.end();
+  });
 }
 
-testBackendHealth(); 
+async function runTests() {
+  for (const endpoint of testEndpoints) {
+    await testEndpoint(endpoint);
+    // Wait 1 second between tests
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  }
+  console.log('🏁 All tests completed');
+}
+
+runTests(); 

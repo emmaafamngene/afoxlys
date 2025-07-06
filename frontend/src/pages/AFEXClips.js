@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { FiVideo, FiTarget, FiUsers, FiZap } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
 const AFEXClips = () => {
-  const { isAuthenticated, user } = useAuth();
-  const [fundraisingStats, setFundraisingStats] = useState({
+  const { user } = useAuth();
+  const [fundraisingStats] = useState({
     goal: 100,
     current: 0,
     progress: 0,

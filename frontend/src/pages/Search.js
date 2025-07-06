@@ -9,7 +9,7 @@ import { FiSearch, FiUsers, FiFileText, FiVideo } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
 const Search = () => {
-  const { isAuthenticated } = useAuth();
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
   const [activeTab, setActiveTab] = useState('all');

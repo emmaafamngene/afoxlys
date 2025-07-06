@@ -46,6 +46,7 @@ const Profile = () => {
     try {
       setLoading(true);
       console.log('🔍 Fetching profile for userId:', userId);
+      console.log('🔍 API_BASE_URL:', API_BASE_URL);
       
       // Test API connection first
       console.log('🔍 Testing API connection...');
@@ -56,28 +57,68 @@ const Profile = () => {
         console.error('🔍 API health check failed:', error);
       }
       
-      const [userResponse, postsResponse, clipsResponse, followersResponse, followingResponse, badgesResponse] = await Promise.all([
-        usersAPI.getById(userId),
-        usersAPI.getPosts(userId),
-        usersAPI.getClips(userId),
-        followAPI.getFollowers(userId),
-        followAPI.getFollowing(userId),
-        fetch(`${API_BASE_URL}/users/${userId}/badges`).then(res => res.json())
-      ]);
-
-      console.log('🔍 User response:', userResponse);
-      console.log('🔍 Posts response:', postsResponse);
-      console.log('🔍 Clips response:', clipsResponse);
-      console.log('🔍 Followers response:', followersResponse);
-      console.log('🔍 Following response:', followingResponse);
-      console.log('🔍 Badges response:', badgesResponse);
-
-      setUser(userResponse.data.user);
-      setPosts(postsResponse.data.posts);
-      setClips(clipsResponse.data.clips);
-      setFollowers(followersResponse.data.followers);
-      setFollowing(followingResponse.data.following);
-      setBadges(badgesResponse.badges || []);
+      console.log('🔍 Making individual API calls...');
+      
+      // Make API calls individually to see which one fails
+      try {
+        console.log('🔍 Calling usersAPI.getById...');
+        const userResponse = await usersAPI.getById(userId);
+        console.log('🔍 User response:', userResponse);
+        setUser(userResponse.data.user);
+      } catch (error) {
+        console.error('🔍 Error fetching user:', error);
+        setUser(null);
+      }
+      
+      try {
+        console.log('🔍 Calling usersAPI.getPosts...');
+        const postsResponse = await usersAPI.getPosts(userId);
+        console.log('🔍 Posts response:', postsResponse);
+        setPosts(postsResponse.data.posts);
+      } catch (error) {
+        console.error('🔍 Error fetching posts:', error);
+        setPosts([]);
+      }
+      
+      try {
+        console.log('🔍 Calling usersAPI.getClips...');
+        const clipsResponse = await usersAPI.getClips(userId);
+        console.log('🔍 Clips response:', clipsResponse);
+        setClips(clipsResponse.data.clips);
+      } catch (error) {
+        console.error('🔍 Error fetching clips:', error);
+        setClips([]);
+      }
+      
+      try {
+        console.log('🔍 Calling followAPI.getFollowers...');
+        const followersResponse = await followAPI.getFollowers(userId);
+        console.log('🔍 Followers response:', followersResponse);
+        setFollowers(followersResponse.data.followers);
+      } catch (error) {
+        console.error('🔍 Error fetching followers:', error);
+        setFollowers([]);
+      }
+      
+      try {
+        console.log('🔍 Calling followAPI.getFollowing...');
+        const followingResponse = await followAPI.getFollowing(userId);
+        console.log('🔍 Following response:', followingResponse);
+        setFollowing(followingResponse.data.following);
+      } catch (error) {
+        console.error('🔍 Error fetching following:', error);
+        setFollowing([]);
+      }
+      
+      try {
+        console.log('🔍 Calling badges API...');
+        const badgesResponse = await fetch(`${API_BASE_URL}/users/${userId}/badges`).then(res => res.json());
+        console.log('🔍 Badges response:', badgesResponse);
+        setBadges(badgesResponse.badges || []);
+      } catch (error) {
+        console.error('🔍 Error fetching badges:', error);
+        setBadges([]);
+      }
       
       console.log('🔍 Profile data set successfully');
     } catch (error) {

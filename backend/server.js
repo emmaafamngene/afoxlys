@@ -12,7 +12,7 @@ const Message = require('./models/Message');
 const { router: notificationRoutes, createNotification } = require('./routes/notifications');
 const chatRoutes = require('./routes/chat');
 const bodyParser = require('body-parser');
-const xpAwarder = require('./middlewares/xpAwarder');
+const { xpAwarder } = require('./middlewares/xpAwarder');
 
 const app = express();
 const server = http.createServer(app);

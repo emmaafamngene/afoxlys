@@ -164,6 +164,7 @@ app.post('/api/chat/conversations', require('./middlewares/auth').auth, async (r
 
 app.use('/api/chat', chatRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/leaderboard', require('./routes/leaderboard'));
 
 // Health check
 app.get('/api/health', (req, res) => {

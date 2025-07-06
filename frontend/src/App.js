@@ -23,6 +23,7 @@ import CreateClip from './pages/CreateClip';
 import Chat from './pages/Chat';
 import Confessions from './pages/Confessions';
 import Swipe from './pages/Swipe';
+import Leaderboard from './pages/Leaderboard';
 
 // Component to redirect to current user's profile
 const CurrentUserProfile = () => {
@@ -156,6 +157,11 @@ function App() {
                 <Route path="/swipe" element={
                   <PrivateRoute>
                     <Swipe />
+                  </PrivateRoute>
+                } />
+                <Route path="/leaderboard" element={
+                  <PrivateRoute>
+                    <Leaderboard />
                   </PrivateRoute>
                 } />
                 

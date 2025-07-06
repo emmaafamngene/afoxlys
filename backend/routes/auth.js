@@ -3,6 +3,8 @@ const { body, validationResult } = require('express-validator');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { auth } = require('../middlewares/auth');
+const { updateLoginStreak } = require('../middlewares/xpAwarder');
+const { calculateProgress, getXPForNextLevel, getXPForCurrentLevel } = require('../utils/levelCalculator');
 
 const router = express.Router();
 
@@ -153,14 +155,31 @@ router.post(
       // Generate token
       const token = generateToken(user._id);
 
-      // Update last active
+      // Update last active and handle login streak
       user.lastActive = new Date();
-      await user.save();
+      const streakXP = await updateLoginStreak(user);
+
+      // Get level information
+      const userProfile = user.getPublicProfile();
+      const levelInfo = {
+        level: user.level,
+        xp: user.xp,
+        progress: calculateProgress(user.xp, user.level),
+        xpForNextLevel: getXPForNextLevel(user.level),
+        xpForCurrentLevel: getXPForCurrentLevel(user.level),
+        loginStreak: user.loginStreak,
+        streakXP: streakXP
+      };
 
       res.json({
         message: 'Login successful',
         token,
-        user: user.getPublicProfile(),
+        user: { ...userProfile, ...levelInfo },
+        levelUp: streakXP > 0 ? {
+          message: `🔥 ${user.loginStreak}-day login streak! +${streakXP} XP`,
+          streakXP,
+          loginStreak: user.loginStreak
+        } : null
       });
     } catch (error) {
       console.error('Login error:', error);
@@ -174,8 +193,18 @@ router.post(
 // @access  Private
 router.get('/me', auth, async (req, res) => {
   try {
+    const userProfile = req.user.getPublicProfile();
+    const levelInfo = {
+      level: req.user.level,
+      xp: req.user.xp,
+      progress: calculateProgress(req.user.xp, req.user.level),
+      xpForNextLevel: getXPForNextLevel(req.user.level),
+      xpForCurrentLevel: getXPForCurrentLevel(req.user.level),
+      loginStreak: req.user.loginStreak
+    };
+
     res.json({
-      user: req.user.getPublicProfile(),
+      user: { ...userProfile, ...levelInfo },
     });
   } catch (error) {
     console.error('Get profile error:', error);

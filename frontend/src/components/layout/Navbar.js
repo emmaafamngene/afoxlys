@@ -5,6 +5,7 @@ import { FiSearch, FiHome, FiVideo, FiPlus, FiUser, FiLogOut, FiSettings, FiX, F
 import AFEXLogo, { DefaultAvatar } from './AFEXLogo';
 import NotificationMenu from '../notifications/NotificationMenu';
 import { getAvatarUrl } from '../../utils/avatarUtils';
+import XPBar from '../leveling/XPBar';
 
 const Navbar = ({ darkMode = false }) => {
   const { user, isAuthenticated, logout } = useAuth();
@@ -190,6 +191,20 @@ const Navbar = ({ darkMode = false }) => {
                       {user?.firstName} {user?.lastName}
                     </p>
                     <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">@{user?.username}</p>
+                    
+                    {/* XP Bar */}
+                    {user?.level && (
+                      <div className="mt-3">
+                        <XPBar 
+                          xp={user.xp || 0}
+                          level={user.level}
+                          progress={user.progress || 0}
+                          xpForNextLevel={user.xpForNextLevel || 100}
+                          xpForCurrentLevel={user.xpForCurrentLevel || 0}
+                          className="text-xs"
+                        />
+                      </div>
+                    )}
                   </div>
                   <div className="py-1 sm:py-2">
                     <Link

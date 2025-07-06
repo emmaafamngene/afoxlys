@@ -4,6 +4,7 @@ const Post = require('../models/Post');
 const User = require('../models/User');
 const { auth, optionalAuth } = require('../middlewares/auth');
 const { uploadPostMedia, handleUploadError } = require('../middlewares/upload');
+const { xpAwarder } = require('../middlewares/xpAwarder');
 
 const router = express.Router();
 
@@ -64,6 +65,7 @@ router.post(
   auth,
   uploadPostMedia,
   handleUploadError,
+  xpAwarder(10, 'creating a post'),
   [
     body('content')
       .isLength({ min: 1, max: 2000 })

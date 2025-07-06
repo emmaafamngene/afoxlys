@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { FiHome, FiSearch, FiMessageCircle, FiUser, FiPlus, FiBell, FiSettings, FiMoreHorizontal, FiSun, FiMoon, FiEdit, FiHeart } from 'react-icons/fi';
+import { FiHome, FiSearch, FiMessageCircle, FiUser, FiPlus, FiBell, FiSettings, FiMoreHorizontal, FiSun, FiMoon, FiEdit, FiHeart, FiTrophy } from 'react-icons/fi';
 import { MdExplore, MdVideoLibrary } from 'react-icons/md';
 import { FaFire } from 'react-icons/fa';
 
@@ -16,6 +16,7 @@ const navLinks = [
 ];
 
 const moreOptions = [
+  { to: '/leaderboard', label: 'Leaderboard', icon: <FiTrophy /> },
   { to: '/edit-profile', label: 'Edit Profile', icon: <FiEdit /> },
   { to: '/settings', label: 'Settings', icon: <FiSettings /> },
 ];

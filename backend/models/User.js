@@ -72,6 +72,23 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    // Leveling system fields
+    xp: {
+      type: Number,
+      default: 0,
+    },
+    level: {
+      type: Number,
+      default: 1,
+    },
+    loginStreak: {
+      type: Number,
+      default: 0,
+    },
+    lastLoginDate: {
+      type: Date,
+      default: Date.now,
+    },
   },
   {
     timestamps: true,

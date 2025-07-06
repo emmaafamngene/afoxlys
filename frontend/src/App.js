@@ -8,6 +8,7 @@ import Sidebar from './components/layout/Sidebar';
 import LoadingPage from './components/LoadingPage';
 import { AnimatePresence } from 'framer-motion';
 import OnboardingTutorial from './components/OnboardingTutorial';
+import { useAdSense } from './hooks/useAdSense';
 
 // Auth Pages
 import Login from './pages/auth/Login';
@@ -38,6 +39,9 @@ function App() {
     return localStorage.getItem('afex-dark') === 'true';
   });
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Initialize AdSense on route changes
+  useAdSense();
 
   useEffect(() => {
     if (darkMode) {

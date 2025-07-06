@@ -182,7 +182,7 @@ const OnboardingTutorial = () => {
         return;
       }
 
-      const intro = introJs();
+      const intro = introJs.tour();
       intro.setOptions({
         steps: [
           {

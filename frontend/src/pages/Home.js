@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { postsAPI } from '../services/api';
+import { postsAPI, confessionsAPI, swipeAPI } from '../services/api';
 import PostCard from '../components/posts/PostCard';
 import SwipeCard from '../components/swipe/SwipeCard';
 import ConfessionCard from '../components/confessions/ConfessionCard';
 import NewConfessionModal from '../components/confessions/NewConfessionModal';
-import { FiPlus, FiVideo, FiHeart, FaFire } from 'react-icons/fi';
+import { FiPlus, FiVideo, FiHeart, FaFire, FiMessageCircle, FiTrendingUp } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { usePageTitle } from '../hooks/usePageTitle';
 import api from '../services/api';
@@ -27,6 +27,22 @@ const Home = () => {
   const [isConfessionModalOpen, setIsConfessionModalOpen] = useState(false);
   const [swipeLoading, setSwipeLoading] = useState(false);
   const [noMoreSwipePosts, setNoMoreSwipePosts] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const navigate = useNavigate();
+
+  // Network status monitoring
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
   
   usePageTitle('Home');
 
@@ -60,20 +76,27 @@ const Home = () => {
     };
   }, []);
 
-  const fetchFeed = async () => {
+  const fetchFeed = async (retryCount = 0) => {
     try {
       setLoading(true);
       const response = await postsAPI.getFeed();
       setPosts(response.data.posts || []);
     } catch (error) {
       console.error('Error fetching feed:', error);
+      if (retryCount < 2) {
+        // Retry after 2 seconds
+        setTimeout(() => fetchFeed(retryCount + 1), 2000);
+        return;
+      }
+      // Show fallback data or empty state
+      setPosts([]);
       toast.error('Failed to load feed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchConfessions = async (pageNum = 1) => {
+  const fetchConfessions = async (pageNum = 1, retryCount = 0) => {
     try {
       setConfessionsLoading(true);
       const response = await postsAPI.getConfessions(pageNum);
@@ -86,6 +109,15 @@ const Home = () => {
       setConfessionsHasMore(response.data.confessions?.length === 20);
     } catch (error) {
       console.error('Error fetching confessions:', error);
+      if (retryCount < 2) {
+        // Retry after 2 seconds
+        setTimeout(() => fetchConfessions(pageNum, retryCount + 1), 2000);
+        return;
+      }
+      // Show fallback data
+      if (pageNum === 1) {
+        setConfessions([]);
+      }
       toast.error('Failed to load confessions. Please try again.');
     } finally {
       setConfessionsLoading(false);
@@ -98,14 +130,21 @@ const Home = () => {
     }
   };
 
-  const fetchRandomSwipePost = async () => {
+  const fetchRandomSwipePost = async (retryCount = 0) => {
     try {
       setSwipeLoading(true);
       const response = await postsAPI.getRandomSwipePost();
-      setCurrentSwipePost(response.data.post);
+      setCurrentSwipePost(response.data.post || response.data);
       setNoMoreSwipePosts(false);
     } catch (error) {
       console.error('Error fetching swipe post:', error);
+      if (retryCount < 2) {
+        // Retry after 2 seconds
+        setTimeout(() => fetchRandomSwipePost(retryCount + 1), 2000);
+        return;
+      }
+      setCurrentSwipePost(null);
+      setNoMoreSwipePosts(true);
       toast.error('Failed to load swipe post. Please try again.');
     } finally {
       setSwipeLoading(false);
@@ -114,15 +153,13 @@ const Home = () => {
 
   const handleSwipeVote = async (voteType, post) => {
     try {
-      await api.post('/swipe/vote', {
-        postId: post._id,
-        voteType
-      });
+      await postsAPI.voteSwipe(post._id, voteType);
       
       // Get next post
       fetchRandomSwipePost();
     } catch (error) {
       console.error('Error voting:', error);
+      toast.error('Failed to vote. Please try again.');
     }
   };
 
@@ -138,8 +175,8 @@ const Home = () => {
     );
   };
 
-  // Loading skeleton component
-  const LoadingSkeleton = () => (
+  // Tab-specific loading components
+  const FeedLoadingState = () => (
     <div className="space-y-4">
       {[1, 2, 3].map((i) => (
         <div key={i} className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow animate-pulse">
@@ -156,6 +193,109 @@ const Home = () => {
           </div>
         </div>
       ))}
+    </div>
+  );
+
+  const ConfessionsLoadingState = () => (
+    <div className="space-y-4">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow animate-pulse">
+          <div className="flex items-center space-x-3 mb-3">
+            <div className="w-10 h-10 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
+            <div className="flex-1">
+              <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-1/2"></div>
+              <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-1/3 mt-1"></div>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded"></div>
+            <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-4/5"></div>
+            <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-3/4"></div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
+  const SwipeLoadingState = () => (
+    <div className="flex items-center justify-center py-12">
+      <div className="text-center">
+        <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-gray-600 dark:text-gray-400">Loading swipe post...</p>
+      </div>
+    </div>
+  );
+
+  // Empty state components
+  const EmptyFeedState = () => (
+    <div className="text-center py-12">
+      <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-full mx-auto mb-4 flex items-center justify-center">
+        <FiMessageCircle className="w-8 h-8 text-gray-400" />
+      </div>
+      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No posts yet</h3>
+      <p className="text-gray-500 dark:text-gray-400 mb-4">Follow some users to see their posts in your feed!</p>
+      <div className="flex gap-3 justify-center">
+        <button
+          onClick={() => fetchFeed()}
+          className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+        >
+          Retry
+        </button>
+        <button
+          onClick={() => navigate('/search')}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          Discover Users
+        </button>
+      </div>
+    </div>
+  );
+
+  const EmptyConfessionsState = () => (
+    <div className="text-center py-12">
+      <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-full mx-auto mb-4 flex items-center justify-center">
+        <FiMessageCircle className="w-8 h-8 text-gray-400" />
+      </div>
+      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No confessions yet</h3>
+      <p className="text-gray-500 dark:text-gray-400 mb-4">Be the first to share a confession!</p>
+      <div className="flex gap-3 justify-center">
+        <button
+          onClick={() => fetchConfessions(1)}
+          className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+        >
+          Retry
+        </button>
+        <button
+          onClick={() => setActiveTab('feed')}
+          className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+        >
+          Create Post
+        </button>
+      </div>
+    </div>
+  );
+
+  const EmptySwipeState = () => (
+    <div className="text-center py-12">
+      <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-full mx-auto mb-4 flex items-center justify-center">
+        <FiTrendingUp className="w-8 h-8 text-gray-400" />
+      </div>
+      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No posts to swipe</h3>
+      <p className="text-gray-500 dark:text-gray-400 mb-4">All posts have been voted on! Check back later.</p>
+      <div className="flex gap-3 justify-center">
+        <button
+          onClick={() => fetchRandomSwipePost()}
+          className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+        >
+          Retry
+        </button>
+        <button
+          onClick={() => setActiveTab('feed')}
+          className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors"
+        >
+          View Feed
+        </button>
+      </div>
     </div>
   );
 
@@ -193,7 +333,7 @@ const Home = () => {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
         <div className="max-w-2xl mx-auto px-4">
-          <LoadingSkeleton />
+          <FeedLoadingState />
         </div>
       </div>
     );
@@ -204,7 +344,15 @@ const Home = () => {
       <div className="max-w-4xl mx-auto w-full">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Your Feed</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Your Feed</h1>
+          {!isOnline && (
+            <div className="flex items-center gap-1 px-2 py-1 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded-full text-xs">
+              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+              <span>Offline</span>
+            </div>
+          )}
+        </div>
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 w-full sm:w-auto">
           <Link
             to="/create-post"
@@ -263,9 +411,7 @@ const Home = () => {
       {activeTab === 'posts' && (
         <>
           {loading ? (
-            <div className="flex justify-center py-8 sm:py-12">
-              <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-blue-600"></div>
-            </div>
+            <FeedLoadingState />
           ) : (
             <div className="space-y-4 sm:space-y-6">
               {posts.length > 0 ? (
@@ -273,21 +419,7 @@ const Home = () => {
                   <PostCard key={post._id} post={post} />
                 ))
               ) : (
-                <div className="text-center py-8 sm:py-12">
-                  <div className="text-gray-400 dark:text-gray-500 mb-4">
-                    <FiPlus className="w-12 h-12 sm:w-16 sm:h-16 mx-auto" />
-                  </div>
-                  <h3 className="text-lg sm:text-xl font-medium text-gray-900 dark:text-white mb-2">No posts yet</h3>
-                  <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-4 sm:mb-6 px-4">
-                    Follow some users or create your first post to see content here.
-                  </p>
-                  <Link 
-                    to="/create-post" 
-                    className="btn btn-primary text-sm sm:text-base px-6 py-3"
-                  >
-                    Create Your First Post
-                  </Link>
-                </div>
+                <EmptyFeedState />
               )}
             </div>
           )}
@@ -310,10 +442,7 @@ const Home = () => {
           </div>
 
           {swipeLoading ? (
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600 dark:text-gray-400">Loading next post...</p>
-            </div>
+            <SwipeLoadingState />
           ) : swipeError ? (
             <div className="text-center py-12">
               <div className="text-6xl mb-4">😢</div>
@@ -328,29 +457,7 @@ const Home = () => {
               </button>
             </div>
           ) : noMoreSwipePosts ? (
-            <div className="text-center py-12">
-              <div className="text-6xl mb-4">🎉</div>
-              <h3 className="text-xl font-medium text-gray-900 dark:text-gray-100 mb-2">
-                You've seen all posts!
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
-                Submit your own post to keep the game going!
-              </p>
-              <div className="flex gap-3 justify-center">
-                <button
-                  onClick={fetchRandomSwipePost}
-                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-                >
-                  Refresh
-                </button>
-                <Link
-                  to="/create-post?for=swipe"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  Submit Your Post
-                </Link>
-              </div>
-            </div>
+            <EmptySwipeState />
           ) : currentSwipePost ? (
             <SwipeCard
               post={currentSwipePost}
@@ -378,10 +485,7 @@ const Home = () => {
 
           <div className="space-y-4">
             {confessionsLoading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                <p className="text-gray-600 dark:text-gray-400">Loading confessions...</p>
-              </div>
+              <ConfessionsLoadingState />
             ) : confessions.length > 0 ? (
               <>
                 {confessions.map((confession) => (
@@ -403,21 +507,7 @@ const Home = () => {
                 )}
               </>
             ) : (
-              <div className="text-center py-8">
-                <div className="text-6xl mb-4">😶</div>
-                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-                  No confessions yet
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-4">
-                  Be the first to share a confession!
-                </p>
-                <button
-                  onClick={() => setIsConfessionModalOpen(true)}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  Write First Confession
-                </button>
-              </div>
+              <EmptyConfessionsState />
             )}
           </div>
         </div>

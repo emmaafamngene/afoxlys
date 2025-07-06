@@ -70,6 +70,18 @@ export const postsAPI = {
   }),
   update: (id, postData) => api.put(`/posts/${id}`, postData),
   delete: (id) => api.delete(`/posts/${id}`),
+  getFeed: () => api.get('/posts/feed'),
+};
+
+// Confessions API
+export const confessionsAPI = {
+  getAll: (page = 1) => api.get('/confessions', { params: { page, limit: 20 } }),
+};
+
+// Swipe API
+export const swipeAPI = {
+  getRandomPost: () => api.get('/swipe/post'),
+  vote: (postId, vote) => api.post(`/swipe/vote/${postId}`, { vote }),
 };
 
 // Clips API

@@ -56,16 +56,40 @@ const Swipe = () => {
     fetchLeaderboard();
   }, []);
 
-  const handleVote = (voteType, post) => {
-    // Update stats immediately for better UX
-    setStats(prev => ({
-      ...prev,
-      totalVotes: prev.totalVotes + 1,
-      [voteType === 'hot' ? 'hotVotes' : 'notVotes']: prev[voteType === 'hot' ? 'hotVotes' : 'notVotes'] + 1
-    }));
-    
-    // Fetch fresh stats
-    fetchStats();
+  const handleVote = async (voteType, post) => {
+    if (!user) {
+      console.error('User not authenticated');
+      return;
+    }
+
+    try {
+      // Send vote to backend
+      await api.post('/swipe/vote', {
+        postId: post._id,
+        voteType: voteType
+      });
+
+      // Update stats immediately for better UX
+      setStats(prev => ({
+        ...prev,
+        totalVotes: prev.totalVotes + 1,
+        [voteType === 'hot' ? 'hotVotes' : 'notVotes']: prev[voteType === 'hot' ? 'hotVotes' : 'notVotes'] + 1
+      }));
+      
+      // Fetch fresh stats
+      fetchStats();
+      
+      // Move to next post
+      handleNext();
+    } catch (error) {
+      console.error('Error voting:', error);
+      // Revert stats if vote failed
+      setStats(prev => ({
+        ...prev,
+        totalVotes: prev.totalVotes - 1,
+        [voteType === 'hot' ? 'hotVotes' : 'notVotes']: prev[voteType === 'hot' ? 'hotVotes' : 'notVotes'] - 1
+      }));
+    }
   };
 
   const handleNext = () => {

@@ -13,14 +13,15 @@ const AFEXLogo = ({ className = '', darkMode = false }) => {
 // Default Avatar Component
 export const DefaultAvatar = ({ user, size = 'md', className = '' }) => {
   const getInitials = (user) => {
-    if (!user) return 'U';
+    if (!user) return 'AF';
+    
     if (user.firstName && user.lastName) {
       return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
     }
     if (user.username) {
       return user.username.substring(0, 2).toUpperCase();
     }
-    return 'U';
+    return 'AF';
   };
 
   const getSizeClasses = (size) => {
@@ -40,21 +41,20 @@ export const DefaultAvatar = ({ user, size = 'md', className = '' }) => {
 
   const getGradientColors = (user) => {
     if (!user || !user.username) {
-      return 'from-gray-400 to-gray-600';
+      return ['#6B7280', '#9CA3AF'];
     }
     
-    // Generate consistent colors based on username
     const colors = [
-      'from-blue-400 to-blue-600',
-      'from-purple-400 to-purple-600',
-      'from-pink-400 to-pink-600',
-      'from-green-400 to-green-600',
-      'from-yellow-400 to-yellow-600',
-      'from-red-400 to-red-600',
-      'from-indigo-400 to-indigo-600',
-      'from-teal-400 to-teal-600',
-      'from-orange-400 to-orange-600',
-      'from-cyan-400 to-cyan-600'
+      ['#FF6B6B', '#4ECDC4'], // Red to Teal
+      ['#45B7D1', '#96CEB4'], // Blue to Green
+      ['#FFEAA7', '#DDA0DD'], // Yellow to Plum
+      ['#A8E6CF', '#DCEDC8'], // Mint to Light Green
+      ['#FFB3BA', '#BAFFC9'], // Pink to Light Green
+      ['#BAE1FF', '#FFB3BA'], // Light Blue to Pink
+      ['#FFD93D', '#FF6B6B'], // Yellow to Red
+      ['#6C5CE7', '#A29BFE'], // Purple to Light Purple
+      ['#00B894', '#00CEC9'], // Green to Cyan
+      ['#FDCB6E', '#E17055'], // Orange to Red Orange
     ];
     
     const index = user.username.charCodeAt(0) % colors.length;

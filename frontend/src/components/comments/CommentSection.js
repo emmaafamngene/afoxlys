@@ -11,13 +11,12 @@ const CommentSection = ({ postId, commentCount, onCommentCountChange }) => {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showComments, setShowComments] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [editingComment, setEditingComment] = useState(null);
   const [editText, setEditText] = useState('');
   const [commentsLoaded, setCommentsLoaded] = useState(false);
 
-  // Pre-load comments when component mounts
+  // Load comments when component mounts
   useEffect(() => {
     if (postId && !commentsLoaded) {
       fetchComments();
@@ -35,14 +34,6 @@ const CommentSection = ({ postId, commentCount, onCommentCountChange }) => {
       toast.error('Failed to load comments');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleToggleComments = () => {
-    setShowComments(!showComments);
-    // If comments haven't been loaded yet, load them now
-    if (!commentsLoaded && !loading) {
-      fetchComments();
     }
   };
 
@@ -158,19 +149,19 @@ const CommentSection = ({ postId, commentCount, onCommentCountChange }) => {
         {user?.avatar ? (
           <div className="relative flex-shrink-0">
             <img
-              src={user.avatar}
-              alt={user.username}
-              className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover border-2 border-white dark:border-gray-800 shadow-lg"
+              src={user?.avatar}
+              alt={user?.username || 'User'}
+              className="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-800 shadow-lg"
               onError={(e) => {
                 e.target.style.display = 'none';
                 e.target.nextSibling.style.display = 'flex';
               }}
             />
-            <DefaultAvatar username={user.username} size={40} />
+            <DefaultAvatar username={user?.username || 'User'} size={40} />
           </div>
         ) : (
           <div className="flex-shrink-0">
-            <DefaultAvatar username={user.username} size={40} />
+            <DefaultAvatar username={user?.username || 'User'} size={40} />
           </div>
         )}
         <div className="flex-1 min-w-0">
@@ -204,137 +195,133 @@ const CommentSection = ({ postId, commentCount, onCommentCountChange }) => {
       </div>
 
       {/* Comments List */}
-      {showComments && (
-        <div className="space-y-4 sm:space-y-6">
-          {loading ? (
-            <div className="flex justify-center py-4 sm:py-6">
-              <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-blue-600"></div>
-            </div>
-          ) : comments.length > 0 ? (
-            comments.map((comment) => (
-              <div key={comment._id} className="flex space-x-3 sm:space-x-4">
-                <Link to={`/user/${comment.author._id}`} className="flex-shrink-0">
-                  {comment.author.avatar ? (
-                    <div className="relative">
-                      <img
-                        src={comment.author.avatar}
-                        alt={comment.author.username}
-                        className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover border-2 border-white dark:border-gray-800 shadow-lg"
-                        onError={(e) => {
-                          e.target.style.display = 'none';
-                          e.target.nextSibling.style.display = 'flex';
-                        }}
-                      />
-                      <DefaultAvatar username={comment.author.username} size={40} />
-                    </div>
-                  ) : (
-                    <DefaultAvatar username={comment.author.username} size={40} />
-                  )}
-                </Link>
-                
-                <div className="flex-1 min-w-0">
-                  <div className="bg-gray-50 dark:bg-gray-800 rounded-xl sm:rounded-2xl p-3 sm:p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="min-w-0 flex-1">
-                        <Link 
-                          to={`/user/${comment.author._id}`}
-                          className="font-semibold text-sm sm:text-base text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors truncate block"
-                        >
-                          {comment.author.firstName} {comment.author.lastName}
-                        </Link>
-                        <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">
-                          @{comment.author.username}
-                        </p>
-                      </div>
-                      
-                      {user && (user._id === comment.author._id || user.role === 'admin') && (
-                        <div className="flex items-center space-x-1 sm:space-x-2 ml-2">
-                          <button
-                            onClick={() => {
-                              setEditingComment(comment._id);
-                              setEditText(comment.content);
-                            }}
-                            className="text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors p-1 rounded"
-                          >
-                            <FiEdit2 className="w-3 h-3 sm:w-4 sm:h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteComment(comment._id)}
-                            className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors p-1 rounded"
-                          >
-                            <FiTrash2 className="w-3 h-3 sm:w-4 sm:h-4" />
-                          </button>
-                        </div>
+      <div className="space-y-4 sm:space-y-6">
+        {loading ? (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="text-gray-500 dark:text-gray-400 mt-2">Loading comments...</p>
+          </div>
+        ) : comments.length > 0 ? (
+          comments.map((comment) => (
+            <div key={comment._id} className="flex space-x-3 sm:space-x-4">
+              <Link to={`/user/${comment.author._id}`} className="flex-shrink-0">
+                {comment.author.avatar ? (
+                  <div className="relative">
+                    <img
+                      src={comment.author.avatar}
+                      alt={comment.author.username}
+                      className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover border-2 border-white dark:border-gray-800 shadow-lg"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                    <DefaultAvatar username={comment.author?.username || 'User'} size={40} />
+                  </div>
+                ) : (
+                  <DefaultAvatar username={comment.author?.username || 'User'} size={40} />
+                )}
+              </Link>
+              <div className="flex-1 min-w-0">
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-xl sm:rounded-2xl p-3 sm:p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center space-x-2">
+                      <Link 
+                        to={`/user/${comment.author._id}`}
+                        className="font-semibold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-sm sm:text-base"
+                      >
+                        {comment.author.firstName && comment.author.lastName
+                          ? `${comment.author.firstName} ${comment.author.lastName}`
+                          : comment.author.username
+                        }
+                      </Link>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        @{comment.author.username}
+                      </span>
+                      <span className="text-xs text-gray-400 dark:text-gray-500">
+                        {formatTimeAgo(comment.createdAt)}
+                      </span>
+                      {comment.isEdited && (
+                        <span className="text-xs text-gray-400 dark:text-gray-500">(edited)</span>
                       )}
                     </div>
-                    
-                    {editingComment === comment._id ? (
-                      <div className="space-y-2">
-                        <textarea
-                          value={editText}
-                          onChange={(e) => setEditText(e.target.value)}
-                          className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg resize-none focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
-                          rows="2"
-                        />
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => handleEditComment(comment._id)}
-                            className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs sm:text-sm hover:bg-blue-700 transition-colors"
-                          >
-                            Save
-                          </button>
-                          <button
-                            onClick={() => {
-                              setEditingComment(null);
-                              setEditText('');
-                            }}
-                            className="px-3 py-1.5 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg text-xs sm:text-sm hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div>
-                        <p className="text-sm sm:text-base text-gray-900 dark:text-white mb-2 leading-relaxed">
-                          {comment.content}
-                          {comment.isEdited && (
-                            <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">(edited)</span>
-                          )}
-                        </p>
-                        
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-4">
-                            <button
-                              onClick={() => handleLikeComment(comment._id)}
-                              className={`flex items-center space-x-1 text-xs sm:text-sm transition-colors ${
-                                comment.isLiked 
-                                  ? 'text-red-500' 
-                                  : 'text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400'
-                              }`}
-                            >
-                              <FiHeart className={`w-3 h-3 sm:w-4 sm:h-4 ${comment.isLiked ? 'fill-current' : ''}`} />
-                              <span>{comment.likeCount || 0}</span>
-                            </button>
-                            <span className="text-xs text-gray-500 dark:text-gray-400">
-                              {formatTimeAgo(comment.createdAt)}
-                            </span>
-                          </div>
-                        </div>
+                    {user && (user._id === comment.author._id || user.role === 'admin') && (
+                      <div className="flex items-center space-x-1">
+                        <button
+                          onClick={() => {
+                            setEditingComment(comment._id);
+                            setEditText(comment.content);
+                          }}
+                          className="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors p-1"
+                        >
+                          <FiEdit2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteComment(comment._id)}
+                          className="text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors p-1"
+                        >
+                          <FiTrash2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                        </button>
                       </div>
                     )}
                   </div>
+                  
+                  {editingComment === comment._id ? (
+                    <div className="space-y-2">
+                      <textarea
+                        value={editText}
+                        onChange={(e) => setEditText(e.target.value)}
+                        className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                        rows="3"
+                      />
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => handleEditComment(comment._id)}
+                          className="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={() => {
+                            setEditingComment(null);
+                            setEditText('');
+                          }}
+                          className="px-3 py-1 bg-gray-500 text-white rounded-lg text-sm hover:bg-gray-600 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-gray-900 dark:text-white text-sm sm:text-base leading-relaxed">
+                      {comment.content}
+                    </p>
+                  )}
+                  
+                  <div className="flex items-center space-x-4 mt-3">
+                    <button
+                      onClick={() => handleLikeComment(comment._id)}
+                      className={`flex items-center space-x-1 text-xs transition-colors ${
+                        comment.isLiked 
+                          ? 'text-red-500' 
+                          : 'text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400'
+                      }`}
+                    >
+                      <FiHeart className={`w-3 h-3 sm:w-4 sm:h-4 ${comment.isLiked ? 'fill-current' : ''}`} />
+                      <span>{comment.likeCount || 0}</span>
+                    </button>
+                  </div>
                 </div>
               </div>
-            ))
-          ) : (
-            <div className="text-center py-6 sm:py-8">
-              <FiMessageCircle className="w-8 h-8 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-2 sm:mb-4" />
-              <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400">No comments yet. Be the first to comment!</p>
             </div>
-          )}
-        </div>
-      )}
+          ))
+        ) : (
+          <div className="text-center py-8">
+            <FiMessageCircle className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+            <p className="text-gray-500 dark:text-gray-400">No comments yet. Be the first to comment!</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

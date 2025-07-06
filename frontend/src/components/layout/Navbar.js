@@ -170,7 +170,7 @@ const Navbar = ({ darkMode = false }) => {
                 {user?.avatar ? (
                   <img
                     src={getAvatarUrl(user.avatar)}
-                    alt={user.username}
+                    alt={user?.username || 'User'}
                     className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover border-2 border-white dark:border-gray-800 shadow-lg"
                     onError={(e) => {
                       e.target.style.display = 'none';
@@ -178,7 +178,7 @@ const Navbar = ({ darkMode = false }) => {
                     }}
                   />
                 ) : (
-                  <DefaultAvatar username={user.username} size={40} />
+                  <DefaultAvatar username={user?.username || 'User'} size={40} />
                 )}
                 <FiChevronDown className={`w-3 h-3 sm:w-4 sm:h-4 text-gray-600 dark:text-gray-400 transition-transform duration-300 ${showProfileMenu ? 'rotate-180' : ''}`} />
               </button>

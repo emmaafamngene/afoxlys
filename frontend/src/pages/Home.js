@@ -41,6 +41,25 @@ const Home = () => {
     }
   }, [isAuthenticated, activeTab]);
 
+  // Listen for tutorial tab switching events
+  useEffect(() => {
+    const handleSwitchToSwipe = () => {
+      setActiveTab('swipe');
+    };
+
+    const handleSwitchToConfessions = () => {
+      setActiveTab('confessions');
+    };
+
+    window.addEventListener('switchToSwipe', handleSwitchToSwipe);
+    window.addEventListener('switchToConfessions', handleSwitchToConfessions);
+
+    return () => {
+      window.removeEventListener('switchToSwipe', handleSwitchToSwipe);
+      window.removeEventListener('switchToConfessions', handleSwitchToConfessions);
+    };
+  }, []);
+
   const fetchFeed = async () => {
     try {
       setLoading(true);
@@ -185,6 +204,7 @@ const Home = () => {
       {/* Tabs */}
       <div className="flex space-x-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-1 mb-6">
         <button
+          data-intro-swipe
           onClick={() => setActiveTab('posts')}
           className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
             activeTab === 'posts'
@@ -205,6 +225,7 @@ const Home = () => {
           🔥 Swipe Game
         </button>
         <button
+          data-intro-confess
           onClick={() => setActiveTab('confessions')}
           className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
             activeTab === 'confessions'

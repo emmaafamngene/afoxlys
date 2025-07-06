@@ -182,9 +182,22 @@ const Navbar = ({ darkMode = false }) => {
               )}
             </div>
 
+            {/* Tutorial Trigger Button */}
+            <button
+              onClick={() => {
+                localStorage.removeItem('afex_onboarding_complete');
+                window.location.reload();
+              }}
+              className="p-2.5 sm:p-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg sm:rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-105"
+              title="Start Tutorial"
+            >
+              <FiAward className="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
+
             {/* Profile Menu */}
             <div className="relative">
               <button
+                data-intro-profile
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
                 className="flex items-center space-x-2 sm:space-x-3 p-1.5 sm:p-2 rounded-lg sm:rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors transform hover:scale-105"
               >

@@ -47,6 +47,7 @@ export default function Sidebar({ darkMode, setDarkMode }) {
               >
                 <NavLink
                   to={link.to}
+                  {...(link.to === '/leaderboard' ? { 'data-intro-leaderboard': true } : {})}
                   className={({ isActive }) =>
                     `group relative flex items-center ${hovered ? 'gap-3 px-3 py-2.5 w-full justify-start' : 'justify-center py-2.5 w-12'} font-medium transition-all duration-300 text-base rounded-lg mx-2
                     ${isActive ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'}`

@@ -7,6 +7,7 @@ import Navbar from './components/layout/Navbar';
 import Sidebar from './components/layout/Sidebar';
 import LoadingPage from './components/LoadingPage';
 import { motion, AnimatePresence } from 'framer-motion';
+import OnboardingTutorial from './components/OnboardingTutorial';
 
 // Auth Pages
 import Login from './pages/auth/Login';
@@ -103,7 +104,10 @@ function App() {
                 {/* Protected Routes */}
                 <Route path="/" element={
                   <PrivateRoute>
-                    <Home />
+                    <>
+                      <OnboardingTutorial />
+                      <Home />
+                    </>
                   </PrivateRoute>
                 } />
                 <Route path="/clips" element={

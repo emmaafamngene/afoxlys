@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { FiSearch, FiHome, FiVideo, FiPlus, FiUser, FiLogOut, FiSettings, FiX, FiMessageCircle, FiBell, FiChevronDown, FiMenu, FiAward } from 'react-icons/fi';
+import { FiSearch, FiVideo, FiPlus, FiUser, FiLogOut, FiSettings, FiX, FiMessageCircle, FiBell, FiChevronDown, FiMenu, FiAward } from 'react-icons/fi';
 import AFEXLogo, { DefaultAvatar } from './AFEXLogo';
-import NotificationMenu from '../notifications/NotificationMenu';
 import { getAvatarUrl } from '../../utils/avatarUtils';
 import XPBar from '../leveling/XPBar';
 
 const Navbar = ({ darkMode = false }) => {
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -17,13 +16,7 @@ const Navbar = ({ darkMode = false }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState([]);
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
-      setSearchQuery('');
-    }
-  };
+
 
   const handleLogout = async () => {
     await logout();

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { likesAPI, commentsAPI } from '../../services/api';
-import { FiHeart, FiMessageCircle, FiMoreVertical, FiEdit2, FiTrash2, FiShare, FiPlay, FiEye } from 'react-icons/fi';
+import { likesAPI } from '../../services/api';
+import { FiHeart, FiMessageCircle, FiMoreVertical, FiShare, FiPlay, FiEye } from 'react-icons/fi';
 import { FaHeart } from 'react-icons/fa';
 import CommentSection from '../comments/CommentSection';
 import DefaultAvatar from '../DefaultAvatar';

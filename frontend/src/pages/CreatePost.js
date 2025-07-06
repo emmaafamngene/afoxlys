@@ -1,20 +1,18 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { postsAPI } from '../services/api';
-import { FiImage, FiVideo, FiX, FiUpload } from 'react-icons/fi';
-import toast from 'react-hot-toast';
+import { FiX, FiSend, FiEdit3, FiStar } from 'react-icons/fi';
+import DefaultAvatar from '../components/DefaultAvatar';
 
 const CreatePost = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const [content, setContent] = useState('');
-  const [media, setMedia] = useState(null);
-  const [mediaType, setMediaType] = useState(null);
-  const [mediaPreview, setMediaPreview] = useState(null);
   const [loading, setLoading] = useState(false);
-  const fileInputRef = useRef(null);
+  const [isFocused, setIsFocused] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   // Check if this post is for the swipe game
   const isForSwipeGame = searchParams.get('for') === 'swipe';
@@ -23,54 +21,10 @@ const CreatePost = () => {
     setContent(e.target.value);
   };
 
-  const handleFileSelect = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    // Validate file size (10MB limit)
-    const maxSize = 10 * 1024 * 1024; // 10MB
-    if (file.size > maxSize) {
-      toast.error('File size must be less than 10MB');
-      return;
-    }
-
-    // Validate file type
-    const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
-    const validVideoTypes = ['video/mp4', 'video/avi', 'video/mov', 'video/wmv'];
-    
-    if (validImageTypes.includes(file.type)) {
-      setMediaType('image');
-    } else if (validVideoTypes.includes(file.type)) {
-      setMediaType('video');
-    } else {
-      toast.error('Please select a valid image or video file');
-      return;
-    }
-
-    setMedia(file);
-    
-    // Create preview
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setMediaPreview(e.target.result);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const removeMedia = () => {
-    setMedia(null);
-    setMediaType(null);
-    setMediaPreview(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!content.trim() && !media) {
-      toast.error('Please add some content or media to your post');
+    if (!content.trim()) {
       return;
     }
 
@@ -79,190 +33,296 @@ const CreatePost = () => {
     try {
       const formData = new FormData();
       formData.append('content', content.trim());
-      
-      if (media) {
-        formData.append('postMedia', media);
-        formData.append('mediaType', mediaType);
-      }
 
       await postsAPI.create(formData);
       
-      const successMessage = isForSwipeGame 
-        ? 'Post submitted to Swipe Game successfully! 🔥' 
-        : 'Post created successfully!';
+      // Show success animation
+      setShowSuccess(true);
       
-      toast.success(successMessage);
-      
-      // Navigate back to appropriate page
-      if (isForSwipeGame) {
-        navigate('/swipe');
-      } else {
-        navigate('/');
-      }
+      // Navigate back after animation
+      setTimeout(() => {
+        if (isForSwipeGame) {
+          navigate('/swipe');
+        } else {
+          navigate('/');
+        }
+      }, 1500);
     } catch (error) {
       console.error('Error creating post:', error);
-      toast.error(error.response?.data?.message || 'Failed to create post');
+      console.log(error.response?.data?.message || 'Failed to create post');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDragOver = (e) => {
-    e.preventDefault();
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-      const file = files[0];
-      const event = { target: { files: [file] } };
-      handleFileSelect(event);
-    }
-  };
+  // Success animation component
+  const SuccessAnimation = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
+      <div className="bg-white rounded-2xl p-8 text-center animate-bounceIn">
+        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <FiStar className="w-8 h-8 text-green-600" />
+        </div>
+        <h3 className="text-xl font-bold text-gray-900 mb-2">
+          {isForSwipeGame ? '🔥 Posted to Swipe Game!' : '✨ Post Created!'}
+        </h3>
+        <p className="text-gray-600">
+          {isForSwipeGame ? 'Your post is now available for voting!' : 'Your post has been published!'}
+        </p>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
-      <div className="card p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              {isForSwipeGame ? '🔥 Submit to Swipe Game' : 'Create Post'}
-            </h1>
-            {isForSwipeGame && (
-              <p className="text-sm text-gray-600 mt-1">
-                Your post will be available for others to vote on in the Swipe Game!
-              </p>
-            )}
-          </div>
-          <button
-            onClick={() => navigate(isForSwipeGame ? '/swipe' : '/')}
-            className="text-gray-500 hover:text-gray-700"
-          >
-            <FiX className="w-6 h-6" />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit}>
-          {/* User Info */}
-          <div className="flex items-center space-x-3 mb-6">
-            <img
-              src={user?.avatar || 'https://via.placeholder.com/40x40/6b7280/ffffff?text=U'}
-              alt={user?.username}
-              className="w-10 h-10 rounded-full object-cover"
-              onError={(e) => {
-                e.target.src = 'https://via.placeholder.com/40x40/6b7280/ffffff?text=U';
-              }}
-            />
-            <div>
-              <p className="font-medium text-gray-900">
-                {user?.firstName} {user?.lastName}
-              </p>
-              <p className="text-sm text-gray-500">@{user?.username}</p>
+    <>
+      {showSuccess && <SuccessAnimation />}
+      
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+        <div className="max-w-2xl mx-auto px-4 py-8">
+          {/* Header */}
+          <div className="animate-slideDown">
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center space-x-3">
+                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                  <FiEdit3 className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                    {isForSwipeGame ? '🔥 Swipe Game Post' : 'Create Post'}
+                  </h1>
+                  {isForSwipeGame && (
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 animate-fadeIn">
+                      Share something amazing for others to vote on!
+                    </p>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={() => navigate(isForSwipeGame ? '/swipe' : '/')}
+                className="w-10 h-10 bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center group"
+              >
+                <FiX className="w-5 h-5 text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors" />
+              </button>
             </div>
           </div>
 
-          {/* Content Input */}
-          <div className="mb-6">
-            <textarea
-              value={content}
-              onChange={handleContentChange}
-              placeholder={isForSwipeGame ? "What's your post for the Swipe Game?" : "What's on your mind?"}
-              className="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
-              rows="4"
-              maxLength="1000"
-            />
-            <div className="flex justify-between items-center mt-2">
-              <div className="text-sm text-gray-500">
-                {content.length}/1000 characters
+          {/* User Info Card */}
+          <div className="animate-slideUp delay-100">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg mb-6 transform hover:scale-[1.02] transition-all duration-300">
+              <div className="flex items-center space-x-4">
+                <div className="relative">
+                  {user?.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt={user?.username}
+                      className="w-12 h-12 rounded-xl object-cover ring-2 ring-blue-100 dark:ring-gray-700"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div 
+                    className={`w-12 h-12 rounded-xl ring-2 ring-blue-100 dark:ring-gray-700 ${user?.avatar ? 'hidden' : 'flex'}`}
+                    style={{ display: user?.avatar ? 'none' : 'flex' }}
+                  >
+                    <DefaultAvatar 
+                      username={`${user?.firstName} ${user?.lastName}`} 
+                      size={48}
+                      style={{ borderRadius: '12px' }}
+                    />
+                  </div>
+                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-gray-800"></div>
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900 dark:text-white text-lg">
+                    {user?.firstName} {user?.lastName}
+                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">@{user?.username}</p>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Media Upload */}
-          <div className="mb-6">
-            <div
-              className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-                mediaPreview
-                  ? 'border-gray-300 bg-gray-50'
-                  : 'border-gray-300 hover:border-primary-400 hover:bg-gray-50'
-              }`}
-              onDragOver={handleDragOver}
-              onDrop={handleDrop}
-            >
-              {!mediaPreview ? (
-                <div>
-                  <FiUpload className="w-8 h-8 text-gray-400 mx-auto mb-3" />
-                  <p className="text-gray-600 mb-2">
-                    {isForSwipeGame 
-                      ? 'Upload an image or video for the Swipe Game! ' 
-                      : 'Drag and drop an image or video here, or '}
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="text-primary-600 hover:text-primary-700 font-medium"
-                    >
-                      browse
-                    </button>
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    Supports: JPG, PNG, GIF, MP4, AVI, MOV, WMV (max 10MB)
-                  </p>
+          {/* Content Form */}
+          <div className="animate-slideUp delay-200">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Content Input */}
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden transform hover:scale-[1.01] transition-all duration-300">
+                <div className={`p-6 transition-all duration-300 ${isFocused ? 'bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-700 dark:to-gray-700' : ''}`}>
+                  <textarea
+                    value={content}
+                    onChange={handleContentChange}
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={() => setIsFocused(false)}
+                    placeholder={isForSwipeGame ? "Share something amazing for the Swipe Game! 🎯" : "What's on your mind? Share your thoughts... 💭"}
+                    className="w-full p-0 border-none bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 resize-none focus:outline-none text-lg leading-relaxed"
+                    rows="6"
+                    maxLength="1000"
+                  />
                 </div>
-              ) : (
-                <div className="relative">
-                  {mediaType === 'image' ? (
-                    <img
-                      src={mediaPreview}
-                      alt="Preview"
-                      className="max-h-64 mx-auto rounded-lg"
-                    />
+                
+                {/* Character Counter */}
+                <div className="px-6 py-4 bg-gray-50 dark:bg-gray-700 border-t border-gray-100 dark:border-gray-600">
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        {content.length}/1000 characters
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      {content.length > 0 && (
+                        <div className="text-xs text-gray-400 dark:text-gray-500">
+                          {Math.ceil(content.length / 50)} min read
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-end space-x-4 animate-slideUp delay-300">
+                <button
+                  type="button"
+                  onClick={() => navigate(isForSwipeGame ? '/swipe' : '/')}
+                  className="px-8 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-300 font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading || !content.trim()}
+                  className="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 font-medium flex items-center space-x-2 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:transform-none"
+                >
+                  {loading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Creating...</span>
+                    </>
                   ) : (
-                    <video
-                      src={mediaPreview}
-                      controls
-                      className="max-h-64 mx-auto rounded-lg"
-                    />
+                    <>
+                      <FiSend className="w-4 h-4" />
+                      <span>{isForSwipeGame ? 'Submit to Swipe Game 🔥' : 'Create Post'}</span>
+                    </>
                   )}
-                  <button
-                    type="button"
-                    onClick={removeMedia}
-                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                  >
-                    <FiX className="w-4 h-4" />
-                  </button>
-                </div>
-              )}
-            </div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*,video/*"
-              onChange={handleFileSelect}
-              className="hidden"
-            />
+                </button>
+              </div>
+            </form>
           </div>
 
-          {/* Submit Button */}
-          <div className="flex justify-end space-x-3">
-            <button
-              type="button"
-              onClick={() => navigate(isForSwipeGame ? '/swipe' : '/')}
-              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading || (!content.trim() && !media)}
-              className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Creating...' : (isForSwipeGame ? 'Submit to Swipe Game 🔥' : 'Create Post')}
-            </button>
+          {/* Tips Section */}
+          <div className="animate-slideUp delay-400 mt-8">
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-700 dark:to-gray-700 rounded-2xl p-6">
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
+                <FiStar className="w-5 h-5 text-blue-500 mr-2" />
+                {isForSwipeGame ? 'Swipe Game Tips' : 'Writing Tips'}
+              </h3>
+              <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
+                {isForSwipeGame ? (
+                  <>
+                    <li>• Keep it engaging and shareable</li>
+                    <li>• Ask questions to encourage interaction</li>
+                    <li>• Share interesting facts or opinions</li>
+                    <li>• Be authentic and genuine</li>
+                  </>
+                ) : (
+                  <>
+                    <li>• Share your thoughts and experiences</li>
+                    <li>• Ask questions to start conversations</li>
+                    <li>• Be authentic and genuine</li>
+                    <li>• Engage with your community</li>
+                  </>
+                )}
+              </ul>
+            </div>
           </div>
-        </form>
+        </div>
       </div>
-    </div>
+
+      <style jsx>{`
+        @keyframes slideDown {
+          from {
+            opacity: 0;
+            transform: translateY(-20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        @keyframes slideUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+        
+        @keyframes bounceIn {
+          0% {
+            opacity: 0;
+            transform: scale(0.3);
+          }
+          50% {
+            opacity: 1;
+            transform: scale(1.05);
+          }
+          70% {
+            transform: scale(0.9);
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+        
+        .animate-slideDown {
+          animation: slideDown 0.6s ease-out;
+        }
+        
+        .animate-slideUp {
+          animation: slideUp 0.6s ease-out;
+        }
+        
+        .animate-fadeIn {
+          animation: fadeIn 0.8s ease-out;
+        }
+        
+        .animate-bounceIn {
+          animation: bounceIn 0.8s ease-out;
+        }
+        
+        .delay-100 {
+          animation-delay: 0.1s;
+        }
+        
+        .delay-200 {
+          animation-delay: 0.2s;
+        }
+        
+        .delay-300 {
+          animation-delay: 0.3s;
+        }
+        
+        .delay-400 {
+          animation-delay: 0.4s;
+        }
+      `}</style>
+    </>
   );
 };
 

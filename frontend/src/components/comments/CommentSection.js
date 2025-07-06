@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { commentsAPI, likesAPI } from '../../services/api';
-import { FiMessageCircle, FiHeart, FiTrash2, FiMoreVertical, FiSend, FiEdit2 } from 'react-icons/fi';
+import { FiMessageCircle, FiHeart, FiTrash2, FiSend, FiEdit2 } from 'react-icons/fi';
 import { DefaultAvatar } from '../layout/AFEXLogo';
 import { Link } from 'react-router-dom';
 
 const CommentSection = ({ postId, commentCount, onCommentCountChange }) => {
-  const { user, isAuthenticated } = useAuth();
+  const { user } = useAuth();
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(false);
@@ -15,15 +15,7 @@ const CommentSection = ({ postId, commentCount, onCommentCountChange }) => {
   const [editText, setEditText] = useState('');
   const [commentsLoaded, setCommentsLoaded] = useState(false);
 
-  // Load comments when component mounts or when comments section is shown
-  useEffect(() => {
-    if (postId && !commentsLoaded) {
-      console.log('CommentSection: Loading comments for post:', postId);
-      fetchComments();
-    }
-  }, [postId, commentsLoaded]);
-
-  const fetchComments = async () => {
+  const fetchComments = useCallback(async () => {
     try {
       setLoading(true);
       console.log('Fetching comments for post:', postId);
@@ -38,7 +30,15 @@ const CommentSection = ({ postId, commentCount, onCommentCountChange }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [postId]);
+
+  // Load comments when component mounts or when comments section is shown
+  useEffect(() => {
+    if (postId && !commentsLoaded) {
+      console.log('CommentSection: Loading comments for post:', postId);
+      fetchComments();
+    }
+  }, [postId, commentsLoaded, fetchComments]);
 
   const handleSubmitComment = async (e) => {
     e.preventDefault();
@@ -77,7 +77,7 @@ const CommentSection = ({ postId, commentCount, onCommentCountChange }) => {
     }
 
     try {
-      const response = await commentsAPI.updateComment(commentId, { content: editText });
+      await commentsAPI.updateComment(commentId, { content: editText });
       setComments(prev => 
         prev.map(comment => 
           comment._id === commentId 

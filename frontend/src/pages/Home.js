@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { postsAPI, confessionsAPI, swipeAPI } from '../services/api';
@@ -44,37 +44,7 @@ const Home = () => {
   
   usePageTitle('Home');
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchFeed();
-      if (activeTab === 'confessions') {
-        fetchConfessions(1);
-      } else if (activeTab === 'swipe') {
-        fetchRandomSwipePost();
-      }
-    }
-  }, [isAuthenticated, activeTab]);
-
-  // Listen for tutorial tab switching events
-  useEffect(() => {
-    const handleSwitchToSwipe = () => {
-      setActiveTab('swipe');
-    };
-
-    const handleSwitchToConfessions = () => {
-      setActiveTab('confessions');
-    };
-
-    window.addEventListener('switchToSwipe', handleSwitchToSwipe);
-    window.addEventListener('switchToConfessions', handleSwitchToConfessions);
-
-    return () => {
-      window.removeEventListener('switchToSwipe', handleSwitchToSwipe);
-      window.removeEventListener('switchToConfessions', handleSwitchToConfessions);
-    };
-  }, []);
-
-  const fetchFeed = async (retryCount = 0) => {
+  const fetchFeed = useCallback(async (retryCount = 0) => {
     try {
       setLoading(true);
       const response = await postsAPI.getFeed();
@@ -92,9 +62,9 @@ const Home = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchConfessions = async (pageNum = 1, retryCount = 0) => {
+  const fetchConfessions = useCallback(async (pageNum = 1, retryCount = 0) => {
     try {
       setConfessionsLoading(true);
       const response = await confessionsAPI.getAll(pageNum);
@@ -120,15 +90,9 @@ const Home = () => {
     } finally {
       setConfessionsLoading(false);
     }
-  };
+  }, []);
 
-  const loadMoreConfessions = () => {
-    if (confessionsHasMore) {
-      fetchConfessions(confessionsPage + 1);
-    }
-  };
-
-  const fetchRandomSwipePost = async (retryCount = 0) => {
+  const fetchRandomSwipePost = useCallback(async (retryCount = 0) => {
     try {
       setSwipeLoading(true);
       setSwipeError(null);
@@ -148,6 +112,42 @@ const Home = () => {
       console.log('Failed to load swipe post. Please try again.');
     } finally {
       setSwipeLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchFeed();
+      if (activeTab === 'confessions') {
+        fetchConfessions(1);
+      } else if (activeTab === 'swipe') {
+        fetchRandomSwipePost();
+      }
+    }
+  }, [isAuthenticated, activeTab, fetchFeed, fetchConfessions, fetchRandomSwipePost]);
+
+  // Listen for tutorial tab switching events
+  useEffect(() => {
+    const handleSwitchToSwipe = () => {
+      setActiveTab('swipe');
+    };
+
+    const handleSwitchToConfessions = () => {
+      setActiveTab('confessions');
+    };
+
+    window.addEventListener('switchToSwipe', handleSwitchToSwipe);
+    window.addEventListener('switchToConfessions', handleSwitchToConfessions);
+
+    return () => {
+      window.removeEventListener('switchToSwipe', handleSwitchToSwipe);
+      window.removeEventListener('switchToConfessions', handleSwitchToConfessions);
+    };
+  }, []);
+
+  const loadMoreConfessions = () => {
+    if (confessionsHasMore) {
+      fetchConfessions(confessionsPage + 1);
     }
   };
 

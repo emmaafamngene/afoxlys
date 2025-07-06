@@ -1,38 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FiBell, FiX, FiMessageCircle, FiUserPlus, FiHeart, FiVideo } from 'react-icons/fi';
-import { useAuth } from '../../contexts/AuthContext';
-import { io } from 'socket.io-client';
-import toast from 'react-hot-toast';
 import { notificationService } from '../../services/notificationService';
 import { DefaultAvatar } from '../layout/AFEXLogo';
 
 const NotificationMenu = () => {
-  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [socket, setSocket] = useState(null);
   const audioRef = useRef(null);
   const menuRef = useRef(null);
 
   useEffect(() => {
-    // Initialize socket connection
-    const newSocket = io(process.env.REACT_APP_API_URL || 'https://afoxlys.onrender.com');
-    setSocket(newSocket);
-
-    // Socket event listeners
-    newSocket.on('newMessage', handleNewMessage);
-    newSocket.on('newFollow', handleNewFollow);
-    newSocket.on('newLike', handleNewLike);
-    newSocket.on('newComment', handleNewComment);
-
     // Load existing notifications
     loadNotifications();
-
-    return () => {
-      newSocket.disconnect();
-    };
   }, []);
 
   useEffect(() => {

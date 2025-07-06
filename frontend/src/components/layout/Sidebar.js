@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { FiHome, FiSearch, FiMessageCircle, FiUser, FiPlus, FiBell, FiSettings, FiMoreHorizontal, FiSun, FiMoon, FiEdit, FiHeart, FiAward } from 'react-icons/fi';
-import { MdExplore, MdVideoLibrary } from 'react-icons/md';
+import { MdVideoLibrary } from 'react-icons/md';
 import { FaFire } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 

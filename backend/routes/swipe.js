@@ -4,12 +4,12 @@ const Post = require('../models/Post');
 const Vote = require('../models/Vote');
 const Badge = require('../models/Badge');
 const User = require('../models/User');
-const { auth } = require('../middlewares/auth');
+const { auth, optionalAuth } = require('../middlewares/auth');
 
 // @route   GET /api/swipe/post
 // @desc    Get a random post for swipe game
-// @access  Private
-router.get('/post', auth, async (req, res) => {
+// @access  Public (temporarily for testing)
+router.get('/post', optionalAuth, async (req, res) => {
   try {
     // Get posts that the user hasn't voted on yet
     const user = await User.findById(req.user._id);

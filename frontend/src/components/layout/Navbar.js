@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { FiSearch, FiHome, FiVideo, FiPlus, FiUser, FiLogOut, FiSettings, FiX, FiMessageCircle, FiBell, FiChevronDown, FiMenu } from 'react-icons/fi';
+import { FiSearch, FiHome, FiVideo, FiPlus, FiUser, FiLogOut, FiSettings, FiX, FiMessageCircle, FiBell, FiChevronDown, FiMenu, FiAward } from 'react-icons/fi';
 import AFEXLogo, { DefaultAvatar } from './AFEXLogo';
 import NotificationMenu from '../notifications/NotificationMenu';
 import { getAvatarUrl } from '../../utils/avatarUtils';
@@ -84,6 +84,26 @@ const Navbar = ({ darkMode = false }) => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-3 lg:space-x-6">
+            {/* Level Display */}
+            {user?.level && (
+              <div className="group relative">
+                <div className="flex items-center space-x-2 bg-gradient-to-r from-blue-500 via-purple-600 to-pink-500 text-white px-4 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 animate-pulse">
+                  <span className="text-sm font-bold animate-bounce">⭐</span>
+                  <span className="text-sm font-bold">Level {user.level}</span>
+                  <span className="text-xs opacity-90 bg-white bg-opacity-20 px-2 py-0.5 rounded-full">{(user.xp || 0).toLocaleString()} XP</span>
+                </div>
+                {/* Hover tooltip */}
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none whitespace-nowrap z-50">
+                  <div className="text-center">
+                    <div className="font-semibold">Level {user.level}</div>
+                    <div className="text-gray-300">{(user.xp || 0).toLocaleString()} XP</div>
+                    <div className="text-gray-400">{(user.loginStreak || 0)} day streak</div>
+                  </div>
+                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                </div>
+              </div>
+            )}
+            
             {/* Create Buttons */}
             <div className="flex items-center space-x-2 lg:space-x-3">
               <Link
@@ -236,6 +256,24 @@ const Navbar = ({ darkMode = false }) => {
 
           {/* Mobile Menu Button */}
           <div className="md:hidden flex items-center space-x-2">
+            {/* Mobile Level Display */}
+            {user?.level && (
+              <div className="group relative">
+                <div className="flex items-center space-x-1 bg-gradient-to-r from-blue-500 via-purple-600 to-pink-500 text-white px-2 py-1.5 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+                  <span className="text-xs font-bold animate-pulse">⭐</span>
+                  <span className="text-xs font-bold">Lv.{user.level}</span>
+                </div>
+                {/* Mobile tooltip */}
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none whitespace-nowrap z-50">
+                  <div className="text-center">
+                    <div>Level {user.level}</div>
+                    <div className="text-gray-300">{(user.xp || 0).toLocaleString()} XP</div>
+                  </div>
+                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-3 border-r-3 border-t-3 border-transparent border-t-gray-900"></div>
+                </div>
+              </div>
+            )}
+            
             {/* Mobile Search Button */}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -328,6 +366,15 @@ const Navbar = ({ darkMode = false }) => {
                 >
                   <FiUser className="w-5 h-5" />
                   <span>Profile</span>
+                </Link>
+                
+                <Link
+                  to="/leaderboard"
+                  className="flex items-center space-x-3 p-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors rounded-lg"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <FiAward className="w-5 h-5" />
+                  <span>Leaderboard</span>
                 </Link>
                 
                 <Link

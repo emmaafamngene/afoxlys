@@ -12,6 +12,7 @@ const Message = require('./models/Message');
 const { router: notificationRoutes, createNotification } = require('./routes/notifications');
 const chatRoutes = require('./routes/chat');
 const bodyParser = require('body-parser');
+const xpAwarder = require('./middlewares/xpAwarder');
 
 const app = express();
 const server = http.createServer(app);
@@ -121,15 +122,15 @@ mongoose
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', require('./routes/users'));
-app.use('/api/posts', require('./routes/posts'));
-app.use('/api/clips', require('./routes/clips'));
-app.use('/api/comments', require('./routes/comments'));
-app.use('/api/likes', require('./routes/likes'));
-app.use('/api/follow', require('./routes/follow'));
+app.use('/api/posts', xpAwarder, require('./routes/posts'));
+app.use('/api/clips', xpAwarder, require('./routes/clips'));
+app.use('/api/comments', xpAwarder, require('./routes/comments'));
+app.use('/api/likes', xpAwarder, require('./routes/likes'));
+app.use('/api/follow', xpAwarder, require('./routes/follow'));
 app.use('/api/search', require('./routes/search'));
 app.use('/api/payments', require('./routes/payments'));
-app.use('/api/confessions', require('./routes/confessions'));
-app.use('/api/swipe', require('./routes/swipe'));
+app.use('/api/confessions', xpAwarder, require('./routes/confessions'));
+app.use('/api/swipe', xpAwarder, require('./routes/swipe'));
 
 // Patch the POST /api/chat/conversations route to emit a socket event
 app.post('/api/chat/conversations', require('./middlewares/auth').auth, async (req, res) => {

@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { FiHome, FiSearch, FiMessageCircle, FiUser, FiPlus, FiBell, FiSettings, FiMoreHorizontal, FiSun, FiMoon, FiEdit, FiHeart, FiAward } from 'react-icons/fi';
 import { MdExplore, MdVideoLibrary } from 'react-icons/md';
 import { FaFire } from 'react-icons/fa';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const navLinks = [
   { to: '/', label: 'Home', icon: <FiHome /> },
@@ -11,12 +12,12 @@ const navLinks = [
   { to: '/confessions', label: 'Confessions', icon: <FiHeart /> },
   { to: '/swipe', label: 'Swipe', icon: <FaFire /> },
   { to: '/chat', label: 'Messages', icon: <FiMessageCircle /> },
+  { to: '/leaderboard', label: 'Leaderboard', icon: <FiAward /> },
   { to: '/create-post', label: 'Create Post', icon: <FiPlus /> },
   { to: '/profile', label: 'Profile', icon: <FiUser /> },
 ];
 
 const moreOptions = [
-  { to: '/leaderboard', label: 'Leaderboard', icon: <FiAward /> },
   { to: '/edit-profile', label: 'Edit Profile', icon: <FiEdit /> },
   { to: '/settings', label: 'Settings', icon: <FiSettings /> },
 ];
@@ -37,18 +38,44 @@ export default function Sidebar({ darkMode, setDarkMode }) {
         {/* Main nav: all icons (no labels) when not hovered, all icons+labels when hovered */}
         <div className={`flex flex-col w-full transition-all duration-300 ${hovered ? '' : 'items-center'}`} style={{ flex: 1 }}>
           <nav className={`flex flex-col gap-1 w-full mt-4 ${hovered ? '' : 'items-center'}`}>
-            {navLinks.map(link => (
-              <NavLink
+            {navLinks.map((link, index) => (
+              <motion.div
                 key={link.to}
-                to={link.to}
-                className={({ isActive }) =>
-                  `group relative flex items-center ${hovered ? 'gap-3 px-3 py-2.5 w-full justify-start' : 'justify-center py-2.5 w-12'} font-medium transition-all duration-200 text-base rounded-lg mx-2
-                  ${isActive ? 'bg-blue-600/90 text-white dark:bg-blue-500/90 shadow-lg' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'}`
-                }
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.1, duration: 0.3 }}
               >
-                <span className={`${hovered ? 'text-xl' : 'text-2xl'} transition-transform duration-200 group-hover:scale-110`}>{link.icon}</span>
-                <span className={`ml-3 text-sm transition-all duration-200 ${hovered ? 'opacity-100 w-auto' : 'opacity-0 w-0 overflow-hidden pointer-events-none'}`}>{link.label}</span>
-              </NavLink>
+                <NavLink
+                  to={link.to}
+                  className={({ isActive }) =>
+                    `group relative flex items-center ${hovered ? 'gap-3 px-3 py-2.5 w-full justify-start' : 'justify-center py-2.5 w-12'} font-medium transition-all duration-300 text-base rounded-lg mx-2
+                    ${isActive ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'}`
+                  }
+                >
+                  <motion.span 
+                    className={`${hovered ? 'text-xl' : 'text-2xl'} transition-transform duration-200 group-hover:scale-110`}
+                    whileHover={{ rotate: 5 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    {link.icon}
+                  </motion.span>
+                  <motion.span 
+                    className={`ml-3 text-sm transition-all duration-300 ${hovered ? 'opacity-100 w-auto' : 'opacity-0 w-0 overflow-hidden pointer-events-none'}`}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: hovered ? 1 : 0 }}
+                  >
+                    {link.label}
+                  </motion.span>
+                  {({ isActive }) => isActive && (
+                    <motion.div
+                      layoutId="activeTab"
+                      className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg -z-10"
+                      initial={false}
+                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                    />
+                  )}
+                </NavLink>
+              </motion.div>
             ))}
             
             {/* More Options Dropdown */}

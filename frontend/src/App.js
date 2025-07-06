@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import PrivateRoute from './components/auth/PrivateRoute';
 import Navbar from './components/layout/Navbar';
 import Sidebar from './components/layout/Sidebar';
 import LoadingPage from './components/LoadingPage';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // Auth Pages
 import Login from './pages/auth/Login';
@@ -93,7 +94,8 @@ function App() {
             
             {/* Main Content */}
             <main className="flex-1 pt-16 lg:pt-16 px-3 sm:px-4 md:px-6 lg:px-8 pb-20 lg:pb-6">
-              <Routes>
+              <AnimatePresence mode="wait">
+                <Routes>
                 {/* Public Routes */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
@@ -168,6 +170,7 @@ function App() {
                 {/* Redirect unknown routes to home */}
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
+              </AnimatePresence>
             </main>
           </div>
         </div>

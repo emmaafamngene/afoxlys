@@ -10,6 +10,8 @@ import { FiPlus, FiVideo, FiHeart, FaFire } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { usePageTitle } from '../hooks/usePageTitle';
 import api from '../services/api';
+import { motion, AnimatePresence } from 'framer-motion';
+import AnimatedPage from '../components/AnimatedPage';
 
 const Home = () => {
   const { isAuthenticated } = useAuth();
@@ -157,7 +159,8 @@ const Home = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto w-full animate-fade-in">
+    <AnimatedPage>
+      <div className="max-w-4xl mx-auto w-full">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-8">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Your Feed</h1>
@@ -383,7 +386,8 @@ const Home = () => {
         onClose={() => setIsConfessionModalOpen(false)}
         onConfessionPosted={handleConfessionPosted}
       />
-    </div>
+      </div>
+    </AnimatedPage>
   );
 };
 

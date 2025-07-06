@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const { body, validationResult } = require('express-validator');
 const Post = require('../models/Post');
 const User = require('../models/User');
@@ -214,6 +215,7 @@ router.delete('/:id', auth, async (req, res) => {
 // @access  Public (temporarily for testing)
 router.get('/feed', optionalAuth, async (req, res) => {
   try {
+    console.log('GET /feed hit');
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
@@ -263,6 +265,13 @@ router.get('/feed', optionalAuth, async (req, res) => {
 // @access  Public
 router.get('/:id', optionalAuth, async (req, res) => {
   try {
+    console.log('GET /:id hit with', req.params.id);
+    
+    // Validate ObjectId format
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(404).json({ message: 'Invalid post ID' });
+    }
+
     const post = await Post.findById(req.params.id)
       .populate('author', 'username firstName lastName avatar')
       .populate('likes', 'username firstName lastName avatar');

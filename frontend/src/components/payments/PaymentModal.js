@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import PaymentService from '../../services/paymentService';
-import moniepointLogo from '../../assets/moniepoint-logo.png';
-import visaLogo from '../../assets/visa.png';
-import mastercardLogo from '../../assets/mastercard.png';
-import verveLogo from '../../assets/verve.png';
+
+// Placeholder images - replace with actual logos
+const moniepointLogo = 'https://via.placeholder.com/28x28/0066CC/FFFFFF?text=M';
+const visaLogo = 'https://via.placeholder.com/28x28/1A1F71/FFFFFF?text=V';
+const mastercardLogo = 'https://via.placeholder.com/28x28/EB001B/FFFFFF?text=MC';
+const verveLogo = 'https://via.placeholder.com/28x28/0066CC/FFFFFF?text=V';
 
 const PaymentModal = ({ isOpen, onClose, onSuccess, type = 'donation', initialAmount = 10 }) => {
   const [formData, setFormData] = useState({
@@ -11,7 +13,7 @@ const PaymentModal = ({ isOpen, onClose, onSuccess, type = 'donation', initialAm
     name: '',
     email: '',
     message: '',
-    paymentMethod: 'paypal'
+    paymentMethod: 'moniepoint'
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -91,15 +93,45 @@ const PaymentModal = ({ isOpen, onClose, onSuccess, type = 'donation', initialAm
           paymentMethod: formData.paymentMethod
         });
 
-        // Redirect to PayPal
-        const paypalUrl = PaymentService.createPayPalDonationUrl(
-          formData.amount,
-          formData.email,
-          formData.name,
-          formData.message
-        );
+        if (formData.paymentMethod === 'moniepoint') {
+          // Show Moniepoint instructions
+          const moniepointInfo = PaymentService.createMoniepointPaymentUrl(
+            formData.amount,
+            formData.email,
+            formData.name,
+            formData.message
+          );
+          
+          alert(`Please send $${formData.amount} to Moniepoint account: ${moniepointInfo.accountNumber} (${moniepointInfo.accountName})`);
+          
+          if (onSuccess) {
+            onSuccess(donationResponse);
+          }
+          onClose();
+        } else {
+          // Handle bank card payment
+          const paymentData = {
+            amount: parseFloat(formData.amount),
+            currency: 'USD',
+            customer: {
+              name: formData.name,
+              email: formData.email
+            },
+            paymentMethod: formData.paymentMethod,
+            metadata: {
+              type: type,
+              message: formData.message
+            }
+          };
 
-        window.location.href = paypalUrl;
+          const response = await PaymentService.createPaymentIntent(paymentData);
+          
+          if (onSuccess) {
+            onSuccess(response);
+          }
+          
+          onClose();
+        }
       } else {
         // Handle regular payment
         const paymentData = {

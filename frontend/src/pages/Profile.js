@@ -182,8 +182,8 @@ const Profile = () => {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <div className="flex flex-col items-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          <p className="text-gray-500">Loading profile...</p>
+          <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-blue-600"></div>
+          <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400">Loading profile...</p>
         </div>
       </div>
     );
@@ -191,14 +191,14 @@ const Profile = () => {
 
   if (!user) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="text-center">
-          <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
-            <FiUsers className="w-12 h-12 text-gray-400" />
+      <div className="flex justify-center items-center min-h-screen px-4">
+        <div className="text-center max-w-md">
+          <div className="w-16 h-16 sm:w-24 sm:h-24 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+            <FiUsers className="w-8 h-8 sm:w-12 sm:h-12 text-gray-400" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">User not found</h2>
-          <p className="text-gray-600 mb-4">The user you're looking for doesn't exist.</p>
-          <Link to="/" className="btn btn-primary">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-2">User not found</h2>
+          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-4">The user you're looking for doesn't exist.</p>
+          <Link to="/" className="btn btn-primary text-sm sm:text-base px-6 py-3">
             Go Home
           </Link>
         </div>
@@ -207,52 +207,55 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="max-w-4xl mx-auto w-full">
       {/* Profile Header */}
-      <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-4xl mx-auto px-4 py-8">
-          <div className="flex flex-col md:flex-row items-start space-y-6 md:space-y-0 md:space-x-8">
+      <div className="bg-white dark:bg-gray-900 rounded-xl sm:rounded-2xl shadow-lg sm:shadow-xl border border-gray-200 dark:border-gray-800 overflow-hidden mb-6 sm:mb-8">
+        {/* Cover Photo Placeholder */}
+        <div className="h-32 sm:h-48 bg-gradient-to-r from-blue-500 to-purple-600 relative">
+          {isOwnProfile && (
+            <button className="absolute top-3 right-3 p-2 bg-white bg-opacity-20 backdrop-blur-sm rounded-lg text-white hover:bg-opacity-30 transition-all">
+              <FiCamera className="w-5 h-5" />
+            </button>
+          )}
+        </div>
+
+        {/* Profile Info */}
+        <div className="px-4 sm:px-6 pb-4 sm:pb-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-end -mt-16 sm:-mt-20 mb-4 sm:mb-6">
             {/* Avatar */}
-            <div className="relative">
-              {user.avatar ? (
-                <div className="relative">
+            <div className="relative mb-4 sm:mb-0 sm:mr-6">
+              <div className="relative">
+                {user.avatar ? (
                   <img
                     src={user.avatar}
                     alt={user.username}
-                    className="w-32 h-32 rounded-full object-cover border-4 border-white dark:border-gray-700 shadow-lg"
+                    className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-white dark:border-gray-800 shadow-lg object-cover"
                     onError={(e) => {
                       e.target.style.display = 'none';
                       e.target.nextSibling.style.display = 'flex';
                     }}
                   />
-                  <div className="hidden">
-                    <DefaultAvatar 
-                      user={user} 
-                      size="xl" 
-                      className="w-32 h-32 rounded-full border-4 border-white dark:border-gray-700 shadow-lg"
-                    />
-                  </div>
-                </div>
-              ) : (
+                ) : null}
                 <DefaultAvatar 
                   user={user} 
-                  size="xl" 
-                  className="w-32 h-32 rounded-full border-4 border-white dark:border-gray-700 shadow-lg"
+                  size="xl"
+                  className={user.avatar ? 'hidden' : ''}
                 />
-              )}
-              {isOwnProfile && (
-                <button 
-                  onClick={triggerAvatarUpload}
-                  disabled={uploadingAvatar}
-                  className="absolute bottom-2 right-2 bg-blue-600 text-white p-2 rounded-full shadow-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {uploadingAvatar ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  ) : (
-                    <FiCamera className="w-4 h-4" />
-                  )}
-                </button>
-              )}
+                
+                {isOwnProfile && (
+                  <button
+                    onClick={triggerAvatarUpload}
+                    disabled={uploadingAvatar}
+                    className="absolute bottom-0 right-0 p-2 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-all transform hover:scale-110"
+                  >
+                    {uploadingAvatar ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    ) : (
+                      <FiCamera className="w-4 h-4" />
+                    )}
+                  </button>
+                )}
+              </div>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -261,33 +264,74 @@ const Profile = () => {
                 className="hidden"
               />
             </div>
-            
-            {/* Profile Info */}
+
+            {/* User Info */}
             <div className="flex-1 min-w-0">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
-                <div className="mb-4 md:mb-0">
-                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4">
+                <div className="min-w-0 flex-1">
+                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-1 truncate">
                     {user.firstName} {user.lastName}
                   </h1>
-                  <p className="text-gray-500 dark:text-gray-400 text-lg">@{user.username}</p>
+                  <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 mb-2">@{user.username}</p>
+                  
+                  {/* Bio */}
+                  {user.bio && (
+                    <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 mb-3 leading-relaxed">
+                      {user.bio}
+                    </p>
+                  )}
+
+                  {/* User Stats */}
+                  <div className="flex flex-wrap gap-4 sm:gap-6 text-sm sm:text-base">
+                    <div className="flex items-center space-x-1 sm:space-x-2">
+                      <FiUsers className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 dark:text-gray-400" />
+                      <span className="font-semibold text-gray-900 dark:text-white">{followers.length}</span>
+                      <span className="text-gray-500 dark:text-gray-400">followers</span>
+                    </div>
+                    <div className="flex items-center space-x-1 sm:space-x-2">
+                      <FiUserPlus className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 dark:text-gray-400" />
+                      <span className="font-semibold text-gray-900 dark:text-white">{following.length}</span>
+                      <span className="text-gray-500 dark:text-gray-400">following</span>
+                    </div>
+                    <div className="flex items-center space-x-1 sm:space-x-2">
+                      <FiGrid className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 dark:text-gray-400" />
+                      <span className="font-semibold text-gray-900 dark:text-white">{posts.length}</span>
+                      <span className="text-gray-500 dark:text-gray-400">posts</span>
+                    </div>
+                    <div className="flex items-center space-x-1 sm:space-x-2">
+                      <FiVideo className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 dark:text-gray-400" />
+                      <span className="font-semibold text-gray-900 dark:text-white">{clips.length}</span>
+                      <span className="text-gray-500 dark:text-gray-400">clips</span>
+                    </div>
+                  </div>
                 </div>
-                
-                <div className="flex items-center space-x-3">
+
+                {/* Action Buttons */}
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-4 sm:mt-0">
                   {isOwnProfile ? (
                     <>
-                      <Link to="/edit-profile" className="btn btn-secondary flex items-center space-x-2">
+                      <Link
+                        to="/edit-profile"
+                        className="btn btn-primary flex items-center justify-center space-x-2 text-sm sm:text-base px-4 py-2.5 sm:px-6 sm:py-3"
+                      >
                         <FiEdit className="w-4 h-4" />
                         <span>Edit Profile</span>
                       </Link>
-                      <Link to="/settings" className="btn btn-secondary">
-                        <FiSettings className="w-5 h-5" />
+                      <Link
+                        to="/settings"
+                        className="btn btn-secondary flex items-center justify-center space-x-2 text-sm sm:text-base px-4 py-2.5 sm:px-6 sm:py-3"
+                      >
+                        <FiSettings className="w-4 h-4" />
+                        <span>Settings</span>
                       </Link>
                     </>
                   ) : (
                     <button
                       onClick={handleFollow}
-                      className={`btn flex items-center space-x-2 ${
-                        isFollowing ? 'btn-secondary' : 'btn-primary'
+                      className={`btn flex items-center justify-center space-x-2 text-sm sm:text-base px-4 py-2.5 sm:px-6 sm:py-3 ${
+                        isFollowing 
+                          ? 'btn-secondary' 
+                          : 'btn-primary'
                       }`}
                     >
                       {isFollowing ? (
@@ -305,144 +349,81 @@ const Profile = () => {
                   )}
                 </div>
               </div>
-
-              {/* Bio */}
-              {user.bio && (
-                <p className="text-gray-700 dark:text-gray-300 mb-4 text-lg leading-relaxed">
-                  {user.bio}
-                </p>
-              )}
-
-              {/* User Details */}
-              <div className="flex flex-wrap items-center space-x-6 text-sm text-gray-500 dark:text-gray-400 mb-6">
-                {user.location && (
-                  <div className="flex items-center space-x-1">
-                    <FiMapPin className="w-4 h-4" />
-                    <span>{user.location}</span>
-                  </div>
-                )}
-                {user.website && (
-                  <div className="flex items-center space-x-1">
-                    <FiLink className="w-4 h-4" />
-                    <a href={user.website} target="_blank" rel="noopener noreferrer" className="hover:text-blue-600">
-                      {user.website}
-                    </a>
-                  </div>
-                )}
-                <div className="flex items-center space-x-1">
-                  <FiCalendar className="w-4 h-4" />
-                  <span>Joined {new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
-                </div>
-              </div>
-
-              {/* Stats */}
-              <div className="flex items-center space-x-8">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white">{posts.length}</div>
-                  <div className="text-gray-500 dark:text-gray-400 text-sm">Posts</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white">{clips.length}</div>
-                  <div className="text-gray-500 dark:text-gray-400 text-sm">AFEXClips</div>
-                </div>
-                <Link to={`/user/${userId}/followers`} className="text-center hover:text-blue-600 transition-colors">
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white">{followers.length}</div>
-                  <div className="text-gray-500 dark:text-gray-400 text-sm">Followers</div>
-                </Link>
-                <Link to={`/user/${userId}/following`} className="text-center hover:text-blue-600 transition-colors">
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white">{following.length}</div>
-                  <div className="text-gray-500 dark:text-gray-400 text-sm">Following</div>
-                </Link>
-              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* Tabs */}
-        <div className="flex space-x-1 bg-white dark:bg-gray-800 p-1 rounded-xl shadow-sm mb-8">
+      {/* Content Tabs */}
+      <div className="bg-white dark:bg-gray-900 rounded-xl sm:rounded-2xl shadow-lg sm:shadow-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+        {/* Tab Navigation */}
+        <div className="flex border-b border-gray-200 dark:border-gray-800">
           <button
             onClick={() => handleTabChange('posts')}
-            className={`flex items-center space-x-2 flex-1 py-3 px-4 rounded-lg font-medium transition-all duration-200 ${
+            className={`flex-1 sm:flex-none px-4 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-medium transition-colors ${
               activeTab === 'posts'
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
+                ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
             }`}
           >
-            <FiGrid className="w-4 h-4" />
-            <span>Posts ({posts.length})</span>
+            <div className="flex items-center justify-center space-x-2">
+              <FiGrid className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span>Posts ({posts.length})</span>
+            </div>
           </button>
           <button
             onClick={() => handleTabChange('clips')}
-            className={`flex items-center space-x-2 flex-1 py-3 px-4 rounded-lg font-medium transition-all duration-200 ${
+            className={`flex-1 sm:flex-none px-4 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-medium transition-colors ${
               activeTab === 'clips'
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
+                ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
             }`}
           >
-            <FiVideo className="w-4 h-4" />
-            <span>AFEXClips ({clips.length})</span>
+            <div className="flex items-center justify-center space-x-2">
+              <FiVideo className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span>Clips ({clips.length})</span>
+            </div>
           </button>
         </div>
 
         {/* Tab Content */}
-        {activeTab === 'posts' && (
-          <div>
-            {posts.length > 0 ? (
-              <div className="space-y-6">
-                {posts.map((post) => (
+        <div className="p-4 sm:p-6">
+          {activeTab === 'posts' ? (
+            <div className="space-y-4 sm:space-y-6">
+              {posts.length > 0 ? (
+                posts.map((post) => (
                   <PostCard key={post._id} post={post} />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
-                <FiGrid className="w-20 h-20 text-gray-300 dark:text-gray-600 mx-auto mb-6" />
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No posts yet</h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
-                  {isOwnProfile 
-                    ? "Share your first post with the world and start building your audience!"
-                    : `${user.firstName} hasn't shared any posts yet.`
-                  }
-                </p>
-                {isOwnProfile && (
-                  <Link to="/create-post" className="btn btn-primary">
-                    Create Your First Post
-                  </Link>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'clips' && (
-          <div>
-            {clips.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {clips.map((clip) => (
-                  <ClipCard key={clip._id} clip={clip} />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
-                <FiVideo className="w-20 h-20 text-gray-300 dark:text-gray-600 mx-auto mb-6" />
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No AFEXClips yet</h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
-                  {isOwnProfile 
-                    ? "Create your first AFEXClip and start trending! Share your moments with the world."
-                    : `${user.firstName} hasn't created any AFEXClips yet.`
-                  }
-                </p>
-                {isOwnProfile && (
-                  <Link to="/create-clip" className="btn btn-primary">
-                    Create Your First Clip
-                  </Link>
-                )}
-              </div>
-            )}
-          </div>
-        )}
+                ))
+              ) : (
+                <div className="text-center py-8 sm:py-12">
+                  <FiGrid className="w-12 h-12 sm:w-16 sm:h-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg sm:text-xl font-medium text-gray-900 dark:text-white mb-2">No posts yet</h3>
+                  <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
+                    {isOwnProfile ? "You haven't created any posts yet." : "This user hasn't created any posts yet."}
+                  </p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-4 sm:space-y-6">
+              {clips.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                  {clips.map((clip) => (
+                    <ClipCard key={clip._id} clip={clip} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 sm:py-12">
+                  <FiVideo className="w-12 h-12 sm:w-16 sm:h-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg sm:text-xl font-medium text-gray-900 dark:text-white mb-2">No clips yet</h3>
+                  <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
+                    {isOwnProfile ? "You haven't created any clips yet." : "This user hasn't created any clips yet."}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

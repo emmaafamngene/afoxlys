@@ -48,7 +48,7 @@ async function testPaymentRoutes() {
           name: 'Test Customer',
           email: 'customer@example.com'
         },
-        paymentMethod: 'paypal',
+        paymentMethod: 'moniepoint',
         isDonation: true
       });
       console.log('✅ Success:', response.data);

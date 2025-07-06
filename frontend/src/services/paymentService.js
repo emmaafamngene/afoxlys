@@ -104,45 +104,25 @@ class PaymentService {
     }
   }
 
-  // PayPal integration
-  static createPayPalDonationUrl(amount, email, name, message = '') {
-    const baseUrl = 'https://www.paypal.com/donate/';
-    const params = new URLSearchParams({
-      hosted_button_id: process.env.REACT_APP_PAYPAL_BUTTON_ID || 'YOUR_PAYPAL_BUTTON_ID',
-      amount: amount.toString(),
-      currency_code: 'USD',
-      item_name: 'AFEXClips Fundraising',
-      return: `${window.location.origin}/donation-success`,
-      cancel_return: `${window.location.origin}/donation-cancelled`,
-      custom: JSON.stringify({
-        email,
-        name,
-        message,
-        timestamp: Date.now()
-      })
-    });
-
-    return `${baseUrl}?${params.toString()}`;
+  // Moniepoint integration
+  static createMoniepointPaymentUrl(amount, email, name, message = '') {
+    // For now, return instructions for manual Moniepoint transfer
+    return {
+      type: 'instructions',
+      accountNumber: '1234567890',
+      accountName: 'AFEX Donations',
+      amount: amount,
+      instructions: `Please send $${amount} to Moniepoint account: 1234567890 (AFEX Donations)`
+    };
   }
 
-  // Handle PayPal return
-  static async handlePayPalReturn(paypalData) {
+  // Handle Moniepoint payment confirmation
+  static async handleMoniepointPayment(paymentData) {
     try {
-      const response = await api.post('/clips/payment-webhook', paypalData);
+      const response = await api.post('/clips/donations', paymentData);
       return response.data;
     } catch (error) {
-      console.error('PayPal return handling error:', error);
-      throw error;
-    }
-  }
-
-  // Contact form
-  static async submitContactForm(contactData) {
-    try {
-      const response = await api.post('/clips/contact', contactData);
-      return response.data;
-    } catch (error) {
-      console.error('Contact form error:', error);
+      console.error('Moniepoint payment handling error:', error);
       throw error;
     }
   }

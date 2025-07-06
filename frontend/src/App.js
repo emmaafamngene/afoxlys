@@ -21,6 +21,7 @@ import EditProfile from './pages/EditProfile';
 import CreatePost from './pages/CreatePost';
 import CreateClip from './pages/CreateClip';
 import Chat from './pages/Chat';
+import Confessions from './pages/Confessions';
 
 // Component to redirect to current user's profile
 const CurrentUserProfile = () => {
@@ -54,23 +55,22 @@ function App() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Listen for sidebar hover events
+  // Listen for sidebar hover events (desktop only)
   useEffect(() => {
     const sidebar = document.querySelector('aside');
     if (!sidebar) return;
+    
     const onEnter = () => setSidebarHovered(true);
     const onLeave = () => setSidebarHovered(false);
+    
     sidebar.addEventListener('mouseenter', onEnter);
     sidebar.addEventListener('mouseleave', onLeave);
+    
     return () => {
       sidebar.removeEventListener('mouseenter', onEnter);
       sidebar.removeEventListener('mouseleave', onLeave);
     };
   }, []);
-
-  // Responsive sidebar width
-  const sidebarWidth = sidebarHovered ? 'w-56' : 'w-16';
-  const sidebarMargin = sidebarHovered ? 'ml-56' : 'ml-16';
 
   // Show loading page while app is initializing
   if (isLoading) {
@@ -81,13 +81,16 @@ function App() {
     <AuthProvider>
       <Router>
         <div className="min-h-screen flex bg-gray-50 dark:bg-gray-950 transition-colors duration-300">
+          {/* Sidebar - Hidden on mobile, visible on large screens */}
           <Sidebar darkMode={darkMode} setDarkMode={setDarkMode} />
-          <div
-            className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${sidebarMargin} pt-0`}
-            style={{ zIndex: 0 }}
-          >
+          
+          {/* Main Content Area */}
+          <div className="flex-1 flex flex-col min-h-screen w-full lg:ml-16 transition-all duration-300">
+            {/* Navbar */}
             <Navbar darkMode={darkMode} />
-            <main className="flex-1 pt-16 px-2 md:px-8 pb-4">
+            
+            {/* Main Content */}
+            <main className="flex-1 pt-16 lg:pt-16 px-3 sm:px-4 md:px-6 lg:px-8 pb-20 lg:pb-6">
               <Routes>
                 {/* Public Routes */}
                 <Route path="/login" element={<Login />} />
@@ -144,6 +147,11 @@ function App() {
                     <Chat />
                   </PrivateRoute>
                 } />
+                <Route path="/confessions" element={
+                  <PrivateRoute>
+                    <Confessions />
+                  </PrivateRoute>
+                } />
                 
                 {/* Redirect unknown routes to home */}
                 <Route path="*" element={<Navigate to="/" replace />} />
@@ -158,6 +166,8 @@ function App() {
             style: {
               background: '#363636',
               color: '#fff',
+              fontSize: '14px',
+              padding: '12px 16px',
             },
             success: {
               duration: 3000,

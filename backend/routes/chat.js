@@ -78,20 +78,36 @@ router.get('/messages/:conversationId', auth, async (req, res) => {
 // Send a message (for initial load, not real-time)
 router.post('/messages', auth, async (req, res) => {
   const { conversationId, sender, recipient, content } = req.body;
+  
+  console.log('📨 Received message request:', { conversationId, sender, recipient, content });
+  
   try {
+    // Validate required fields
+    if (!conversationId || !sender || !recipient || !content) {
+      console.error('❌ Missing required fields:', { conversationId, sender, recipient, content });
+      return res.status(400).json({ message: 'Missing required fields' });
+    }
+
     const message = await Message.create({
       conversation: conversationId,
       sender,
       recipient,
       content,
     });
+    
+    console.log('✅ Message created:', message._id);
+    
     await Conversation.findByIdAndUpdate(conversationId, {
       lastMessage: content,
       updatedAt: Date.now(),
     });
+    
+    console.log('✅ Conversation updated');
+    
     res.json(message);
   } catch (err) {
-    res.status(500).json({ message: 'Error sending message' });
+    console.error('❌ Error sending message:', err);
+    res.status(500).json({ message: 'Error sending message', error: err.message });
   }
 });
 

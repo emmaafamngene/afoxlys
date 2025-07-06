@@ -69,18 +69,18 @@ const PostCard = ({ post, onUpdate }) => {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl overflow-hidden border border-gray-200 dark:border-gray-800 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
-      {/* Enhanced Header */}
-      <div className="p-6 border-b border-gray-200 dark:border-gray-800 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900">
+    <div className="bg-white dark:bg-gray-900 rounded-xl sm:rounded-2xl shadow-lg sm:shadow-xl overflow-hidden border border-gray-200 dark:border-gray-800 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
+      {/* Header */}
+      <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-800 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3 sm:space-x-4">
             <Link to={`/user/${post.author._id}`} className="group">
               {post.author.avatar ? (
                 <div className="relative">
                   <img
                     src={post.author.avatar}
                     alt={post.author.username}
-                    className="w-12 h-12 rounded-full object-cover border-2 border-white dark:border-gray-800 shadow-lg group-hover:scale-110 transition-transform duration-300"
+                    className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover border-2 border-white dark:border-gray-800 shadow-lg group-hover:scale-110 transition-transform duration-300"
                     onError={(e) => {
                       e.target.style.display = 'none';
                       e.target.nextSibling.style.display = 'flex';
@@ -100,47 +100,47 @@ const PostCard = ({ post, onUpdate }) => {
                 />
               )}
             </Link>
-            <div>
+            <div className="min-w-0 flex-1">
               <Link 
                 to={`/user/${post.author._id}`}
-                className="font-bold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-lg"
+                className="font-bold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-base sm:text-lg truncate block"
               >
                 {post.author.firstName} {post.author.lastName}
               </Link>
-              <p className="text-sm text-gray-500 dark:text-gray-400">@{post.author.username}</p>
+              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">@{post.author.username}</p>
             </div>
           </div>
-          <button className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
-            <FiMoreHorizontal className="w-6 h-6" />
+          <button className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors p-1.5 sm:p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 flex-shrink-0">
+            <FiMoreHorizontal className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
         </div>
       </div>
 
-      {/* Enhanced Content */}
-      <div className="p-6">
-        <p className="text-gray-900 dark:text-white mb-6 leading-relaxed text-lg">
+      {/* Content */}
+      <div className="p-4 sm:p-6">
+        <p className="text-gray-900 dark:text-white mb-4 sm:mb-6 leading-relaxed text-sm sm:text-base lg:text-lg">
           {post.content}
         </p>
 
-        {/* Enhanced Media */}
+        {/* Media */}
         {post.media && (
-          <div className="mb-6 max-w-md mx-auto">
+          <div className="mb-4 sm:mb-6 max-w-full mx-auto">
             {post.media.type?.startsWith('image/') ? (
               <div className="relative group">
                 <img
                   src={post.media.url}
                   alt="Post media"
-                  className="w-full rounded-2xl shadow-lg group-hover:shadow-2xl transition-all duration-300"
+                  className="w-full rounded-xl sm:rounded-2xl shadow-lg group-hover:shadow-2xl transition-all duration-300"
                   onError={e => { e.target.style.display = 'none'; }}
                 />
-                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 rounded-2xl transition-all duration-300"></div>
+                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 rounded-xl sm:rounded-2xl transition-all duration-300"></div>
               </div>
             ) : post.media.type?.startsWith('video/') ? (
               <div className="relative group">
                 <video
                   src={post.media.url}
                   controls
-                  className="w-full rounded-2xl shadow-lg group-hover:shadow-2xl transition-all duration-300"
+                  className="w-full rounded-xl sm:rounded-2xl shadow-lg group-hover:shadow-2xl transition-all duration-300"
                   preload="metadata"
                   onPlay={() => setIsPlaying(true)}
                   onPause={() => setIsPlaying(false)}
@@ -153,29 +153,29 @@ const PostCard = ({ post, onUpdate }) => {
                 />
                 {!isPlaying && (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <button className="bg-white bg-opacity-90 rounded-full p-4 hover:bg-opacity-100 transition-all shadow-lg hover:shadow-xl">
-                      <FiPlay className="w-8 h-8 text-gray-900" />
+                    <button className="bg-white bg-opacity-90 rounded-full p-3 sm:p-4 hover:bg-opacity-100 transition-all shadow-lg hover:shadow-xl">
+                      <FiPlay className="w-6 h-6 sm:w-8 sm:h-8 text-gray-900" />
                     </button>
                   </div>
                 )}
                 {post.media.duration && (
-                  <div className="absolute bottom-3 right-3 bg-black bg-opacity-80 text-white text-sm px-3 py-1 rounded-full font-medium">
+                  <div className="absolute bottom-2 sm:bottom-3 right-2 sm:right-3 bg-black bg-opacity-80 text-white text-xs sm:text-sm px-2 sm:px-3 py-1 rounded-full font-medium">
                     {formatDuration(post.media.duration)}
                   </div>
                 )}
-                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-5 rounded-2xl transition-all duration-300"></div>
+                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-5 rounded-xl sm:rounded-2xl transition-all duration-300"></div>
               </div>
             ) : null}
           </div>
         )}
 
-        {/* Enhanced Tags */}
+        {/* Tags */}
         {post.tags && post.tags.length > 0 && (
-          <div className="flex flex-wrap gap-3 mb-6">
+          <div className="flex flex-wrap gap-2 sm:gap-3 mb-4 sm:mb-6">
             {post.tags.map((tag, index) => (
               <span
                 key={index}
-                className="px-4 py-2 bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 text-blue-700 dark:text-blue-300 text-sm rounded-full font-medium shadow-sm hover:shadow-md transition-all duration-300"
+                className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 text-blue-700 dark:text-blue-300 text-xs sm:text-sm rounded-full font-medium shadow-sm hover:shadow-md transition-all duration-300"
               >
                 #{tag}
               </span>
@@ -183,61 +183,62 @@ const PostCard = ({ post, onUpdate }) => {
           </div>
         )}
 
-        {/* Enhanced Stats */}
-        <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mb-6">
-          <div className="flex items-center space-x-6">
-            <div className="flex items-center space-x-2">
-              <FiEye className="w-5 h-5" />
+        {/* Stats */}
+        <div className="flex items-center justify-between text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-4 sm:mb-6">
+          <div className="flex items-center space-x-4 sm:space-x-6">
+            <div className="flex items-center space-x-1.5 sm:space-x-2">
+              <FiEye className="w-4 h-4 sm:w-5 sm:h-5" />
               <span className="font-medium">{post.views || 0} views</span>
             </div>
             <span className="font-medium">{formatDate(post.createdAt)}</span>
           </div>
         </div>
 
-        {/* Enhanced Actions */}
-        <div className="flex items-center justify-between pt-6 border-t border-gray-200 dark:border-gray-800">
-          <div className="flex items-center space-x-8">
+        {/* Actions */}
+        <div className="flex items-center justify-between pt-4 sm:pt-6 border-t border-gray-200 dark:border-gray-800">
+          <div className="flex items-center space-x-4 sm:space-x-8">
             <button
               onClick={handleLike}
               disabled={isLiking}
-              className={`flex items-center space-x-3 transition-all duration-300 transform hover:scale-105 ${
+              className={`flex items-center space-x-2 p-2 sm:p-3 rounded-xl transition-all duration-200 ${
                 isLiked 
-                  ? 'text-red-500 hover:text-red-600' 
-                  : 'text-gray-500 hover:text-red-500'
-              } ${isLiking ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  ? 'text-red-500 bg-red-50 dark:bg-red-900/20' 
+                  : 'text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+              }`}
             >
               {isLiked ? (
-                <FaHeart className="w-6 h-6" />
+                <FaHeart className="w-5 h-5 sm:w-6 sm:h-6" />
               ) : (
-                <FiHeart className="w-6 h-6" />
+                <FiHeart className="w-5 h-5 sm:w-6 sm:h-6" />
               )}
-              <span className="font-bold text-lg">{likeCount}</span>
+              <span className="text-sm sm:text-base font-medium">{likeCount}</span>
             </button>
-            
+
             <button
               onClick={() => setShowComments(!showComments)}
-              className="flex items-center space-x-3 text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors transform hover:scale-105"
+              className="flex items-center space-x-2 p-2 sm:p-3 text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-all duration-200"
             >
-              <FiMessageCircle className="w-6 h-6" />
-              <span className="font-bold text-lg">{commentCount}</span>
+              <FiMessageCircle className="w-5 h-5 sm:w-6 sm:h-6" />
+              <span className="text-sm sm:text-base font-medium">{commentCount}</span>
+            </button>
+
+            <button
+              onClick={handleShare}
+              className="flex items-center space-x-2 p-2 sm:p-3 text-gray-500 dark:text-gray-400 hover:text-green-500 dark:hover:text-green-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-all duration-200"
+            >
+              <FiShare className="w-5 h-5 sm:w-6 sm:h-6" />
+              <span className="text-sm sm:text-base font-medium">Share</span>
             </button>
           </div>
-
-          <button
-            onClick={handleShare}
-            className="text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors p-3 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transform hover:scale-105"
-          >
-            <FiShare className="w-6 h-6" />
-          </button>
         </div>
 
-        {/* Enhanced Comment Section */}
+        {/* Comments Section */}
         {showComments && (
-          <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-800">
+          <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-gray-200 dark:border-gray-800">
             <CommentSection 
-              postId={post._id}
-              commentCount={commentCount}
+              postId={post._id} 
               onCommentCountChange={handleCommentCountChange}
+              commentCount={commentCount}
             />
           </div>
         )}

@@ -178,7 +178,7 @@ const Navbar = ({ darkMode = false }) => {
                     }}
                   />
                 ) : (
-                  <DefaultAvatar user={user} size="md" />
+                  <DefaultAvatar username={user.username} size={40} />
                 )}
                 <FiChevronDown className={`w-3 h-3 sm:w-4 sm:h-4 text-gray-600 dark:text-gray-400 transition-transform duration-300 ${showProfileMenu ? 'rotate-180' : ''}`} />
               </button>

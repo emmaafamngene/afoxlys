@@ -88,16 +88,15 @@ const PostCard = ({ post, onUpdate }) => {
                     }}
                   />
                   <DefaultAvatar 
-                    user={post.author} 
-                    size="md" 
-                    className="hidden group-hover:scale-110 transition-transform duration-300"
+                    username={post.author.username} 
+                    size={48}
+                    style={{ display: 'none' }}
                   />
                 </div>
               ) : (
                 <DefaultAvatar 
-                  user={post.author} 
-                  size="md"
-                  className="group-hover:scale-110 transition-transform duration-300"
+                  username={post.author.username} 
+                  size={48}
                 />
               )}
             </Link>

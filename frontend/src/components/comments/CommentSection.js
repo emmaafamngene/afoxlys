@@ -166,15 +166,11 @@ const CommentSection = ({ postId, commentCount, onCommentCountChange }) => {
                 e.target.nextSibling.style.display = 'flex';
               }}
             />
-            <DefaultAvatar 
-              user={user} 
-              size="md" 
-              className="hidden"
-            />
+            <DefaultAvatar username={user.username} size={40} />
           </div>
         ) : (
           <div className="flex-shrink-0">
-            <DefaultAvatar user={user} size="md" />
+            <DefaultAvatar username={user.username} size={40} />
           </div>
         )}
         <div className="flex-1 min-w-0">
@@ -229,14 +225,10 @@ const CommentSection = ({ postId, commentCount, onCommentCountChange }) => {
                           e.target.nextSibling.style.display = 'flex';
                         }}
                       />
-                      <DefaultAvatar 
-                        user={comment.author} 
-                        size="md" 
-                        className="hidden"
-                      />
+                      <DefaultAvatar username={comment.author.username} size={40} />
                     </div>
                   ) : (
-                    <DefaultAvatar user={comment.author} size="md" />
+                    <DefaultAvatar username={comment.author.username} size={40} />
                   )}
                 </Link>
                 

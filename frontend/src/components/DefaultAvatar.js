@@ -33,19 +33,23 @@ const DefaultAvatar = ({ username, size = 40, style = {} }) => {
 
   const initials = getInitials(username);
   const [color1, color2] = getGradientColors(username);
+  
+  // Ensure size is a valid number
+  const validSize = typeof size === 'number' && !isNaN(size) ? size : 40;
+  const fontSize = Math.max(validSize * 0.4, 12);
 
   return (
     <div
       style={{
-        width: size,
-        height: size,
+        width: validSize,
+        height: validSize,
         borderRadius: '50%',
         background: `linear-gradient(135deg, ${color1}, ${color2})`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         color: 'white',
-        fontSize: Math.max(size * 0.4, 12),
+        fontSize: fontSize,
         fontWeight: 'bold',
         textShadow: '0 1px 2px rgba(0,0,0,0.3)',
         ...style

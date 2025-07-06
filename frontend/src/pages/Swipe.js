@@ -3,6 +3,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import SwipeCard from '../components/swipe/SwipeCard';
+import DefaultAvatar from '../components/DefaultAvatar';
+import { getAvatarUrl } from '../utils/avatarUtils';
 
 const Swipe = () => {
   const { user } = useAuth();
@@ -248,47 +250,93 @@ const Swipe = () => {
         )}
 
         {activeTab === 'leaderboard' && (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {/* Top Posts */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-                🔥 Hottest Posts
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center">
+                <span className="text-2xl mr-2">🔥</span>
+                Hottest Posts
               </h2>
               {leaderboard.topPosts.length === 0 ? (
-                <p className="text-gray-600 dark:text-gray-400 text-center py-4">
-                  No posts have been voted on yet.
-                </p>
+                <div className="text-center py-8">
+                  <div className="text-4xl mb-3">📊</div>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    No posts have been voted on yet.
+                  </p>
+                </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {leaderboard.topPosts.map((post, index) => (
-                    <div key={post._id} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                      <div className="text-2xl font-bold text-gray-400 dark:text-gray-500">
-                        #{index + 1}
+                    <div key={post._id} className="flex items-center gap-4 p-4 bg-gradient-to-r from-gray-50 to-white dark:from-gray-700 dark:to-gray-800 rounded-xl border border-gray-200 dark:border-gray-600 hover:shadow-md transition-all duration-300">
+                      <div className="flex-shrink-0">
+                        <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg ${
+                          index === 0 ? 'bg-gradient-to-r from-yellow-400 to-yellow-600' :
+                          index === 1 ? 'bg-gradient-to-r from-gray-300 to-gray-500' :
+                          index === 2 ? 'bg-gradient-to-r from-orange-400 to-orange-600' :
+                          'bg-gradient-to-r from-blue-400 to-blue-600'
+                        }`}>
+                          {index + 1}
+                        </div>
                       </div>
-                      <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-600">
+                      
+                      <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-600 flex-shrink-0">
                         {post.mediaUrl ? (
                           <img
                             src={post.mediaUrl}
                             alt="Post"
                             className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                              e.target.nextSibling.style.display = 'flex';
+                            }}
                           />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-gray-400">
-                            📷
-                          </div>
-                        )}
+                        ) : null}
+                        <div className="w-full h-full flex items-center justify-center text-gray-400 text-2xl" style={{ display: post.mediaUrl ? 'none' : 'flex' }}>
+                          📷
+                        </div>
                       </div>
-                      <div className="flex-1">
-                        <p className="font-medium text-gray-900 dark:text-gray-100">
-                          {post.userId?.firstName || post.userId?.username || 'Anonymous'}
-                        </p>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          {post.userId?.avatar ? (
+                            <img
+                              src={getAvatarUrl(post.userId.avatar)}
+                              alt={post.userId.username}
+                              className="w-6 h-6 rounded-full object-cover"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'block';
+                              }}
+                            />
+                          ) : null}
+                          <DefaultAvatar 
+                            username={post.userId?.username} 
+                            size={24}
+                            style={{ display: post.userId?.avatar ? 'none' : 'block' }}
+                          />
+                          <p className="font-semibold text-gray-900 dark:text-gray-100 truncate">
+                            {post.userId?.firstName && post.userId?.lastName 
+                              ? `${post.userId.firstName} ${post.userId.lastName}`
+                              : post.userId?.username || 'Anonymous'
+                            }
+                          </p>
+                        </div>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
                           {formatTime(post.createdAt)}
                         </p>
+                        {post.content && (
+                          <p className="text-sm text-gray-700 dark:text-gray-300 mt-1 truncate">
+                            {post.content}
+                          </p>
+                        )}
                       </div>
-                      <div className="text-right">
-                        <div className="text-xl font-bold text-orange-600 dark:text-orange-400">
+                      
+                      <div className="text-right flex-shrink-0">
+                        <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
                           🔥 {post.score || 0}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          hot votes
                         </div>
                       </div>
                     </div>
@@ -298,45 +346,70 @@ const Swipe = () => {
             </div>
 
             {/* Top Voters */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-                👆 Top Voters
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center">
+                <span className="text-2xl mr-2">👆</span>
+                Top Voters
               </h2>
               {leaderboard.topVoters.length === 0 ? (
-                <p className="text-gray-600 dark:text-gray-400 text-center py-4">
-                  No voting activity yet.
-                </p>
+                <div className="text-center py-8">
+                  <div className="text-4xl mb-3">🏆</div>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    No voting activity yet.
+                  </p>
+                </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {leaderboard.topVoters.map((voter, index) => (
-                    <div key={voter._id} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                      <div className="text-2xl font-bold text-gray-400 dark:text-gray-500">
-                        #{index + 1}
+                    <div key={voter._id} className="flex items-center gap-4 p-4 bg-gradient-to-r from-gray-50 to-white dark:from-gray-700 dark:to-gray-800 rounded-xl border border-gray-200 dark:border-gray-600 hover:shadow-md transition-all duration-300">
+                      <div className="flex-shrink-0">
+                        <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg ${
+                          index === 0 ? 'bg-gradient-to-r from-yellow-400 to-yellow-600' :
+                          index === 1 ? 'bg-gradient-to-r from-gray-300 to-gray-500' :
+                          index === 2 ? 'bg-gradient-to-r from-orange-400 to-orange-600' :
+                          'bg-gradient-to-r from-blue-400 to-blue-600'
+                        }`}>
+                          {index + 1}
+                        </div>
                       </div>
-                      <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-600">
+                      
+                      <div className="flex-shrink-0">
                         {voter.avatar ? (
                           <img
-                            src={voter.avatar}
-                            alt="Profile"
-                            className="w-full h-full object-cover"
+                            src={getAvatarUrl(voter.avatar)}
+                            alt={voter.username}
+                            className="w-12 h-12 rounded-full object-cover border-2 border-white dark:border-gray-700 shadow-lg"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                              e.target.nextSibling.style.display = 'block';
+                            }}
                           />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
-                            👤
-                          </div>
-                        )}
+                        ) : null}
+                        <DefaultAvatar 
+                          username={voter.username} 
+                          size={48}
+                          style={{ display: voter.avatar ? 'none' : 'block' }}
+                        />
                       </div>
-                      <div className="flex-1">
-                        <p className="font-medium text-gray-900 dark:text-gray-100">
-                          {voter.firstName || voter.username}
+                      
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-gray-900 dark:text-gray-100">
+                          {voter.firstName && voter.lastName 
+                            ? `${voter.firstName} ${voter.lastName}`
+                            : voter.username
+                          }
+                        </p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          @{voter.username}
                         </p>
                       </div>
-                      <div className="text-right">
-                        <div className="text-sm font-bold text-blue-600 dark:text-blue-400">
+                      
+                      <div className="text-right flex-shrink-0">
+                        <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
                           {voter.voteCount} votes
                         </div>
-                        <div className="text-xs text-gray-600 dark:text-gray-400">
-                          {voter.hotVotes} 🔥
+                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                          {voter.hotVotes} 🔥 hot
                         </div>
                       </div>
                     </div>

@@ -14,10 +14,10 @@ router.get('/post', auth, async (req, res) => {
     // Get posts the user has already voted on
     const votedPosts = await Vote.find({ voterId: userId }).distinct('postId');
     
-    // Find a random post that user hasn't voted on and has media
+    // Find a random public post that user hasn't voted on
     const randomPost = await Post.findOne({
       _id: { $nin: votedPosts },
-      'media.0': { $exists: true } // Check if media array has at least one item
+      isPrivate: false
     })
     .populate('author', 'username firstName lastName avatar')
     .sort({ createdAt: -1 })

@@ -7,22 +7,35 @@ import { getAvatarUrl } from '../../utils/avatarUtils';
 const SwipeCard = ({ post, onVote, onNext }) => {
   const [isVoting, setIsVoting] = useState(false);
   const [showVoteAnimation, setShowVoteAnimation] = useState(null);
+  const [animationPhase, setAnimationPhase] = useState('idle');
 
   const handleVote = async (voteType) => {
     if (isVoting) return;
     
     setIsVoting(true);
     setShowVoteAnimation(voteType);
+    setAnimationPhase('start');
     
     try {
       // Map frontend voteType to backend
       const backendVoteType = voteType === 'like' ? 'hot' : 'not';
       await onVote(backendVoteType, post);
+      
+      // Start exit animation
+      setTimeout(() => {
+        setAnimationPhase('exit');
+        setTimeout(() => {
+          setShowVoteAnimation(null);
+          setAnimationPhase('idle');
+          setIsVoting(false);
+        }, 300);
+      }, 800);
+      
     } catch (error) {
       console.error('Error voting:', error);
-    } finally {
-      setIsVoting(false);
       setShowVoteAnimation(null);
+      setAnimationPhase('idle');
+      setIsVoting(false);
     }
   };
 
@@ -46,24 +59,86 @@ const SwipeCard = ({ post, onVote, onNext }) => {
 
   return (
     <div className="relative max-w-md mx-auto">
-      {/* Vote Animation Overlay */}
+      {/* Enhanced Vote Animation Overlay */}
       {showVoteAnimation && (
-        <div className={`absolute inset-0 z-20 flex items-center justify-center text-6xl font-bold ${
-          showVoteAnimation === 'like' 
-            ? 'bg-green-500 bg-opacity-80 text-white' 
-            : 'bg-red-500 bg-opacity-80 text-white'
-        }`}>
-          {showVoteAnimation === 'like' ? '❤️' : '❌'}
-        </div>
+        <>
+          {/* Background Overlay */}
+          <div className={`absolute inset-0 z-30 rounded-xl overflow-hidden ${
+            animationPhase === 'start' ? 'animate-pulse' : ''
+          }`}>
+            <div className={`absolute inset-0 transition-all duration-500 ${
+              showVoteAnimation === 'like' 
+                ? 'bg-gradient-to-br from-green-400 via-green-500 to-green-600' 
+                : 'bg-gradient-to-br from-red-400 via-red-500 to-red-600'
+            } ${animationPhase === 'exit' ? 'opacity-0 scale-110' : 'opacity-90'}`} />
+          </div>
+
+          {/* Main Animation Content */}
+          <div className={`absolute inset-0 z-40 flex flex-col items-center justify-center transition-all duration-500 ${
+            animationPhase === 'exit' ? 'opacity-0 scale-75' : 'opacity-100 scale-100'
+          }`}>
+            {/* Large Icon */}
+            <div className={`text-8xl mb-4 transition-all duration-300 ${
+              animationPhase === 'start' ? 'animate-vote-bounce' : ''
+            }`}>
+              {showVoteAnimation === 'like' ? '🔥' : '❌'}
+            </div>
+
+            {/* Vote Text */}
+            <div className="text-center">
+              <h2 className={`text-4xl font-bold text-white mb-2 transition-all duration-300 ${
+                animationPhase === 'start' ? 'animate-vote-pulse' : ''
+              }`}>
+                {showVoteAnimation === 'like' ? 'HOT!' : 'NOT HOT'}
+              </h2>
+              <p className="text-white text-lg opacity-90">
+                {showVoteAnimation === 'like' ? 'This post is fire! 🔥' : 'This post is not it...'}
+              </p>
+            </div>
+
+            {/* Particle Effects */}
+            <div className="absolute inset-0 pointer-events-none">
+              {[...Array(8)].map((_, i) => (
+                <div
+                  key={i}
+                  className={`absolute w-2 h-2 rounded-full ${
+                    showVoteAnimation === 'like' ? 'bg-yellow-300' : 'bg-red-300'
+                  } animate-particle-float`}
+                  style={{
+                    top: `${20 + Math.random() * 60}%`,
+                    left: `${20 + Math.random() * 60}%`,
+                    animationDelay: `${i * 0.1}s`,
+                    animationDuration: '1.5s'
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Success Checkmark */}
+          {animationPhase === 'start' && (
+            <div className="absolute top-4 right-4 z-50">
+              <div className="bg-white rounded-full p-2 shadow-lg animate-success-check">
+                <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Card */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+      <div className={`swipe-card bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700 transition-all duration-300 ${
+        showVoteAnimation ? 'transform scale-105' : 'hover:shadow-xl hover:-translate-y-1'
+      }`}>
         {/* Media or Text Content */}
         {hasMedia ? (
           <div className="relative aspect-square bg-gray-100 dark:bg-gray-700">
             <img
-              src={post.media[0]}
+              src={post.media[0]?.url || post.mediaUrl}
               alt="Post content"
               className="w-full h-full object-cover"
               onError={(e) => {
@@ -140,7 +215,7 @@ const SwipeCard = ({ post, onVote, onNext }) => {
             <button
               onClick={() => handleVote('dislike')}
               disabled={isVoting}
-              className="flex-1 flex items-center justify-center space-x-2 py-3 px-4 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="vote-button flex-1 flex items-center justify-center space-x-2 py-3 px-4 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg"
             >
               <FiX className="w-5 h-5" />
               <span>Not Hot</span>
@@ -148,7 +223,7 @@ const SwipeCard = ({ post, onVote, onNext }) => {
             <button
               onClick={() => handleVote('like')}
               disabled={isVoting}
-              className="flex-1 flex items-center justify-center space-x-2 py-3 px-4 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="vote-button flex-1 flex items-center justify-center space-x-2 py-3 px-4 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg"
             >
               <FiHeart className="w-5 h-5" />
               <span>Hot!</span>

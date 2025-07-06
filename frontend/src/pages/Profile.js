@@ -7,6 +7,7 @@ import PostCard from '../components/posts/PostCard';
 import ClipCard from '../components/clips/ClipCard';
 import Badge from '../components/Badge';
 import { DefaultAvatar } from '../components/layout/AFEXLogo';
+import { getAvatarUrl } from '../utils/avatarUtils';
 import { FiEdit, FiSettings, FiGrid, FiVideo, FiUsers, FiUserPlus, FiUserCheck, FiMapPin, FiCalendar, FiLink, FiMail, FiCamera } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
@@ -232,7 +233,7 @@ const Profile = () => {
               <div className="relative">
                 {user.avatar ? (
                   <img
-                    src={user.avatar}
+                    src={getAvatarUrl(user.avatar)}
                     alt={user.username}
                     className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-white dark:border-gray-800 shadow-lg object-cover"
                     onError={(e) => {

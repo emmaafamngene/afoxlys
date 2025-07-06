@@ -7,20 +7,30 @@ import { FaHeart } from 'react-icons/fa';
 import CommentSection from '../comments/CommentSection';
 import DefaultAvatar from '../DefaultAvatar';
 import { getAvatarUrl } from '../../utils/avatarUtils';
-import toast from 'react-hot-toast';
 
 const PostCard = ({ post, onUpdate }) => {
   const { user } = useAuth();
   const [isLiked, setIsLiked] = useState(post.likes?.some(like => like._id === user?._id) || false);
   const [likeCount, setLikeCount] = useState(post.likeCount || post.likes?.length || 0);
-  const [commentCount, setCommentCount] = useState(post.commentCount || 0);
+  const [commentCount, setCommentCount] = useState(post.commentCount || (post.comments ? post.comments.length : 0));
   const [showComments, setShowComments] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
 
+  // Debug logging
+  useEffect(() => {
+    console.log('PostCard render - post:', post._id, 'commentCount:', post.commentCount, 'comments array:', post.comments);
+  }, [post]);
+
+  // Update comment count when post data changes
+  useEffect(() => {
+    const newCommentCount = post.commentCount || (post.comments ? post.comments.length : 0);
+    setCommentCount(newCommentCount);
+  }, [post.commentCount, post.comments]);
+
   const handleLike = async () => {
     if (!user) {
-      toast.error('Please login to like posts');
+      console.log('Please login to like posts');
       return;
     }
 
@@ -37,7 +47,7 @@ const PostCard = ({ post, onUpdate }) => {
       }
     } catch (error) {
       console.error('Like error:', error);
-      toast.error('Failed to like post');
+      console.log('Failed to like post');
     } finally {
       setIsLiking(false);
     }
@@ -49,7 +59,7 @@ const PostCard = ({ post, onUpdate }) => {
 
   const handleShare = () => {
     navigator.clipboard.writeText(`${window.location.origin}/post/${post._id}`);
-    toast.success('Link copied to clipboard!');
+    console.log('Link copied to clipboard!');
   };
 
   const formatDate = (dateString) => {
@@ -215,7 +225,10 @@ const PostCard = ({ post, onUpdate }) => {
             </button>
 
             <button
-              onClick={() => setShowComments(!showComments)}
+              onClick={() => {
+                console.log('Comment button clicked, current showComments:', showComments, 'commentCount:', commentCount);
+                setShowComments(!showComments);
+              }}
               className="flex items-center space-x-2 p-2 sm:p-3 text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-all duration-200"
             >
               <FiMessageCircle className="w-5 h-5 sm:w-6 sm:h-6" />

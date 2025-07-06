@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FiHeart, FiX, FiUser } from 'react-icons/fi';
+import { FiHeart, FiX } from 'react-icons/fi';
 import DefaultAvatar from '../DefaultAvatar';
 import { getAvatarUrl } from '../../utils/avatarUtils';
 
@@ -50,12 +50,26 @@ const SwipeCard = ({ post, onVote, onNext }) => {
   React.useEffect(() => {
     document.addEventListener('keydown', handleKeyPress);
     return () => document.removeEventListener('keydown', handleKeyPress);
-  }, []);
+  }, [handleKeyPress]);
 
   if (!post) return null;
 
+  // Debug logging for comments
+  console.log('SwipeCard post data:', {
+    postId: post._id,
+    commentCount: post.commentCount,
+    commentsLength: post.comments?.length,
+    comments: post.comments
+  });
+
   const hasMedia = post.media && post.media.length > 0;
   const avatarUrl = getAvatarUrl(post.author?.avatar);
+  
+  // Use username directly from the post author
+  const displayName = post.author?.username || 'Unknown User';
+  
+  // Calculate comment count with fallbacks
+  const commentCount = post.commentCount || post.comments?.length || 0;
 
   return (
     <div className="relative max-w-md mx-auto">
@@ -63,7 +77,7 @@ const SwipeCard = ({ post, onVote, onNext }) => {
       {showVoteAnimation && (
         <>
           {/* Background Overlay */}
-          <div className={`absolute inset-0 z-30 rounded-xl overflow-hidden ${
+          <div className={`absolute inset-0 z-30 overflow-hidden ${
             animationPhase === 'start' ? 'animate-pulse' : ''
           }`}>
             <div className={`absolute inset-0 transition-all duration-500 ${
@@ -131,7 +145,7 @@ const SwipeCard = ({ post, onVote, onNext }) => {
       )}
 
       {/* Card */}
-      <div className={`swipe-card bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700 transition-all duration-300 ${
+      <div className={`swipe-card bg-white dark:bg-gray-800 shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700 transition-all duration-300 ${
         showVoteAnimation ? 'transform scale-105' : 'hover:shadow-xl hover:-translate-y-1'
       }`}>
         {/* Media or Text Content */}
@@ -154,9 +168,9 @@ const SwipeCard = ({ post, onVote, onNext }) => {
             </div>
           </div>
         ) : (
-          <div className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-700 dark:to-gray-600 p-8 min-h-[300px] flex items-center justify-center">
+          <div className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-700 dark:to-gray-600 p-6 min-h-[200px] flex items-center justify-center">
             <div className="text-center max-w-sm">
-              <div className="text-6xl mb-4">📝</div>
+              <div className="text-4xl mb-3">📝</div>
               <p className="text-lg font-medium text-gray-800 dark:text-gray-200 mb-2">
                 Text Post
               </p>
@@ -172,40 +186,42 @@ const SwipeCard = ({ post, onVote, onNext }) => {
           {/* User Info */}
           <div className="flex items-center mb-3">
             <Link to={`/profile/${post.author?.username}`} className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
-              {avatarUrl ? (
-                <img
-                  src={avatarUrl}
-                  alt={post.author?.username}
-                  className="w-8 h-8 rounded-full object-cover"
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                    e.target.nextSibling.style.display = 'block';
-                  }}
+              <div className="relative">
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt={displayName}
+                    className="w-8 h-8 rounded-full object-cover"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'block';
+                    }}
+                  />
+                ) : null}
+                <DefaultAvatar 
+                  username={post.author?.username} 
+                  size={32}
+                  style={{ display: avatarUrl ? 'none' : 'block' }}
                 />
-              ) : null}
-              <DefaultAvatar 
-                username={post.author?.username} 
-                size={32}
-                style={{ display: avatarUrl ? 'none' : 'block' }}
-              />
+              </div>
               <span className="font-medium text-gray-900 dark:text-gray-100">
-                {post.author?.username || 'Anonymous'}
+                {displayName}
               </span>
             </Link>
           </div>
 
           {/* Post Content */}
-          <div className="mb-4">
+          <div className="mb-3">
             <p className="text-gray-800 dark:text-gray-200 text-sm leading-relaxed">
               {post.content || post.text || 'No content available'}
             </p>
           </div>
 
           {/* Stats */}
-          <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-4">
+          <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-3">
             <div className="flex items-center space-x-4">
               <span>❤️ {post.likes?.length || 0}</span>
-              <span>💬 {post.comments?.length || 0}</span>
+              <span>💬 {commentCount}</span>
             </div>
             <span>{new Date(post.createdAt).toLocaleDateString()}</span>
           </div>
@@ -215,7 +231,7 @@ const SwipeCard = ({ post, onVote, onNext }) => {
             <button
               onClick={() => handleVote('dislike')}
               disabled={isVoting}
-              className="vote-button flex-1 flex items-center justify-center space-x-2 py-3 px-4 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg"
+              className="vote-button flex-1 flex items-center justify-center space-x-2 py-3 px-4 bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg"
             >
               <FiX className="w-5 h-5" />
               <span>Not Hot</span>
@@ -223,7 +239,7 @@ const SwipeCard = ({ post, onVote, onNext }) => {
             <button
               onClick={() => handleVote('like')}
               disabled={isVoting}
-              className="vote-button flex-1 flex items-center justify-center space-x-2 py-3 px-4 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg"
+              className="vote-button flex-1 flex items-center justify-center space-x-2 py-3 px-4 bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg"
             >
               <FiHeart className="w-5 h-5" />
               <span>Hot!</span>
@@ -233,7 +249,7 @@ const SwipeCard = ({ post, onVote, onNext }) => {
       </div>
 
       {/* Instructions */}
-      <div className="text-center mt-4 text-sm text-gray-500 dark:text-gray-400">
+      <div className="text-center mt-3 text-sm text-gray-500 dark:text-gray-400">
         <p>Use arrow keys: ← Not Hot | → Hot!</p>
       </div>
     </div>

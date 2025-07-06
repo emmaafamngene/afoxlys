@@ -82,6 +82,9 @@ export const confessionsAPI = {
 export const swipeAPI = {
   getRandomPost: () => api.get('/swipe/post'),
   vote: (postId, vote) => api.post(`/swipe/vote/${postId}`, { vote }),
+  getStats: () => api.get('/swipe/stats'),
+  getLeaderboard: (params) => api.get('/swipe/leaderboard', { params }),
+  getComments: (postId, params) => api.get(`/comments/post/${postId}`, { params }),
 };
 
 // Clips API

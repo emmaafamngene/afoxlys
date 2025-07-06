@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import PrivateRoute from './components/auth/PrivateRoute';
 import Navbar from './components/layout/Navbar';
 import Sidebar from './components/layout/Sidebar';
 import LoadingPage from './components/LoadingPage';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import OnboardingTutorial from './components/OnboardingTutorial';
 
 // Auth Pages
@@ -38,8 +38,6 @@ function App() {
     return localStorage.getItem('afex-dark') === 'true';
   });
   const [isLoading, setIsLoading] = useState(true);
-  // Sidebar hover state for layout shift
-  const [sidebarHovered, setSidebarHovered] = useState(false);
 
   useEffect(() => {
     if (darkMode) {
@@ -59,22 +57,7 @@ function App() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Listen for sidebar hover events (desktop only)
-  useEffect(() => {
-    const sidebar = document.querySelector('aside');
-    if (!sidebar) return;
-    
-    const onEnter = () => setSidebarHovered(true);
-    const onLeave = () => setSidebarHovered(false);
-    
-    sidebar.addEventListener('mouseenter', onEnter);
-    sidebar.addEventListener('mouseleave', onLeave);
-    
-    return () => {
-      sidebar.removeEventListener('mouseenter', onEnter);
-      sidebar.removeEventListener('mouseleave', onLeave);
-    };
-  }, []);
+
 
   // Show loading page while app is initializing
   if (isLoading) {

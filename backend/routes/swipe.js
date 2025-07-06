@@ -4,6 +4,7 @@ const Post = require('../models/Post');
 const Vote = require('../models/Vote');
 const Badge = require('../models/Badge');
 const User = require('../models/User');
+const Comment = require('../models/Comment');
 const { auth, optionalAuth } = require('../middlewares/auth');
 
 // @route   GET /api/swipe/post
@@ -25,7 +26,18 @@ router.get('/post', optionalAuth, async (req, res) => {
     // Populate the post with author info
     const populatedPost = await Post.findById(post[0]._id)
       .populate('author', 'username firstName lastName avatar')
-      .populate('likes', 'username firstName lastName avatar');
+      .populate('likes', 'username firstName lastName avatar')
+      .populate('comments', 'content author createdAt');
+
+    // Add comment count
+    try {
+      const commentCount = await Comment.countDocuments({ post: post[0]._id });
+      populatedPost.commentCount = commentCount;
+      console.log(`Comment count for post ${post[0]._id}: ${commentCount}`);
+    } catch (error) {
+      console.error('Error counting comments:', error);
+      populatedPost.commentCount = 0;
+    }
 
     console.log('Swipe post data:', {
       id: populatedPost._id,

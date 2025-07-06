@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import AFEXLogo from './layout/AFEXLogo';
 
 export default function LoadingPage({ darkMode = false }) {
   const [showWelcome, setShowWelcome] = useState(false);
-  const [showName, setShowName] = useState(false);
 
   useEffect(() => {
     // Show welcome message after a short delay
@@ -11,14 +9,8 @@ export default function LoadingPage({ darkMode = false }) {
       setShowWelcome(true);
     }, 500);
 
-    // Show user name after welcome message
-    const nameTimer = setTimeout(() => {
-      setShowName(true);
-    }, 1000);
-
     return () => {
       clearTimeout(welcomeTimer);
-      clearTimeout(nameTimer);
     };
   }, []);
 

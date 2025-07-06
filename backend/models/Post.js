@@ -80,7 +80,7 @@ postSchema.virtual('likeCount').get(function () {
 
 // Virtual for comment count
 postSchema.virtual('commentCount').get(function () {
-  return this.comments.length;
+  return this.comments ? this.comments.length : 0;
 });
 
 // Ensure virtuals are serialized

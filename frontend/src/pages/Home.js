@@ -6,11 +6,8 @@ import PostCard from '../components/posts/PostCard';
 import SwipeCard from '../components/swipe/SwipeCard';
 import ConfessionCard from '../components/confessions/ConfessionCard';
 import NewConfessionModal from '../components/confessions/NewConfessionModal';
-import { FiPlus, FiVideo, FiHeart, FaFire, FiMessageCircle, FiTrendingUp } from 'react-icons/fi';
-import toast from 'react-hot-toast';
+import { FiPlus, FiVideo, FiMessageCircle, FiTrendingUp } from 'react-icons/fi';
 import { usePageTitle } from '../hooks/usePageTitle';
-import api from '../services/api';
-import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedPage from '../components/AnimatedPage';
 
 const Home = () => {
@@ -21,11 +18,12 @@ const Home = () => {
   const [confessionsPage, setConfessionsPage] = useState(1);
   const [confessionsHasMore, setConfessionsHasMore] = useState(true);
   const [currentSwipePost, setCurrentSwipePost] = useState(null);
-  const [swipeError, setSwipeError] = useState(null);
+
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('posts');
   const [isConfessionModalOpen, setIsConfessionModalOpen] = useState(false);
   const [swipeLoading, setSwipeLoading] = useState(false);
+  const [swipeError, setSwipeError] = useState(null);
   const [noMoreSwipePosts, setNoMoreSwipePosts] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const navigate = useNavigate();
@@ -90,7 +88,7 @@ const Home = () => {
       }
       // Show fallback data or empty state
       setPosts([]);
-      toast.error('Failed to load feed. Please try again.');
+      console.log('Failed to load feed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -118,7 +116,7 @@ const Home = () => {
       if (pageNum === 1) {
         setConfessions([]);
       }
-      toast.error('Failed to load confessions. Please try again.');
+      console.log('Failed to load confessions. Please try again.');
     } finally {
       setConfessionsLoading(false);
     }
@@ -133,6 +131,7 @@ const Home = () => {
   const fetchRandomSwipePost = async (retryCount = 0) => {
     try {
       setSwipeLoading(true);
+      setSwipeError(null);
       const response = await swipeAPI.getRandomPost();
       setCurrentSwipePost(response.data.post || response.data);
       setNoMoreSwipePosts(false);
@@ -145,7 +144,8 @@ const Home = () => {
       }
       setCurrentSwipePost(null);
       setNoMoreSwipePosts(true);
-      toast.error('Failed to load swipe post. Please try again.');
+      setSwipeError('Failed to load swipe post. Please try again.');
+      console.log('Failed to load swipe post. Please try again.');
     } finally {
       setSwipeLoading(false);
     }
@@ -159,7 +159,7 @@ const Home = () => {
       fetchRandomSwipePost();
     } catch (error) {
       console.error('Error voting:', error);
-      toast.error('Failed to vote. Please try again.');
+      console.log('Failed to vote. Please try again.');
     }
   };
 

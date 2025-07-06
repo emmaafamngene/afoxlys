@@ -239,6 +239,7 @@ router.get('/feed', optionalAuth, async (req, res) => {
     const posts = await Post.find(query)
       .populate('author', 'username firstName lastName avatar')
       .populate('likes', 'username firstName lastName avatar')
+      .populate('comments', '_id') // Populate comments to get count
       .skip(skip)
       .limit(limit)
       .sort({ createdAt: -1 });

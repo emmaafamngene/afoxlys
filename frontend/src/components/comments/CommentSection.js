@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { commentsAPI, likesAPI } from '../../services/api';
 import { FiMessageCircle, FiHeart, FiTrash2, FiMoreVertical, FiSend, FiEdit2 } from 'react-icons/fi';
-import toast from 'react-hot-toast';
 import { DefaultAvatar } from '../layout/AFEXLogo';
 import { Link } from 'react-router-dom';
 
@@ -16,9 +15,10 @@ const CommentSection = ({ postId, commentCount, onCommentCountChange }) => {
   const [editText, setEditText] = useState('');
   const [commentsLoaded, setCommentsLoaded] = useState(false);
 
-  // Load comments when component mounts
+  // Load comments when component mounts or when comments section is shown
   useEffect(() => {
     if (postId && !commentsLoaded) {
+      console.log('CommentSection: Loading comments for post:', postId);
       fetchComments();
     }
   }, [postId, commentsLoaded]);
@@ -26,12 +26,15 @@ const CommentSection = ({ postId, commentCount, onCommentCountChange }) => {
   const fetchComments = async () => {
     try {
       setLoading(true);
+      console.log('Fetching comments for post:', postId);
       const response = await commentsAPI.getPostComments(postId);
-      setComments(response.data.comments);
+      console.log('Comments response:', response.data);
+      setComments(response.data.comments || []);
       setCommentsLoaded(true);
     } catch (error) {
       console.error('Error fetching comments:', error);
-      toast.error('Failed to load comments');
+      console.log('Failed to load comments');
+      setComments([]);
     } finally {
       setLoading(false);
     }
@@ -40,11 +43,11 @@ const CommentSection = ({ postId, commentCount, onCommentCountChange }) => {
   const handleSubmitComment = async (e) => {
     e.preventDefault();
     if (!user) {
-      toast.error('Please login to comment');
+      console.log('Please login to comment');
       return;
     }
     if (!newComment.trim()) {
-      toast.error('Comment cannot be empty');
+      console.log('Comment cannot be empty');
       return;
     }
 
@@ -58,10 +61,10 @@ const CommentSection = ({ postId, commentCount, onCommentCountChange }) => {
         onCommentCountChange(comments.length + 1);
       }
       
-      toast.success('Comment posted successfully!');
+      console.log('Comment posted successfully!');
     } catch (error) {
       console.error('Error posting comment:', error);
-      toast.error('Failed to post comment');
+      console.log('Failed to post comment');
     } finally {
       setSubmitting(false);
     }
@@ -69,7 +72,7 @@ const CommentSection = ({ postId, commentCount, onCommentCountChange }) => {
 
   const handleEditComment = async (commentId) => {
     if (!editText.trim()) {
-      toast.error('Comment cannot be empty');
+      console.log('Comment cannot be empty');
       return;
     }
 
@@ -84,10 +87,10 @@ const CommentSection = ({ postId, commentCount, onCommentCountChange }) => {
       );
       setEditingComment(null);
       setEditText('');
-      toast.success('Comment updated successfully!');
+      console.log('Comment updated successfully!');
     } catch (error) {
       console.error('Error updating comment:', error);
-      toast.error('Failed to update comment');
+      console.log('Failed to update comment');
     }
   };
 
@@ -104,10 +107,10 @@ const CommentSection = ({ postId, commentCount, onCommentCountChange }) => {
         onCommentCountChange(comments.length - 1);
       }
       
-      toast.success('Comment deleted successfully!');
+      console.log('Comment deleted successfully!');
     } catch (error) {
       console.error('Error deleting comment:', error);
-      toast.error('Failed to delete comment');
+      console.log('Failed to delete comment');
     }
   };
 
@@ -126,7 +129,7 @@ const CommentSection = ({ postId, commentCount, onCommentCountChange }) => {
       }));
     } catch (error) {
       console.error('Error liking comment:', error);
-      toast.error('Failed to like comment');
+      console.log('Failed to like comment');
     }
   };
 

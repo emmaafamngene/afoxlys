@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import api from '../services/api';
+import { swipeAPI } from '../services/api';
 import SwipeCard from '../components/swipe/SwipeCard';
 import DefaultAvatar from '../components/DefaultAvatar';
 import { getAvatarUrl } from '../utils/avatarUtils';
+import { FiRefreshCw, FiTrendingUp, FiBarChart2, FiAward, FiHeart, FiX } from 'react-icons/fi';
+import { FaFire } from 'react-icons/fa';
 
 const Swipe = () => {
   const { user } = useAuth();
@@ -15,19 +17,29 @@ const Swipe = () => {
   const [leaderboard, setLeaderboard] = useState({ topPosts: [], topVoters: [] });
   const [activeTab, setActiveTab] = useState('game');
   const [noMorePosts, setNoMorePosts] = useState(false);
+  const [isVoting, setIsVoting] = useState(false);
 
   const fetchRandomPost = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/swipe/post');
-      setCurrentPost(response.data);
       setNoMorePosts(false);
+      const response = await swipeAPI.getRandomPost();
+      const postData = response.data.post || response.data;
+      
+      if (!postData) {
+        setNoMorePosts(true);
+        setCurrentPost(null);
+        return;
+      }
+      
+      setCurrentPost(postData);
     } catch (error) {
+      console.error('Error fetching random post:', error);
       if (error.response?.status === 404) {
         setNoMorePosts(true);
         setCurrentPost(null);
       } else {
-        console.error('Error fetching random post:', error);
+        console.error('Failed to load post. Please try again.');
       }
     } finally {
       setLoading(false);
@@ -36,7 +48,7 @@ const Swipe = () => {
 
   const fetchStats = async () => {
     try {
-      const response = await api.get('/swipe/stats');
+      const response = await swipeAPI.getStats();
       setStats(response.data);
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -45,7 +57,7 @@ const Swipe = () => {
 
   const fetchLeaderboard = async () => {
     try {
-      const response = await api.get('/swipe/leaderboard');
+      const response = await swipeAPI.getLeaderboard();
       setLeaderboard(response.data);
     } catch (error) {
       console.error('Error fetching leaderboard:', error);
@@ -53,24 +65,30 @@ const Swipe = () => {
   };
 
   useEffect(() => {
-    fetchRandomPost();
-    fetchStats();
-    fetchLeaderboard();
-  }, []);
+    if (user) {
+      fetchRandomPost();
+      fetchStats();
+      fetchLeaderboard();
+    }
+  }, [user]);
 
   const handleVote = async (voteType, post) => {
     if (!user) {
-      console.error('User not authenticated');
+      console.error('Please log in to vote');
       return;
     }
 
-    try {
-      // Send vote to backend
-      await api.post('/swipe/vote', {
-        postId: post._id,
-        voteType: voteType
-      });
+    if (isVoting) return;
 
+    try {
+      setIsVoting(true);
+      
+      // Send vote to backend
+      await swipeAPI.vote(post._id, voteType);
+      
+      // Show success message
+      console.log(voteType === 'hot' ? '🔥 Hot vote recorded!' : '👎 Not vote recorded!');
+      
       // Update stats immediately for better UX
       setStats(prev => ({
         ...prev,
@@ -82,15 +100,15 @@ const Swipe = () => {
       fetchStats();
       
       // Move to next post
-      handleNext();
+      setTimeout(() => {
+        handleNext();
+      }, 1000);
+      
     } catch (error) {
       console.error('Error voting:', error);
-      // Revert stats if vote failed
-      setStats(prev => ({
-        ...prev,
-        totalVotes: prev.totalVotes - 1,
-        [voteType === 'hot' ? 'hotVotes' : 'notVotes']: prev[voteType === 'hot' ? 'hotVotes' : 'notVotes'] - 1
-      }));
+      console.error('Failed to record vote. Please try again.');
+    } finally {
+      setIsVoting(false);
     }
   };
 
@@ -113,134 +131,153 @@ const Swipe = () => {
     return date.toLocaleDateString();
   };
 
+  const LoadingSpinner = () => (
+    <div className="flex items-center justify-center py-16">
+      <div className="text-center">
+        <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-gray-600 dark:text-gray-400 text-lg">Loading next post...</p>
+        <p className="text-gray-500 dark:text-gray-500 text-sm mt-2">Finding something hot for you 🔥</p>
+      </div>
+    </div>
+  );
+
+  const EmptyState = () => (
+    <div className="text-center py-16">
+      <div className="text-8xl mb-6">🎉</div>
+      <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+        You've seen all posts!
+      </h3>
+      <p className="text-gray-600 dark:text-gray-400 mb-8 text-lg">
+        Submit your own post to keep the game going and see how hot you are! 🔥
+      </p>
+      <div className="flex gap-4 justify-center">
+        <button
+          onClick={fetchRandomPost}
+          className="px-6 py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-colors flex items-center gap-2"
+        >
+          <FiRefreshCw className="w-4 h-4" />
+          Refresh
+        </button>
+        <button
+          onClick={handleSubmitToSwipe}
+          className="px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl hover:from-orange-600 hover:to-red-600 transition-colors flex items-center gap-2"
+        >
+          <FaFire className="w-4 h-4" />
+          Submit Your Post
+        </button>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-2xl mx-auto p-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+      <div className="max-w-4xl mx-auto p-4">
         {/* Header */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 mb-8 border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
                 🔥 Hot or Not
               </h1>
-              <p className="text-gray-600 dark:text-gray-400">
-                Swipe to vote on posts
+              <p className="text-gray-600 dark:text-gray-400 text-lg">
+                Swipe to vote on posts and discover what's trending
               </p>
             </div>
             <button
               onClick={handleSubmitToSwipe}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+              className="px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl hover:from-orange-600 hover:to-red-600 transition-all duration-300 flex items-center gap-2 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
             >
-              <span>📤</span>
+              <FaFire className="w-5 h-5" />
               Submit to Swipe
             </button>
           </div>
 
           {/* Tabs */}
-          <div className="flex space-x-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+          <div className="flex space-x-2 bg-gray-100 dark:bg-gray-700 rounded-xl p-2">
             <button
               onClick={() => setActiveTab('game')}
-              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+              className={`flex-1 py-3 px-6 rounded-lg text-sm font-semibold transition-all duration-300 flex items-center justify-center gap-2 ${
                 activeTab === 'game'
-                  ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 shadow-sm'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+                  ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 shadow-lg transform scale-105'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-600'
               }`}
             >
-              🎮 Game
+              <FiTrendingUp className="w-4 h-4" />
+              Game
             </button>
             <button
               onClick={() => setActiveTab('stats')}
-              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+              className={`flex-1 py-3 px-6 rounded-lg text-sm font-semibold transition-all duration-300 flex items-center justify-center gap-2 ${
                 activeTab === 'stats'
-                  ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 shadow-sm'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+                  ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 shadow-lg transform scale-105'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-600'
               }`}
             >
-              📊 Stats
+              <FiBarChart2 className="w-4 h-4" />
+              Stats
             </button>
             <button
               onClick={() => setActiveTab('leaderboard')}
-              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+              className={`flex-1 py-3 px-6 rounded-lg text-sm font-semibold transition-all duration-300 flex items-center justify-center gap-2 ${
                 activeTab === 'leaderboard'
-                  ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 shadow-sm'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+                  ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 shadow-lg transform scale-105'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-600'
               }`}
             >
-              🏆 Leaderboard
+              <FiAward className="w-4 h-4" />
+              Leaderboard
             </button>
           </div>
         </div>
 
         {/* Content */}
         {activeTab === 'game' && (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {loading ? (
-              <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                <p className="text-gray-600 dark:text-gray-400">Loading next post...</p>
-              </div>
+              <LoadingSpinner />
             ) : noMorePosts ? (
-              <div className="text-center py-12">
-                <div className="text-6xl mb-4">🎉</div>
-                <h3 className="text-xl font-medium text-gray-900 dark:text-gray-100 mb-2">
-                  You've seen all posts!
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-4">
-                  Submit your own post to keep the game going!
-                </p>
-                <div className="flex gap-3 justify-center">
-                  <button
-                    onClick={fetchRandomPost}
-                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-                  >
-                    Refresh
-                  </button>
-                  <button
-                    onClick={handleSubmitToSwipe}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    Submit Your Post
-                  </button>
-                </div>
-              </div>
+              <EmptyState />
             ) : currentPost ? (
-              <SwipeCard
-                post={currentPost}
-                onVote={handleVote}
-                onNext={handleNext}
-              />
+              <div className="max-w-md mx-auto">
+                <SwipeCard
+                  post={currentPost}
+                  onVote={handleVote}
+                  onNext={handleNext}
+                />
+              </div>
             ) : null}
           </div>
         )}
 
         {activeTab === 'stats' && (
-          <div className="space-y-4">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+          <div className="space-y-6">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-gray-700">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center gap-3">
+                <FiBarChart2 className="w-6 h-6 text-blue-500" />
                 Your Voting Stats
               </h2>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="text-center p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl border border-blue-200 dark:border-blue-700">
+                  <div className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">
                     {stats.totalVotes}
                   </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                  <div className="text-sm text-blue-700 dark:text-blue-300 font-medium">
                     Total Votes
                   </div>
                 </div>
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-green-600 dark:text-green-400">
+                <div className="text-center p-6 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-xl border border-green-200 dark:border-green-700">
+                  <div className="text-4xl font-bold text-green-600 dark:text-green-400 mb-2">
                     {stats.hotVotes}
                   </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                  <div className="text-sm text-green-700 dark:text-green-300 font-medium">
                     🔥 Hot Votes
                   </div>
                 </div>
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-red-600 dark:text-red-400">
+                <div className="text-center p-6 bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 rounded-xl border border-red-200 dark:border-red-700">
+                  <div className="text-4xl font-bold text-red-600 dark:text-red-400 mb-2">
                     {stats.notVotes}
                   </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                  <div className="text-sm text-red-700 dark:text-red-300 font-medium">
                     👎 Not Votes
                   </div>
                 </div>
@@ -250,24 +287,24 @@ const Swipe = () => {
         )}
 
         {activeTab === 'leaderboard' && (
-          <div className="space-y-6">
+          <div className="space-y-8">
             {/* Top Posts */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center">
-                <span className="text-2xl mr-2">🔥</span>
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-gray-700">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-8 flex items-center gap-3">
+                <FaFire className="w-6 h-6 text-orange-500" />
                 Hottest Posts
               </h2>
               {leaderboard.topPosts.length === 0 ? (
-                <div className="text-center py-8">
-                  <div className="text-4xl mb-3">📊</div>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    No posts have been voted on yet.
+                <div className="text-center py-12">
+                  <div className="text-6xl mb-4">📊</div>
+                  <p className="text-gray-600 dark:text-gray-400 text-lg">
+                    No posts have been voted on yet. Be the first to vote!
                   </p>
                 </div>
               ) : (
                 <div className="space-y-4">
                   {leaderboard.topPosts.map((post, index) => (
-                    <div key={post._id} className="flex items-center gap-4 p-4 bg-gradient-to-r from-gray-50 to-white dark:from-gray-700 dark:to-gray-800 rounded-xl border border-gray-200 dark:border-gray-600 hover:shadow-md transition-all duration-300">
+                    <div key={post._id} className="flex items-center gap-4 p-6 bg-gradient-to-r from-gray-50 to-white dark:from-gray-700 dark:to-gray-800 rounded-xl border border-gray-200 dark:border-gray-600 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
                       <div className="flex-shrink-0">
                         <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg ${
                           index === 0 ? 'bg-gradient-to-r from-yellow-400 to-yellow-600' :
@@ -297,7 +334,7 @@ const Swipe = () => {
                       </div>
                       
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center gap-2 mb-2">
                           {post.userId?.avatar ? (
                             <img
                               src={getAvatarUrl(post.userId.avatar)}
@@ -315,17 +352,14 @@ const Swipe = () => {
                             style={{ display: post.userId?.avatar ? 'none' : 'block' }}
                           />
                           <p className="font-semibold text-gray-900 dark:text-gray-100 truncate">
-                            {post.userId?.firstName && post.userId?.lastName 
-                              ? `${post.userId.firstName} ${post.userId.lastName}`
-                              : post.userId?.username || 'Anonymous'
-                            }
+                            {post.userId?.username || 'Unknown User'}
                           </p>
                         </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
                           {formatTime(post.createdAt)}
                         </p>
                         {post.content && (
-                          <p className="text-sm text-gray-700 dark:text-gray-300 mt-1 truncate">
+                          <p className="text-sm text-gray-700 dark:text-gray-300 truncate">
                             {post.content}
                           </p>
                         )}
@@ -346,22 +380,22 @@ const Swipe = () => {
             </div>
 
             {/* Top Voters */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center">
-                <span className="text-2xl mr-2">👆</span>
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-gray-700">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-8 flex items-center gap-3">
+                <FiAward className="w-6 h-6 text-yellow-500" />
                 Top Voters
               </h2>
               {leaderboard.topVoters.length === 0 ? (
-                <div className="text-center py-8">
-                  <div className="text-4xl mb-3">🏆</div>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    No voting activity yet.
+                <div className="text-center py-12">
+                  <div className="text-6xl mb-4">🏆</div>
+                  <p className="text-gray-600 dark:text-gray-400 text-lg">
+                    No voting activity yet. Start voting to see the leaderboard!
                   </p>
                 </div>
               ) : (
                 <div className="space-y-4">
                   {leaderboard.topVoters.map((voter, index) => (
-                    <div key={voter._id} className="flex items-center gap-4 p-4 bg-gradient-to-r from-gray-50 to-white dark:from-gray-700 dark:to-gray-800 rounded-xl border border-gray-200 dark:border-gray-600 hover:shadow-md transition-all duration-300">
+                    <div key={voter._id} className="flex items-center gap-4 p-6 bg-gradient-to-r from-gray-50 to-white dark:from-gray-700 dark:to-gray-800 rounded-xl border border-gray-200 dark:border-gray-600 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
                       <div className="flex-shrink-0">
                         <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg ${
                           index === 0 ? 'bg-gradient-to-r from-yellow-400 to-yellow-600' :
@@ -393,11 +427,8 @@ const Swipe = () => {
                       </div>
                       
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-gray-900 dark:text-gray-100">
-                          {voter.firstName && voter.lastName 
-                            ? `${voter.firstName} ${voter.lastName}`
-                            : voter.username
-                          }
+                        <p className="font-semibold text-gray-900 dark:text-gray-100 text-lg">
+                          {voter.username || 'Unknown User'}
                         </p>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
                           @{voter.username}

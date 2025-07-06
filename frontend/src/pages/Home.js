@@ -63,32 +63,30 @@ const Home = () => {
   const fetchFeed = async () => {
     try {
       setLoading(true);
-      const response = await postsAPI.getAll({ page: 1, limit: 10 });
-      setPosts(response.data.posts);
+      const response = await postsAPI.getFeed();
+      setPosts(response.data.posts || []);
     } catch (error) {
       console.error('Error fetching feed:', error);
-      toast.error('Failed to load feed');
+      toast.error('Failed to load feed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchConfessions = async (page = 1) => {
+  const fetchConfessions = async (pageNum = 1) => {
     try {
       setConfessionsLoading(true);
-      const response = await api.get('/confessions', {
-        params: { page, limit: 10 }
-      });
-      if (page === 1) {
-        setConfessions(response.data.confessions);
+      const response = await postsAPI.getConfessions(pageNum);
+      if (pageNum === 1) {
+        setConfessions(response.data.confessions || []);
       } else {
-        setConfessions(prev => [...prev, ...response.data.confessions]);
+        setConfessions(prev => [...prev, ...(response.data.confessions || [])]);
       }
-      setConfessionsHasMore(response.data.currentPage < response.data.totalPages);
-      setConfessionsPage(page);
+      setConfessionsPage(pageNum);
+      setConfessionsHasMore(response.data.confessions?.length === 20);
     } catch (error) {
       console.error('Error fetching confessions:', error);
-      toast.error('Failed to load confessions');
+      toast.error('Failed to load confessions. Please try again.');
     } finally {
       setConfessionsLoading(false);
     }
@@ -103,19 +101,12 @@ const Home = () => {
   const fetchRandomSwipePost = async () => {
     try {
       setSwipeLoading(true);
-      setSwipeError(null);
-      const response = await api.get('/swipe/post');
-      setCurrentSwipePost(response.data);
+      const response = await postsAPI.getRandomSwipePost();
+      setCurrentSwipePost(response.data.post);
       setNoMoreSwipePosts(false);
     } catch (error) {
-      if (error.response?.status === 404) {
-        setNoMoreSwipePosts(true);
-        setCurrentSwipePost(null);
-      } else {
-        setSwipeError('Failed to load swipe post.');
-        setCurrentSwipePost(null);
-        console.error('Error fetching random post:', error);
-      }
+      console.error('Error fetching swipe post:', error);
+      toast.error('Failed to load swipe post. Please try again.');
     } finally {
       setSwipeLoading(false);
     }
@@ -147,6 +138,27 @@ const Home = () => {
     );
   };
 
+  // Loading skeleton component
+  const LoadingSkeleton = () => (
+    <div className="space-y-4">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow animate-pulse">
+          <div className="flex items-center space-x-3 mb-3">
+            <div className="w-10 h-10 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
+            <div className="flex-1">
+              <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-3/4"></div>
+              <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-1/2 mt-1"></div>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded"></div>
+            <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-5/6"></div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 px-4">
@@ -172,6 +184,16 @@ const Home = () => {
               Sign In
             </Link>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading && posts.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+        <div className="max-w-2xl mx-auto px-4">
+          <LoadingSkeleton />
         </div>
       </div>
     );

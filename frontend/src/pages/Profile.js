@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { usersAPI, postsAPI, clipsAPI, followAPI } from '../services/api';
 import { usePageTitle } from '../hooks/usePageTitle';
@@ -8,8 +8,10 @@ import ClipCard from '../components/clips/ClipCard';
 import Badge from '../components/Badge';
 import { DefaultAvatar } from '../components/layout/AFEXLogo';
 import { getAvatarUrl } from '../utils/avatarUtils';
-import { FiEdit, FiSettings, FiGrid, FiVideo, FiUsers, FiUserPlus, FiUserCheck, FiMapPin, FiCalendar, FiLink, FiMail, FiCamera } from 'react-icons/fi';
+import { FiEdit, FiSettings, FiGrid, FiVideo, FiUsers, FiUserPlus, FiUserCheck, FiMapPin, FiCalendar, FiLink, FiMail, FiCamera, FiEdit2, FiHeart, FiMessageCircle, FiAward, FiStar, FiZap, FiTrendingUp } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://afoxlys.onrender.com/api';
 
 const Profile = () => {
   const { userId } = useParams();
@@ -53,7 +55,7 @@ const Profile = () => {
         usersAPI.getClips(userId),
         followAPI.getFollowers(userId),
         followAPI.getFollowing(userId),
-        fetch(`/api/users/${userId}/badges`).then(res => res.json())
+        fetch(`${API_BASE_URL}/users/${userId}/badges`).then(res => res.json())
       ]);
 
       console.log('🔍 User response:', userResponse);

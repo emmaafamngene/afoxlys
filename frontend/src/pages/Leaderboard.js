@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { FiAward, FiUsers, FiTrendingUp, FiStar, FiZap } from 'react-icons/fi';
 import { getAvatarUrl } from '../utils/avatarUtils';
 import { DefaultAvatar } from '../components/layout/AFEXLogo';
+import { useAuth } from '../contexts/AuthContext';
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://afoxlys.onrender.com/api';
 
 const Leaderboard = () => {
   const [users, setUsers] = useState([]);
@@ -9,6 +12,7 @@ const Leaderboard = () => {
   const [sortBy, setSortBy] = useState('xp');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const { user } = useAuth();
 
   useEffect(() => {
     fetchLeaderboard();
@@ -17,7 +21,7 @@ const Leaderboard = () => {
   const fetchLeaderboard = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/leaderboard?type=${sortBy}&page=${page}&limit=20`);
+      const response = await fetch(`${API_BASE_URL}/leaderboard?type=${sortBy}&page=${page}&limit=20`);
       const data = await response.json();
       
       setUsers(data.users);

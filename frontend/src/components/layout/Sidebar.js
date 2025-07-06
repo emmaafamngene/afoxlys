@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { FiHome, FiSearch, FiMessageCircle, FiUser, FiPlus, FiBell, FiSettings, FiMoreHorizontal, FiSun, FiMoon, FiEdit, FiHeart } from 'react-icons/fi';
 import { MdExplore, MdVideoLibrary } from 'react-icons/md';
+import { FaFire } from 'react-icons/fa';
 
 const navLinks = [
   { to: '/', label: 'Home', icon: <FiHome /> },
   { to: '/search', label: 'Search', icon: <FiSearch /> },
   { to: '/clips', label: 'Fliks', icon: <MdVideoLibrary /> },
   { to: '/confessions', label: 'Confessions', icon: <FiHeart /> },
+  { to: '/swipe', label: 'Swipe', icon: <FaFire /> },
   { to: '/chat', label: 'Messages', icon: <FiMessageCircle /> },
   { to: '/create-post', label: 'Create Post', icon: <FiPlus /> },
   { to: '/profile', label: 'Profile', icon: <FiUser /> },

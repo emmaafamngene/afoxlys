@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { likesAPI, commentsAPI } from '../../services/api';
-import { FiHeart, FiMessageCircle, FiShare, FiMoreHorizontal, FiPlay, FiEye } from 'react-icons/fi';
+import { FiHeart, FiMessageCircle, FiMoreVertical, FiEdit2, FiTrash2, FiShare, FiPlay, FiEye } from 'react-icons/fi';
 import { FaHeart } from 'react-icons/fa';
-import toast from 'react-hot-toast';
-import { DefaultAvatar } from '../layout/AFEXLogo';
 import CommentSection from '../comments/CommentSection';
+import DefaultAvatar from '../DefaultAvatar';
+import { getAvatarUrl } from '../../utils/avatarUtils';
+import toast from 'react-hot-toast';
 
 const PostCard = ({ post, onUpdate }) => {
   const { user } = useAuth();
@@ -78,7 +79,7 @@ const PostCard = ({ post, onUpdate }) => {
               {post.author.avatar ? (
                 <div className="relative">
                   <img
-                    src={post.author.avatar}
+                    src={getAvatarUrl(post.author.avatar)}
                     alt={post.author.username}
                     className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover border-2 border-white dark:border-gray-800 shadow-lg group-hover:scale-110 transition-transform duration-300"
                     onError={(e) => {
@@ -111,7 +112,7 @@ const PostCard = ({ post, onUpdate }) => {
             </div>
           </div>
           <button className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors p-1.5 sm:p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 flex-shrink-0">
-            <FiMoreHorizontal className="w-5 h-5 sm:w-6 sm:h-6" />
+            <FiMoreVertical className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
         </div>
       </div>

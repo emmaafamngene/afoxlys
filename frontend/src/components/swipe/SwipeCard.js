@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FiHeart, FiX, FiUser } from 'react-icons/fi';
 import DefaultAvatar from '../DefaultAvatar';
+import { getAvatarUrl } from '../../utils/avatarUtils';
 
 const SwipeCard = ({ post, onVote, onNext }) => {
   const [isVoting, setIsVoting] = useState(false);
@@ -40,6 +41,9 @@ const SwipeCard = ({ post, onVote, onNext }) => {
 
   if (!post) return null;
 
+  const hasMedia = post.media && post.media.length > 0;
+  const avatarUrl = getAvatarUrl(post.author?.avatar);
+
   return (
     <div className="relative max-w-md mx-auto">
       {/* Vote Animation Overlay */}
@@ -55,9 +59,9 @@ const SwipeCard = ({ post, onVote, onNext }) => {
 
       {/* Card */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700">
-        {/* Media */}
-        <div className="relative aspect-square bg-gray-100 dark:bg-gray-700">
-          {post.media && post.media.length > 0 ? (
+        {/* Media or Text Content */}
+        {hasMedia ? (
+          <div className="relative aspect-square bg-gray-100 dark:bg-gray-700">
             <img
               src={post.media[0]}
               alt="Post content"
@@ -67,24 +71,36 @@ const SwipeCard = ({ post, onVote, onNext }) => {
                 e.target.nextSibling.style.display = 'flex';
               }}
             />
-          ) : null}
-          <div className="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-500" style={{ display: post.media && post.media.length > 0 ? 'none' : 'flex' }}>
-            <div className="text-center">
-              <div className="text-6xl mb-2">📝</div>
-              <p className="text-sm">Text Post</p>
+            <div className="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-500" style={{ display: 'none' }}>
+              <div className="text-center">
+                <div className="text-6xl mb-2">📷</div>
+                <p className="text-sm">Image not available</p>
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-700 dark:to-gray-600 p-8 min-h-[300px] flex items-center justify-center">
+            <div className="text-center max-w-sm">
+              <div className="text-6xl mb-4">📝</div>
+              <p className="text-lg font-medium text-gray-800 dark:text-gray-200 mb-2">
+                Text Post
+              </p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Swipe to vote on this text-based post
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Content */}
         <div className="p-4">
           {/* User Info */}
           <div className="flex items-center mb-3">
-            <Link to={`/profile/${post.author.username}`} className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
-              {post.author.avatar ? (
+            <Link to={`/profile/${post.author?.username}`} className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
+              {avatarUrl ? (
                 <img
-                  src={post.author.avatar}
-                  alt={post.author.username}
+                  src={avatarUrl}
+                  alt={post.author?.username}
                   className="w-8 h-8 rounded-full object-cover"
                   onError={(e) => {
                     e.target.style.display = 'none';
@@ -93,12 +109,12 @@ const SwipeCard = ({ post, onVote, onNext }) => {
                 />
               ) : null}
               <DefaultAvatar 
-                username={post.author.username} 
+                username={post.author?.username} 
                 size={32}
-                style={{ display: post.author.avatar ? 'none' : 'block' }}
+                style={{ display: avatarUrl ? 'none' : 'block' }}
               />
               <span className="font-medium text-gray-900 dark:text-gray-100">
-                {post.author.username}
+                {post.author?.username || 'Anonymous'}
               </span>
             </Link>
           </div>
@@ -106,7 +122,7 @@ const SwipeCard = ({ post, onVote, onNext }) => {
           {/* Post Content */}
           <div className="mb-4">
             <p className="text-gray-800 dark:text-gray-200 text-sm leading-relaxed">
-              {post.content}
+              {post.content || post.text || 'No content available'}
             </p>
           </div>
 

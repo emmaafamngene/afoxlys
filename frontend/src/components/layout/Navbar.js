@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { FiSearch, FiHome, FiVideo, FiPlus, FiUser, FiLogOut, FiSettings, FiX, FiMessageCircle, FiBell, FiChevronDown, FiMenu } from 'react-icons/fi';
 import AFEXLogo, { DefaultAvatar } from './AFEXLogo';
 import NotificationMenu from '../notifications/NotificationMenu';
+import { getAvatarUrl } from '../../utils/avatarUtils';
 
 const Navbar = ({ darkMode = false }) => {
   const { user, isAuthenticated, logout } = useAuth();
@@ -168,7 +169,7 @@ const Navbar = ({ darkMode = false }) => {
               >
                 {user?.avatar ? (
                   <img
-                    src={user.avatar}
+                    src={getAvatarUrl(user.avatar)}
                     alt={user.username}
                     className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover border-2 border-white dark:border-gray-800 shadow-lg"
                     onError={(e) => {

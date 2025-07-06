@@ -5,6 +5,7 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://afoxlys.onrender.
 // Create axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },

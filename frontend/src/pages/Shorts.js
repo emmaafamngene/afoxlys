@@ -49,18 +49,39 @@ const Shorts = () => {
       // Step 1: Upload to Cloudinary
       const formData = new FormData();
       formData.append('file', selectedFile);
-      formData.append('upload_preset', 'afex_shorts'); // Custom preset for AFEX shorts
+      formData.append('upload_preset', 'ml_default'); // Use default unsigned preset
+
+      console.log('Uploading to Cloudinary...', {
+        fileType: selectedFile.type,
+        fileSize: selectedFile.size,
+        uploadPreset: 'ml_default'
+      });
 
       const cloudinaryResponse = await fetch(
-        `https://api.cloudinary.com/v1_1/mediaflows_bd94f1b4-79cd-4db7-9f73-d9fe7617f2ae/${selectedFile.type.startsWith('video/') ? 'video' : 'image'}/upload`,
+        `https://api.cloudinary.com/v1_1/dwsnvxcd8/${selectedFile.type.startsWith('video/') ? 'video' : 'image'}/upload`,
         {
           method: 'POST',
           body: formData,
         }
       );
 
+      console.log('Cloudinary response status:', cloudinaryResponse.status);
+
+      if (!cloudinaryResponse.ok) {
+        const errorData = await cloudinaryResponse.json();
+        console.error('Cloudinary upload failed:', errorData);
+        throw new Error(`Cloudinary upload failed: ${errorData.error?.message || 'Unknown error'}`);
+      }
+
       const cloudinaryData = await cloudinaryResponse.json();
+      console.log('Cloudinary upload successful:', cloudinaryData);
+
+      if (!cloudinaryData.secure_url) {
+        throw new Error('No secure_url received from Cloudinary');
+      }
+
       const mediaUrl = cloudinaryData.secure_url;
+      console.log('Media URL:', mediaUrl);
 
       // Step 2: Save to MongoDB via your backend
       const response = await shortsAPI.create({
@@ -74,9 +95,11 @@ const Shorts = () => {
         setShowUploadModal(false);
         setSelectedFile(null);
         setCaption('');
+        alert('Short uploaded successfully!');
       }
     } catch (error) {
       console.error('Error uploading short:', error);
+      alert(`Upload failed: ${error.message || 'Unknown error occurred'}`);
     } finally {
       setUploading(false);
     }

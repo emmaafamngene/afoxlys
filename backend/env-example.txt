@@ -8,10 +8,10 @@ MONGO_URI=mongodb://localhost:27017/afex
 JWT_SECRET=your_super_secret_jwt_key_here
 
 # Cloudinary Configuration
-CLOUDINARY_CLOUD_NAME=dwsnvxcd8
+CLOUDINARY_CLOUD_NAME=mediaflows_bd94f1b4-79cd-4db7-9f73-d9fe7617f2ae
 CLOUDINARY_API_KEY=954559319454737
 CLOUDINARY_API_SECRET=SsUPIFPgVHYkYBsqslVxihGLZAw
-CLOUDINARY_URL=cloudinary://954559319454737:SsUPIFPgVHYkYBsqslVxihGLZAw@dwsnvxcd8
+CLOUDINARY_URL=cloudinary://954559319454737:SsUPIFPgVHYkYBsqslVxihGLZAw@mediaflows_bd94f1b4-79cd-4db7-9f73-d9fe7617f2ae
 
 # Server Configuration
 PORT=5000

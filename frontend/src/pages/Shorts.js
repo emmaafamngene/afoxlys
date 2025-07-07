@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { shortsAPI } from '../services/api';
-import { FiHeart, FiShare2, FiMessageCircle, FiPlus, FiUpload } from 'react-icons/fi';
+import { FiHeart, FiShare2, FiMessageCircle, FiPlus } from 'react-icons/fi';
 import { FaHeart } from 'react-icons/fa';
 import DefaultAvatar from '../components/DefaultAvatar';
 import { getAvatarUrl } from '../utils/avatarUtils';
 
 const Shorts = () => {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [shorts, setShorts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -52,7 +52,7 @@ const Shorts = () => {
       formData.append('upload_preset', 'afex_shorts'); // Custom preset for AFEX shorts
 
       const cloudinaryResponse = await fetch(
-        `https://api.cloudinary.com/v1_1/dwsnvxcd8/${selectedFile.type.startsWith('video/') ? 'video' : 'image'}/upload`,
+        `https://api.cloudinary.com/v1_1/mediaflows_bd94f1b4-79cd-4db7-9f73-d9fe7617f2ae/${selectedFile.type.startsWith('video/') ? 'video' : 'image'}/upload`,
         {
           method: 'POST',
           body: formData,
@@ -127,158 +127,167 @@ const Shorts = () => {
 
   const ShortCard = ({ short, index }) => {
     const [comment, setComment] = useState('');
-    const [showCommentInput, setShowCommentInput] = useState(false);
 
     const isVisible = index === currentIndex;
 
     return (
       <div className={`relative w-full h-full ${isVisible ? 'block' : 'hidden'}`}>
         {/* Media Content */}
-        <div className="relative w-full h-full bg-black">
-          {short.type === 'video' ? (
-            <video
-              src={short.mediaUrl}
-              className="w-full h-full object-cover"
-              loop
-              muted
-              playsInline
-              onLoadStart={() => console.log('Video loading...')}
-              onError={(e) => console.error('Video error:', e)}
-            />
-          ) : (
-            <img
-              src={short.mediaUrl}
-              alt={short.caption}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                e.target.style.display = 'none';
-                e.target.nextSibling.style.display = 'flex';
-              }}
-            />
-          )}
-          
-          {/* Fallback for failed media */}
-          <div className="absolute inset-0 flex items-center justify-center text-white bg-gray-800" style={{ display: 'none' }}>
-            <div className="text-center">
-              <div className="text-6xl mb-2">📷</div>
-              <p className="text-sm">Media not available</p>
+        <div className="relative w-full h-full flex items-center justify-center">
+          <div className="w-1/4 max-w-sm aspect-[9/16] bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden">
+            {short.type === 'video' ? (
+              <video
+                src={short.mediaUrl}
+                className="w-full h-full object-cover"
+                loop
+                muted
+                playsInline
+                onLoadStart={() => console.log('Video loading...')}
+                onError={(e) => console.error('Video error:', e)}
+              />
+            ) : (
+              <img
+                src={short.mediaUrl}
+                alt={short.caption}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.nextSibling.style.display = 'flex';
+                }}
+              />
+            )}
+            
+            {/* Fallback for failed media */}
+            <div className="absolute inset-0 flex items-center justify-center text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700" style={{ display: 'none' }}>
+              <div className="text-center">
+                <div className="text-4xl mb-2">📷</div>
+                <p className="text-sm">Media not available</p>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Overlay Content */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
-          {/* Caption */}
-          <p className="text-white text-lg mb-4 font-medium">{short.caption}</p>
-          
-          {/* User Info */}
-          <div className="flex items-center mb-4">
-            <div className="w-8 h-8 rounded-full overflow-hidden mr-3">
-              {short.author?.avatar ? (
-                <img
-                  src={getAvatarUrl(short.author.avatar)}
-                  alt={short.author.username}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <DefaultAvatar username={short.author?.username} />
-              )}
+        <div className="absolute bottom-0 left-0 right-0 p-4">
+          <div className="w-1/4 max-w-sm mx-auto">
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-lg">
+              {/* Caption */}
+              <p className="text-gray-900 dark:text-white text-sm mb-3 font-medium">{short.caption}</p>
+              
+              {/* User Info */}
+              <div className="flex items-center mb-3">
+                <div className="w-6 h-6 rounded-full overflow-hidden mr-2">
+                  {short.author?.avatar ? (
+                    <img
+                      src={getAvatarUrl(short.author.avatar)}
+                      alt={short.author.username}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <DefaultAvatar username={short.author?.username} />
+                  )}
+                </div>
+                <span className="text-gray-700 dark:text-gray-300 text-sm font-medium">{short.author?.username}</span>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-between">
+                <button
+                  onClick={() => handleLike(short._id)}
+                  className="flex items-center space-x-1"
+                >
+                  {short.isLiked ? (
+                    <FaHeart className="w-4 h-4 text-red-500" />
+                  ) : (
+                    <FiHeart className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                  )}
+                  <span className="text-gray-600 dark:text-gray-400 text-xs">{short.likes || 0}</span>
+                </button>
+
+                <button
+                  onClick={() => setShowComments(prev => ({ ...prev, [short._id]: !prev[short._id] }))}
+                  className="flex items-center space-x-1"
+                >
+                  <FiMessageCircle className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                  <span className="text-gray-600 dark:text-gray-400 text-xs">{short.comments?.length || 0}</span>
+                </button>
+
+                <button
+                  onClick={() => handleShare(short._id)}
+                  className="flex items-center space-x-1"
+                >
+                  <FiShare2 className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                  <span className="text-gray-600 dark:text-gray-400 text-xs">Share</span>
+                </button>
+              </div>
             </div>
-            <span className="text-white font-medium">{short.author?.username}</span>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex items-center space-x-6">
-            <button
-              onClick={() => handleLike(short._id)}
-              className="flex flex-col items-center space-y-1"
-            >
-              {short.isLiked ? (
-                <FaHeart className="w-6 h-6 text-red-500" />
-              ) : (
-                <FiHeart className="w-6 h-6 text-white" />
-              )}
-              <span className="text-white text-sm">{short.likes || 0}</span>
-            </button>
-
-            <button
-              onClick={() => setShowComments(prev => ({ ...prev, [short._id]: !prev[short._id] }))}
-              className="flex flex-col items-center space-y-1"
-            >
-              <FiMessageCircle className="w-6 h-6 text-white" />
-              <span className="text-white text-sm">{short.comments?.length || 0}</span>
-            </button>
-
-            <button
-              onClick={() => handleShare(short._id)}
-              className="flex flex-col items-center space-y-1"
-            >
-              <FiShare2 className="w-6 h-6 text-white" />
-              <span className="text-white text-sm">Share</span>
-            </button>
           </div>
         </div>
 
         {/* Comments Section */}
         {showComments[short._id] && (
-          <div className="absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-800 max-h-64 overflow-y-auto">
-            <div className="p-4">
-              <h3 className="font-semibold mb-3">Comments</h3>
-              
-              {/* Comment Input */}
-              <div className="flex space-x-2 mb-4">
-                <input
-                  type="text"
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  placeholder="Add a comment..."
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter' && comment.trim()) {
-                      handleComment(short._id, comment);
-                      setComment('');
-                    }
-                  }}
-                />
-                <button
-                  onClick={() => {
-                    if (comment.trim()) {
-                      handleComment(short._id, comment);
-                      setComment('');
-                    }
-                  }}
-                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-                >
-                  Post
-                </button>
-              </div>
-
-              {/* Comments List */}
-              <div className="space-y-3">
-                {short.comments?.map((comment, index) => (
-                  <div key={index} className="flex space-x-2">
-                    <div className="w-6 h-6 rounded-full overflow-hidden">
-                      {comment.author?.avatar ? (
-                        <img
-                          src={getAvatarUrl(comment.author.avatar)}
-                          alt={comment.author.username}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <DefaultAvatar username={comment.author?.username} />
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2">
-                        <span className="font-medium text-sm">{comment.author?.username}</span>
-                        <span className="text-gray-500 text-xs">
-                          {new Date(comment.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <p className="text-sm">{comment.content}</p>
-                    </div>
+          <div className="absolute bottom-0 left-0 right-0 p-4">
+            <div className="w-1/4 max-w-sm mx-auto">
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg max-h-64 overflow-y-auto">
+                <div className="p-4">
+                  <h3 className="font-semibold mb-3 text-gray-900 dark:text-white">Comments</h3>
+                  
+                  {/* Comment Input */}
+                  <div className="flex space-x-2 mb-4">
+                    <input
+                      type="text"
+                      value={comment}
+                      onChange={(e) => setComment(e.target.value)}
+                      placeholder="Add a comment..."
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && comment.trim()) {
+                          handleComment(short._id, comment);
+                          setComment('');
+                        }
+                      }}
+                    />
+                    <button
+                      onClick={() => {
+                        if (comment.trim()) {
+                          handleComment(short._id, comment);
+                          setComment('');
+                        }
+                      }}
+                      className="px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm"
+                    >
+                      Post
+                    </button>
                   </div>
-                ))}
+
+                  {/* Comments List */}
+                  <div className="space-y-3">
+                    {short.comments?.map((comment, index) => (
+                      <div key={index} className="flex space-x-2">
+                        <div className="w-5 h-5 rounded-full overflow-hidden flex-shrink-0">
+                          {comment.author?.avatar ? (
+                            <img
+                              src={getAvatarUrl(comment.author.avatar)}
+                              alt={comment.author.username}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <DefaultAvatar username={comment.author?.username} />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center space-x-2">
+                            <span className="font-medium text-xs text-gray-900 dark:text-white">{comment.author?.username}</span>
+                            <span className="text-gray-500 text-xs">
+                              {new Date(comment.createdAt).toLocaleDateString()}
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-700 dark:text-gray-300">{comment.content}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -289,23 +298,23 @@ const Shorts = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-white text-xl">Loading shorts...</div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-gray-600 dark:text-gray-400 text-xl">Loading shorts...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-black/20 backdrop-blur-sm p-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-white text-2xl font-bold">Shorts</h1>
+      <div className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm p-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between max-w-4xl mx-auto">
+          <h1 className="text-gray-900 dark:text-white text-2xl font-bold">Shorts</h1>
           <button
             onClick={() => setShowUploadModal(true)}
-            className="w-10 h-10 bg-white rounded-full flex items-center justify-center"
+            className="w-10 h-10 bg-blue-500 hover:bg-blue-600 rounded-full flex items-center justify-center transition-colors"
           >
-            <FiPlus className="w-5 h-5 text-black" />
+            <FiPlus className="w-5 h-5 text-white" />
           </button>
         </div>
       </div>
@@ -314,35 +323,37 @@ const Shorts = () => {
       <div className="pt-20 pb-4">
         {shorts.length === 0 ? (
           <div className="flex items-center justify-center h-screen">
-            <div className="text-center text-white">
+            <div className="text-center text-gray-900 dark:text-white">
               <div className="text-6xl mb-4">📱</div>
               <h2 className="text-2xl font-bold mb-2">No Shorts Yet</h2>
-              <p className="text-gray-400 mb-4">Be the first to create a short!</p>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">Be the first to create a short!</p>
               <button
                 onClick={() => setShowUploadModal(true)}
-                className="px-6 py-3 bg-white text-black rounded-lg font-medium hover:bg-gray-100"
+                className="px-6 py-3 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors"
               >
                 Create Short
               </button>
             </div>
           </div>
         ) : (
-          <div className="relative h-screen">
-            {shorts.map((short, index) => (
-              <ShortCard key={short._id} short={short} index={index} />
-            ))}
-            
-            {/* Navigation */}
-            <div className="absolute right-4 top-1/2 transform -translate-y-1/2 space-y-2">
-              {shorts.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentIndex(index)}
-                  className={`w-2 h-2 rounded-full ${
-                    index === currentIndex ? 'bg-white' : 'bg-white/50'
-                  }`}
-                />
+          <div className="max-w-4xl mx-auto px-4">
+            <div className="relative h-screen">
+              {shorts.map((short, index) => (
+                <ShortCard key={short._id} short={short} index={index} />
               ))}
+              
+              {/* Navigation */}
+              <div className="absolute right-4 top-1/2 transform -translate-y-1/2 space-y-2">
+                {shorts.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentIndex(index)}
+                    className={`w-2 h-2 rounded-full ${
+                      index === currentIndex ? 'bg-blue-500' : 'bg-gray-400'
+                    }`}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         )}

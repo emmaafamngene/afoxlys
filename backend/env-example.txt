@@ -18,4 +18,27 @@ PORT=5000
 NODE_ENV=development
 
 # CORS Origins
-FRONTEND_URL=http://localhost:3000 
+FRONTEND_URL=http://localhost:3000
+
+# Render Deployment Configuration
+# For Render, you'll need to set these environment variables in your Render dashboard
+# Go to your service > Environment > Environment Variables
+
+# Database (MongoDB Atlas recommended for production)
+# Replace with your MongoDB Atlas connection string
+# MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/afex?retryWrites=true&w=majority
+
+# JWT Secret (use a strong random string for production)
+# JWT_SECRET=your_very_long_random_secret_key_here
+
+# Cloudinary (already configured above)
+# CLOUDINARY_CLOUD_NAME=mediaflows_bd94f1b4-79cd-4db7-9f73-d9fe7617f2ae
+# CLOUDINARY_API_KEY=954559319454737
+# CLOUDINARY_API_SECRET=SsUPIFPgVHYkYBsqslVxihGLZAw
+
+# Production Settings
+# NODE_ENV=production
+# PORT=10000 (Render will set this automatically)
+
+# CORS for Production
+# FRONTEND_URL=https://your-frontend-domain.com 

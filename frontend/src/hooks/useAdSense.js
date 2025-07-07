@@ -1,21 +1,35 @@
 import { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
 
-export const useAdSense = () => {
-  const location = useLocation();
-
+export default function useAdSense() {
   useEffect(() => {
-    // Initialize AdSense on route change
-    if (window.adsbygoogle) {
+    const pushAds = () => {
       try {
-        // Push adsbygoogle to reinitialize ads on the new page
-        (window.adsbygoogle = window.adsbygoogle || []).push({});
-        console.log('AdSense reinitialized on route change:', location.pathname);
-      } catch (error) {
-        console.error('Error reinitializing AdSense:', error);
+        if (window.adsbygoogle && Array.isArray(window.adsbygoogle)) {
+          window.adsbygoogle.push({});
+          console.log("AdSense ads pushed successfully");
+        }
+      } catch (e) {
+        console.error("AdSense error:", e);
       }
+    };
+
+    const scriptExists = document.querySelector(
+      'script[src*="pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"]'
+    );
+
+    if (!scriptExists) {
+      const script = document.createElement("script");
+      script.src =
+        "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9943929128198070";
+      script.async = true;
+      script.crossOrigin = "anonymous";
+      script.onload = pushAds;
+      document.body.appendChild(script);
+    } else {
+      // Script exists, try to push ads after a short delay to ensure it's ready
+      setTimeout(pushAds, 100);
     }
-  }, [location.pathname]);
+  }, []);
 
   // Function to manually initialize AdSense
   const initializeAdSense = () => {
@@ -30,4 +44,4 @@ export const useAdSense = () => {
   };
 
   return { initializeAdSense };
-}; 
+} 

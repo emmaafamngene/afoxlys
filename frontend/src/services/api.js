@@ -78,15 +78,6 @@ export const confessionsAPI = {
   getAll: (page = 1) => api.get('/confessions', { params: { page, limit: 20 } }),
 };
 
-// Swipe API
-export const swipeAPI = {
-  getRandomPost: () => api.get('/swipe/post'),
-  vote: (postId, vote) => api.post(`/swipe/vote/${postId}`, { vote }),
-  getStats: () => api.get('/swipe/stats'),
-  getLeaderboard: (params) => api.get('/swipe/leaderboard', { params }),
-  getComments: (postId, params) => api.get(`/comments/post/${postId}`, { params }),
-};
-
 // Clips API
 export const clipsAPI = {
   getAll: (params) => api.get('/clips', { params }),
@@ -142,6 +133,18 @@ export const chatAPI = {
   createConversation: (userId1, userId2) => api.post('/chat/conversations', { userId1, userId2 }),
   getMessages: (conversationId) => api.get(`/chat/messages/${conversationId}`),
   sendMessage: (messageData) => api.post('/chat/messages', messageData),
+};
+
+// Shorts API
+export const shortsAPI = {
+  getAll: (page = 1) => api.get('/shorts', { params: { page, limit: 20 } }),
+  create: (data) => api.post('/shorts', data),
+  getById: (id) => api.get(`/shorts/${id}`),
+  like: (id) => api.post(`/shorts/${id}/like`),
+  addComment: (id, content) => api.post(`/shorts/${id}/comments`, { content }),
+  getComments: (id, page = 1) => api.get(`/shorts/${id}/comments`, { params: { page, limit: 20 } }),
+  delete: (id) => api.delete(`/shorts/${id}`),
+  getByUser: (userId, page = 1) => api.get(`/shorts/user/${userId}`, { params: { page, limit: 20 } }),
 };
 
 export default api; 

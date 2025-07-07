@@ -1,0 +1,21 @@
+# Copy this file to .env and update with your actual values
+
+# MongoDB Configuration
+MONGODB_URI=mongodb://localhost:27017/afex
+MONGO_URI=mongodb://localhost:27017/afex
+
+# JWT Secret (generate a random string)
+JWT_SECRET=your_super_secret_jwt_key_here
+
+# Cloudinary Configuration
+CLOUDINARY_CLOUD_NAME=dwsnvxcd8
+CLOUDINARY_API_KEY=954559319454737
+CLOUDINARY_API_SECRET=SsUPIFPgVHYkYBsqslVxihGLZAw
+CLOUDINARY_URL=cloudinary://954559319454737:SsUPIFPgVHYkYBsqslVxihGLZAw@dwsnvxcd8
+
+# Server Configuration
+PORT=5000
+NODE_ENV=development
+
+# CORS Origins
+FRONTEND_URL=http://localhost:3000 

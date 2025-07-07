@@ -1,9 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { postsAPI, confessionsAPI, swipeAPI } from '../services/api';
 import PostCard from '../components/posts/PostCard';
-import SwipeCard from '../components/swipe/SwipeCard';
 import ConfessionCard from '../components/confessions/ConfessionCard';
 import NewConfessionModal from '../components/confessions/NewConfessionModal';
 import { FiPlus, FiVideo, FiMessageCircle, FiTrendingUp } from 'react-icons/fi';
@@ -17,14 +15,10 @@ const Home = () => {
   const [confessionsLoading, setConfessionsLoading] = useState(true);
   const [confessionsPage, setConfessionsPage] = useState(1);
   const [confessionsHasMore, setConfessionsHasMore] = useState(true);
-  const [currentSwipePost, setCurrentSwipePost] = useState(null);
 
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('posts');
   const [isConfessionModalOpen, setIsConfessionModalOpen] = useState(false);
-  const [swipeLoading, setSwipeLoading] = useState(false);
-  const [swipeError, setSwipeError] = useState(null);
-  const [noMoreSwipePosts, setNoMoreSwipePosts] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const navigate = useNavigate();
 
@@ -92,39 +86,14 @@ const Home = () => {
     }
   }, []);
 
-  const fetchRandomSwipePost = useCallback(async (retryCount = 0) => {
-    try {
-      setSwipeLoading(true);
-      setSwipeError(null);
-      const response = await swipeAPI.getRandomPost();
-      setCurrentSwipePost(response.data.post || response.data);
-      setNoMoreSwipePosts(false);
-    } catch (error) {
-      console.error('Error fetching swipe post:', error);
-      if (retryCount < 2) {
-        // Retry after 2 seconds
-        setTimeout(() => fetchRandomSwipePost(retryCount + 1), 2000);
-        return;
-      }
-      setCurrentSwipePost(null);
-      setNoMoreSwipePosts(true);
-      setSwipeError('Failed to load swipe post. Please try again.');
-      console.log('Failed to load swipe post. Please try again.');
-    } finally {
-      setSwipeLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
     if (isAuthenticated) {
       fetchFeed();
       if (activeTab === 'confessions') {
         fetchConfessions(1);
-      } else if (activeTab === 'swipe') {
-        fetchRandomSwipePost();
       }
     }
-  }, [isAuthenticated, activeTab, fetchFeed, fetchConfessions, fetchRandomSwipePost]);
+  }, [isAuthenticated, activeTab, fetchFeed, fetchConfessions]);
 
   // Listen for tutorial tab switching events
   useEffect(() => {
@@ -148,18 +117,6 @@ const Home = () => {
   const loadMoreConfessions = () => {
     if (confessionsHasMore) {
       fetchConfessions(confessionsPage + 1);
-    }
-  };
-
-  const handleSwipeVote = async (voteType, post) => {
-    try {
-      await swipeAPI.vote(post._id, voteType);
-      
-      // Get next post
-      fetchRandomSwipePost();
-    } catch (error) {
-      console.error('Error voting:', error);
-      console.log('Failed to vote. Please try again.');
     }
   };
 
@@ -217,15 +174,6 @@ const Home = () => {
     </div>
   );
 
-  const SwipeLoadingState = () => (
-    <div className="flex items-center justify-center py-12">
-      <div className="text-center">
-        <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
-        <p className="text-gray-600 dark:text-gray-400">Loading swipe post...</p>
-      </div>
-    </div>
-  );
-
   // Empty state components
   const EmptyFeedState = () => (
     <div className="text-center py-12">
@@ -270,30 +218,6 @@ const Home = () => {
           className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
         >
           Create Post
-        </button>
-      </div>
-    </div>
-  );
-
-  const EmptySwipeState = () => (
-    <div className="text-center py-12">
-      <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-full mx-auto mb-4 flex items-center justify-center">
-        <FiTrendingUp className="w-8 h-8 text-gray-400" />
-      </div>
-      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No posts to swipe</h3>
-      <p className="text-gray-500 dark:text-gray-400 mb-4">All posts have been voted on! Check back later.</p>
-      <div className="flex gap-3 justify-center">
-        <button
-          onClick={() => fetchRandomSwipePost()}
-          className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
-        >
-          Retry
-        </button>
-        <button
-          onClick={() => setActiveTab('feed')}
-          className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors"
-        >
-          View Feed
         </button>
       </div>
     </div>
@@ -385,16 +309,6 @@ const Home = () => {
           📝 Posts
         </button>
         <button
-          onClick={() => setActiveTab('swipe')}
-          className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-            activeTab === 'swipe'
-              ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 shadow-sm'
-              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
-          }`}
-        >
-          🔥 Swipe Game
-        </button>
-        <button
           data-intro-confess
           onClick={() => setActiveTab('confessions')}
           className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
@@ -424,48 +338,6 @@ const Home = () => {
             </div>
           )}
         </>
-      )}
-
-      {activeTab === 'swipe' && (
-        <div className="space-y-4">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-              🔥 Hot or Not
-            </h2>
-            <Link
-              to="/create-post?for=swipe"
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-            >
-              <span>📤</span>
-              Submit to Swipe
-            </Link>
-          </div>
-
-          {swipeLoading ? (
-            <SwipeLoadingState />
-          ) : swipeError ? (
-            <div className="text-center py-12">
-              <div className="text-6xl mb-4">😢</div>
-              <h3 className="text-xl font-medium text-gray-900 dark:text-gray-100 mb-2">
-                {swipeError}
-              </h3>
-              <button
-                onClick={fetchRandomSwipePost}
-                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-              >
-                Try Again
-              </button>
-            </div>
-          ) : noMoreSwipePosts ? (
-            <EmptySwipeState />
-          ) : currentSwipePost ? (
-            <SwipeCard
-              post={currentSwipePost}
-              onVote={handleSwipeVote}
-              onNext={fetchRandomSwipePost}
-            />
-          ) : null}
-        </div>
       )}
 
       {activeTab === 'confessions' && (

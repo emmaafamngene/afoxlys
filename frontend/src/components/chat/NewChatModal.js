@@ -38,7 +38,12 @@ export default function NewChatModal({ isOpen, onClose, onStartChat }) {
 
     const searchUsers = async () => {
       try {
+        console.log('🔍 Making API call to search for:', searchTerm);
+        console.log('🔍 API URL:', `${process.env.REACT_APP_API_URL || 'https://afoxlys.onrender.com/api'}/search/users?q=${encodeURIComponent(searchTerm)}`);
+        
         const res = await usersAPI.search(searchTerm);
+        console.log('🔍 API response:', res);
+        
         // The API returns { users: [...], pagination: {...}, query: "..." }
         const users = res.data.users || [];
         console.log('🔍 Search results:', users);

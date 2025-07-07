@@ -191,24 +191,11 @@ const OnboardingTutorial = () => {
               <div style='font-size:1.4rem;font-weight:bold;margin-bottom:12px;'>Welcome to <span style='color:#ffd700;'>AFEX</span>!</div>
               <div style='font-size:1rem;line-height:1.6;'>
                 Your next-gen social platform where you can:<br/>
-                <span style='color:#ffd700;font-weight:600;'>🔥 Swipe</span> on posts • <span style='color:#ffd700;font-weight:600;'>🤫 Confess</span> anonymously<br/>
+                <span style='color:#ffd700;font-weight:600;'>🤫 Confess</span> anonymously<br/>
                 <span style='color:#ffd700;font-weight:600;'>🏆 Level up</span> • <span style='color:#ffd700;font-weight:600;'>📊 Climb</span> the leaderboard<br/>
                 Let's take a quick tour! 🚀
               </div>
             </div>`
-          },
-          {
-            element: document.querySelector('[data-intro-swipe]'),
-            intro: `<div style='text-align:center;'>
-              <div style='font-size:2rem;margin-bottom:12px;'>🔥</div>
-              <div style='font-size:1.2rem;font-weight:bold;margin-bottom:8px;'>Swipe Game</div>
-              <div style='font-size:1rem;line-height:1.5;'>
-                Vote <span style='color:#ff6b6b;font-weight:600;'>Hot</span> or <span style='color:#4ecdc4;font-weight:600;'>Not</span> on posts!<br/>
-                Help others earn badges and climb the ranks!<br/>
-                <span style='color:#ffd700;font-size:0.9rem;'>Tap to switch to Swipe Game</span>
-              </div>
-            </div>`,
-            position: 'bottom'
           },
           {
             element: document.querySelector('[data-intro-confess]'),

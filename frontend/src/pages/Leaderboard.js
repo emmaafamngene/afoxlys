@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FiAward, FiUsers, FiTrendingUp, FiStar, FiZap } from 'react-icons/fi';
 import { getAvatarUrl } from '../utils/avatarUtils';
 import { DefaultAvatar } from '../components/layout/AFEXLogo';
@@ -14,11 +14,7 @@ const Leaderboard = () => {
   const [totalPages, setTotalPages] = useState(1);
   const { user: currentUser } = useAuth();
 
-  useEffect(() => {
-    fetchLeaderboard();
-  }, [sortBy, page, fetchLeaderboard]);
-
-  const fetchLeaderboard = async () => {
+  const fetchLeaderboard = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(`${API_BASE_URL}/leaderboard?type=${sortBy}&page=${page}&limit=20`);
@@ -31,7 +27,11 @@ const Leaderboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [sortBy, page]);
+
+  useEffect(() => {
+    fetchLeaderboard();
+  }, [fetchLeaderboard]);
 
   const getRankIcon = (rank) => {
     if (rank === 1) return (

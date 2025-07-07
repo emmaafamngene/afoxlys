@@ -14,9 +14,6 @@ const CreatePost = () => {
   const [isFocused, setIsFocused] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  // Check if this post is for the swipe game
-  const isForSwipeGame = searchParams.get('for') === 'swipe';
-
   const handleContentChange = (e) => {
     setContent(e.target.value);
   };
@@ -41,11 +38,7 @@ const CreatePost = () => {
       
       // Navigate back after animation
       setTimeout(() => {
-        if (isForSwipeGame) {
-          navigate('/swipe');
-        } else {
-          navigate('/');
-        }
+        navigate('/');
       }, 1500);
     } catch (error) {
       console.error('Error creating post:', error);
@@ -63,10 +56,10 @@ const CreatePost = () => {
           <FiStar className="w-8 h-8 text-green-600" />
         </div>
         <h3 className="text-xl font-bold text-gray-900 mb-2">
-          {isForSwipeGame ? '🔥 Posted to Swipe Game!' : '✨ Post Created!'}
+          ✨ Post Created!
         </h3>
         <p className="text-gray-600">
-          {isForSwipeGame ? 'Your post is now available for voting!' : 'Your post has been published!'}
+          Your post has been published!
         </p>
       </div>
     </div>
@@ -87,17 +80,12 @@ const CreatePost = () => {
                 </div>
                 <div>
                   <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                    {isForSwipeGame ? '🔥 Swipe Game Post' : 'Create Post'}
+                    Create Post
                   </h1>
-                  {isForSwipeGame && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 animate-fadeIn">
-                      Share something amazing for others to vote on!
-                    </p>
-                  )}
                 </div>
               </div>
               <button
-                onClick={() => navigate(isForSwipeGame ? '/swipe' : '/')}
+                onClick={() => navigate('/')}
                 className="w-10 h-10 bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center group"
               >
                 <FiX className="w-5 h-5 text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors" />
@@ -154,7 +142,7 @@ const CreatePost = () => {
                     onChange={handleContentChange}
                     onFocus={() => setIsFocused(true)}
                     onBlur={() => setIsFocused(false)}
-                    placeholder={isForSwipeGame ? "Share something amazing for the Swipe Game! 🎯" : "What's on your mind? Share your thoughts... 💭"}
+                    placeholder="What's on your mind? Share your thoughts... 💭"
                     className="w-full p-0 border-none bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 resize-none focus:outline-none text-lg leading-relaxed"
                     rows="6"
                     maxLength="1000"
@@ -185,7 +173,7 @@ const CreatePost = () => {
               <div className="flex justify-end space-x-4 animate-slideUp delay-300">
                 <button
                   type="button"
-                  onClick={() => navigate(isForSwipeGame ? '/swipe' : '/')}
+                  onClick={() => navigate('/')}
                   className="px-8 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-300 font-medium"
                 >
                   Cancel
@@ -203,7 +191,7 @@ const CreatePost = () => {
                   ) : (
                     <>
                       <FiSend className="w-4 h-4" />
-                      <span>{isForSwipeGame ? 'Submit to Swipe Game 🔥' : 'Create Post'}</span>
+                      <span>Create Post</span>
                     </>
                   )}
                 </button>
@@ -216,24 +204,13 @@ const CreatePost = () => {
             <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-700 dark:to-gray-700 rounded-2xl p-6">
               <h3 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
                 <FiStar className="w-5 h-5 text-blue-500 mr-2" />
-                {isForSwipeGame ? 'Swipe Game Tips' : 'Writing Tips'}
+                Writing Tips
               </h3>
               <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
-                {isForSwipeGame ? (
-                  <>
-                    <li>• Keep it engaging and shareable</li>
-                    <li>• Ask questions to encourage interaction</li>
-                    <li>• Share interesting facts or opinions</li>
-                    <li>• Be authentic and genuine</li>
-                  </>
-                ) : (
-                  <>
-                    <li>• Share your thoughts and experiences</li>
-                    <li>• Ask questions to start conversations</li>
-                    <li>• Be authentic and genuine</li>
-                    <li>• Engage with your community</li>
-                  </>
-                )}
+                <li>• Share your thoughts and experiences</li>
+                <li>• Ask questions to start conversations</li>
+                <li>• Be authentic and genuine</li>
+                <li>• Engage with your community</li>
               </ul>
             </div>
           </div>

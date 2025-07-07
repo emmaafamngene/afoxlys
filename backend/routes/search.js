@@ -30,12 +30,18 @@ router.get('/users', optionalAuth, async (req, res) => {
       ]
     };
 
+    // Temporarily disable privacy filtering for debugging
     // If user is authenticated, exclude private users they don't follow
     if (req.user) {
       const currentUser = await User.findById(req.user._id).populate('following');
       const followingIds = currentUser.following.map(followed => followed._id);
       followingIds.push(req.user._id);
 
+      // Only exclude current user from search results
+      searchConditions._id = { $ne: req.user._id };
+      
+      // Comment out privacy filtering for now
+      /*
       searchConditions.$and = [
         {
           $or: [
@@ -44,11 +50,15 @@ router.get('/users', optionalAuth, async (req, res) => {
           ]
         }
       ];
+      */
     } else {
-      // For non-authenticated users, only show public users
-      searchConditions.isPrivate = false;
+      // For non-authenticated users, show all users (temporarily)
+      // searchConditions.isPrivate = false;
     }
 
+    console.log('🔍 Search query:', searchQuery);
+    console.log('🔍 Search conditions:', JSON.stringify(searchConditions, null, 2));
+    
     const users = await User.find(searchConditions)
       .select('-password')
       .skip(skip)
@@ -56,6 +66,9 @@ router.get('/users', optionalAuth, async (req, res) => {
       .sort({ createdAt: -1 });
 
     const total = await User.countDocuments(searchConditions);
+    
+    console.log('🔍 Found users:', users.length);
+    console.log('🔍 Total users matching criteria:', total);
 
     res.json({
       users,

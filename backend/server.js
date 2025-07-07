@@ -130,7 +130,7 @@ app.use('/api/follow', xpAwarder, require('./routes/follow'));
 app.use('/api/search', require('./routes/search'));
 app.use('/api/payments', require('./routes/payments'));
 app.use('/api/confessions', require('./routes/confessions'));
-app.use('/api/swipe', require('./routes/swipe'));
+app.use('/api/shorts', require('./routes/shorts'));
 
 // Patch the POST /api/chat/conversations route to emit a socket event
 app.post('/api/chat/conversations', require('./middlewares/auth').auth, async (req, res) => {

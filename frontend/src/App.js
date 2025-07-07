@@ -8,7 +8,7 @@ import Sidebar from './components/layout/Sidebar';
 import LoadingPage from './components/LoadingPage';
 import { AnimatePresence } from 'framer-motion';
 import OnboardingTutorial from './components/OnboardingTutorial';
-import { useAdSense } from './hooks/useAdSense';
+import useAdSense from './hooks/useAdSense';
 
 // Auth Pages
 import Login from './pages/auth/Login';
@@ -25,8 +25,8 @@ import CreatePost from './pages/CreatePost';
 import CreateClip from './pages/CreateClip';
 import Chat from './pages/Chat';
 import Confessions from './pages/Confessions';
-import Swipe from './pages/Swipe';
 import Leaderboard from './pages/Leaderboard';
+import Shorts from './pages/Shorts';
 
 // Component to redirect to current user's profile
 const CurrentUserProfile = () => {
@@ -147,14 +147,14 @@ function App() {
                     <Confessions />
                   </PrivateRoute>
                 } />
-                <Route path="/swipe" element={
-                  <PrivateRoute>
-                    <Swipe />
-                  </PrivateRoute>
-                } />
                 <Route path="/leaderboard" element={
                   <PrivateRoute>
                     <Leaderboard />
+                  </PrivateRoute>
+                } />
+                <Route path="/shorts" element={
+                  <PrivateRoute>
+                    <Shorts />
                   </PrivateRoute>
                 } />
                 

@@ -32,13 +32,17 @@ const io = new Server(server, {
 const allowedOrigins = [
   'https://afoxly.netlify.app',
   'http://localhost:3000',
-  // Add other allowed origins here if needed
+  // Add more if needed
 ];
 
 app.use(cors({
   origin: function(origin, callback) {
+    console.log('CORS check for origin:', origin);
     if (!origin) return callback(null, true); // allow non-browser requests
-    if (allowedOrigins.includes(origin)) {
+    if (
+      allowedOrigins.includes(origin) ||
+      origin.endsWith('.netlify.app')
+    ) {
       return callback(null, true);
     }
     return callback(new Error('Not allowed by CORS'));
@@ -49,8 +53,12 @@ app.use(cors({
 }));
 app.options('*', cors({
   origin: function(origin, callback) {
+    console.log('CORS preflight check for origin:', origin);
     if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
+    if (
+      allowedOrigins.includes(origin) ||
+      origin.endsWith('.netlify.app')
+    ) {
       return callback(null, true);
     }
     return callback(new Error('Not allowed by CORS'));

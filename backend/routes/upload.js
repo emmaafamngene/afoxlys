@@ -16,8 +16,10 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 // Route for uploading files to Cloudinary with signed authentication
 router.post('/upload-to-cloudinary', auth, upload.single('file'), async (req, res) => {
+  console.log('Received upload request');
   try {
     if (!req.file) {
+      console.log('No file uploaded');
       return res.status(400).json({ error: 'No file uploaded' });
     }
 

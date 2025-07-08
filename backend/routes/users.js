@@ -6,8 +6,13 @@ const Clip = require('../models/Clip');
 const { auth, optionalAuth } = require('../middlewares/auth');
 const { uploadAvatar, uploadCoverPhoto, handleUploadError } = require('../middlewares/upload');
 const Badge = require('../models/Badge');
+const multer = require('multer');
+const cloudinary = require('cloudinary').v2;
 
 const router = express.Router();
+
+// Use memory storage for avatar uploads
+const avatarUpload = multer({ storage: multer.memoryStorage() });
 
 // @route   GET /api/users
 // @desc    Get all users (with pagination)
@@ -170,7 +175,7 @@ router.put(
 // @route   POST /api/users/:id/avatar
 // @desc    Upload user avatar
 // @access  Private
-router.post('/:id/avatar', auth, uploadAvatar, handleUploadError, async (req, res) => {
+router.post('/:id/avatar', auth, avatarUpload.single('avatar'), async (req, res) => {
   try {
     if (req.params.id !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Not authorized to update this profile' });
@@ -180,14 +185,21 @@ router.post('/:id/avatar', auth, uploadAvatar, handleUploadError, async (req, re
       return res.status(400).json({ message: 'No file uploaded' });
     }
 
-    const avatarUrl = `/uploads/avatars/${req.file.filename}`;
-    
+    // Upload avatar to Cloudinary
+    const fileBuffer = req.file.buffer;
+    const base64File = fileBuffer.toString('base64');
+    const dataURI = `data:${req.file.mimetype};base64,${base64File}`;
+    const uploadResult = await cloudinary.uploader.upload(dataURI, {
+      resource_type: 'image',
+      folder: 'afex/avatars',
+      public_id: `avatar_${req.user._id}_${Date.now()}`
+    });
+    const avatarUrl = uploadResult.secure_url;
     const user = await User.findByIdAndUpdate(
       req.params.id,
       { avatar: avatarUrl },
       { new: true }
     ).select('-password');
-
     res.json({
       message: 'Avatar uploaded successfully',
       avatar: avatarUrl,

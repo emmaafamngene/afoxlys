@@ -7,8 +7,8 @@ const { auth } = require('../middlewares/auth');
 // Configure Cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
+  api_key: '639186169578869',
+  api_secret: '6pLBSW_Giu1wJlF8WV9Jw72LxjI'
 });
 
 // Configure multer for memory storage

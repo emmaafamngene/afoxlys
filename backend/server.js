@@ -31,6 +31,7 @@ const io = new Server(server, {
 
 const allowedOrigins = [
   'https://afoxly.netlify.app',
+  'http://localhost:3000',
   // Add other allowed origins here if needed
 ];
 

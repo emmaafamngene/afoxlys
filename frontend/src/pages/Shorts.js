@@ -46,18 +46,21 @@ const Shorts = () => {
     try {
       setUploading(true);
 
-      // Step 1: Upload to Cloudinary
+      // Step 1: Upload to Cloudinary - try multiple approaches
       const formData = new FormData();
       formData.append('file', selectedFile);
-      formData.append('upload_preset', 'ml_default'); // Use default unsigned preset
+      
+      // Try with a common default preset first
+      formData.append('upload_preset', 'ml_default');
 
       console.log('Uploading to Cloudinary...', {
         fileType: selectedFile.type,
         fileSize: selectedFile.size,
+        cloudName: 'dwsnvxcd8',
         uploadPreset: 'ml_default'
       });
 
-      const cloudinaryResponse = await fetch(
+      let cloudinaryResponse = await fetch(
         `https://api.cloudinary.com/v1_1/dwsnvxcd8/${selectedFile.type.startsWith('video/') ? 'video' : 'image'}/upload`,
         {
           method: 'POST',
@@ -65,22 +68,63 @@ const Shorts = () => {
         }
       );
 
+      // If ml_default fails, try without preset
+      if (!cloudinaryResponse.ok) {
+        console.log('ml_default failed, trying without preset...');
+        formData.delete('upload_preset');
+        
+        cloudinaryResponse = await fetch(
+          `https://api.cloudinary.com/v1_1/dwsnvxcd8/${selectedFile.type.startsWith('video/') ? 'video' : 'image'}/upload`,
+          {
+            method: 'POST',
+            body: formData,
+          }
+        );
+      }
+
+      // If both failed, try with a different approach - use signed upload
+      if (!cloudinaryResponse.ok) {
+        console.log('Both attempts failed, trying signed upload...');
+        
+        // For signed upload, we need to send to our backend first
+        const signedFormData = new FormData();
+        signedFormData.append('file', selectedFile);
+        signedFormData.append('type', selectedFile.type.startsWith('video/') ? 'video' : 'image');
+        
+        cloudinaryResponse = await fetch('/api/upload-to-cloudinary', {
+          method: 'POST',
+          body: signedFormData,
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+      }
+
       console.log('Cloudinary response status:', cloudinaryResponse.status);
 
       if (!cloudinaryResponse.ok) {
         const errorData = await cloudinaryResponse.json();
         console.error('Cloudinary upload failed:', errorData);
+        
+
+        
         throw new Error(`Cloudinary upload failed: ${errorData.error?.message || 'Unknown error'}`);
       }
 
       const cloudinaryData = await cloudinaryResponse.json();
       console.log('Cloudinary upload successful:', cloudinaryData);
 
-      if (!cloudinaryData.secure_url) {
-        throw new Error('No secure_url received from Cloudinary');
+      // Handle both direct Cloudinary response and our backend response
+      let mediaUrl;
+      if (cloudinaryData.secure_url) {
+        // Direct Cloudinary response
+        mediaUrl = cloudinaryData.secure_url;
+      } else if (cloudinaryData.success && cloudinaryData.secure_url) {
+        // Our backend response
+        mediaUrl = cloudinaryData.secure_url;
+      } else {
+        throw new Error('No secure_url received from upload');
       }
-
-      const mediaUrl = cloudinaryData.secure_url;
       console.log('Media URL:', mediaUrl);
 
       // Step 2: Save to MongoDB via your backend

@@ -29,69 +29,16 @@ const io = new Server(server, {
   pingInterval: 25000
 });
 
-// CORS configuration - MUST come before other middleware
-const corsOptions = {
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    const allowedOrigins = [
-      'http://localhost:3000',
-      'https://afex-app.netlify.app',
-      'https://afex.netlify.app',
-      'https://afoxly.netlify.app'
-    ];
-    
-    // Log CORS origin for debugging
-    console.log('🔍 CORS Origin Check:', origin);
-    
-    // Check if origin is in allowed list or is a Netlify subdomain
-    if (allowedOrigins.includes(origin) || origin.endsWith('.netlify.app')) {
-      console.log('✅ CORS Origin Allowed:', origin);
-      return callback(null, true);
-    }
-    
-    console.log('❌ CORS Origin Blocked:', origin);
-    return callback(new Error('Not allowed by CORS'));
-  },
-  credentials: true,
+// Allow all origins for testing
+app.use(cors({
+  origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
-  preflightContinue: false,
-  optionsSuccessStatus: 204,
-  exposedHeaders: ['Content-Length', 'X-Requested-With']
-};
+  credentials: true,
+}));
 
-// Apply CORS before other middleware
-app.use(cors(corsOptions));
-
-// Handle preflight requests explicitly
-app.options('*', cors(corsOptions));
-
-// Additional CORS headers middleware for extra safety
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  const allowedOrigins = [
-    'http://localhost:3000',
-    'https://afex-app.netlify.app',
-    'https://afex.netlify.app',
-    'https://afoxly.netlify.app'
-  ];
-  
-  if (origin && (allowedOrigins.includes(origin) || origin.endsWith('.netlify.app'))) {
-    res.header('Access-Control-Allow-Origin', origin);
-  }
-  
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  
-  if (req.method === 'OPTIONS') {
-    res.sendStatus(204);
-  } else {
-    next();
-  }
-});
+// Handle preflight requests
+app.options('*', cors());
 
 // Other middleware
 app.use(helmet({
@@ -131,6 +78,7 @@ app.use('/api/search', require('./routes/search'));
 app.use('/api/payments', require('./routes/payments'));
 app.use('/api/confessions', require('./routes/confessions'));
 app.use('/api/shorts', require('./routes/shorts'));
+app.use('/api', require('./routes/upload'));
 
 // Patch the POST /api/chat/conversations route to emit a socket event
 app.post('/api/chat/conversations', require('./middlewares/auth').auth, async (req, res) => {

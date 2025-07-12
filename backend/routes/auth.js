@@ -79,7 +79,7 @@ router.post(
       res.status(201).json({
         message: 'User registered successfully',
         token,
-        user: user.getPublicProfile(),
+        user: { ...user.getPublicProfile(), email: user.email },
       });
     } catch (error) {
       console.error('Registration error:', error);
@@ -174,7 +174,7 @@ router.post(
       res.json({
         message: 'Login successful',
         token,
-        user: { ...userProfile, ...levelInfo },
+        user: { ...userProfile, ...levelInfo, email: user.email },
         levelUp: streakXP > 0 ? {
           message: `🔥 ${user.loginStreak}-day login streak! +${streakXP} XP`,
           streakXP,
@@ -203,8 +203,11 @@ router.get('/me', auth, async (req, res) => {
       loginStreak: req.user.loginStreak
     };
 
+    // Include email for premium purchases
+    const userData = { ...userProfile, ...levelInfo, email: req.user.email };
+
     res.json({
-      user: { ...userProfile, ...levelInfo },
+      user: userData,
     });
   } catch (error) {
     console.error('Get profile error:', error);

@@ -7,7 +7,7 @@ import DefaultAvatar from '../components/DefaultAvatar';
 import { getAvatarUrl } from '../utils/avatarUtils';
 
 const Shorts = () => {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, token } = useAuth();
   const [shorts, setShorts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -51,6 +51,15 @@ const Shorts = () => {
 
   const handleUpload = async () => {
     if (!selectedFile || !caption.trim()) return;
+    
+    // Check if user is authenticated
+    if (!token) {
+      alert('Please login to upload shorts');
+      return;
+    }
+
+    console.log('Upload token:', token ? 'Token exists' : 'No token');
+    console.log('User authenticated:', isAuthenticated);
 
     try {
       setUploading(true);
@@ -64,7 +73,7 @@ const Shorts = () => {
         method: 'POST',
         body: signedFormData,
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${token}`
         }
       });
 

@@ -68,7 +68,17 @@ const Shorts = () => {
       const signedFormData = new FormData();
       signedFormData.append('file', selectedFile);
       signedFormData.append('type', selectedFile.type.startsWith('video/') ? 'video' : 'image');
+      
+      console.log('File details:', {
+        name: selectedFile.name,
+        type: selectedFile.type,
+        size: selectedFile.size,
+        lastModified: selectedFile.lastModified
+      });
 
+      console.log('Sending upload request to:', 'https://afoxlys.onrender.com/api/upload/upload-to-cloudinary');
+      console.log('Request headers:', { 'Authorization': `Bearer ${token ? 'TOKEN_EXISTS' : 'NO_TOKEN'}` });
+      
       const cloudinaryResponse = await fetch('https://afoxlys.onrender.com/api/upload/upload-to-cloudinary', {
         method: 'POST',
         body: signedFormData,
@@ -76,10 +86,14 @@ const Shorts = () => {
           'Authorization': `Bearer ${token}`
         }
       });
+      
+      console.log('Upload response status:', cloudinaryResponse.status);
+      console.log('Upload response headers:', Object.fromEntries(cloudinaryResponse.headers.entries()));
 
       if (!cloudinaryResponse.ok) {
         const errorData = await cloudinaryResponse.json();
-        throw new Error(`Cloudinary upload failed: ${errorData.error?.message || 'Unknown error'}`);
+        console.log('Upload error response:', errorData);
+        throw new Error(`Cloudinary upload failed: ${errorData.error || errorData.message || errorData.details || 'Unknown error'}`);
       }
 
       const cloudinaryData = await cloudinaryResponse.json();

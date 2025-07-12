@@ -54,14 +54,23 @@ router.post('/upload-to-cloudinary', auth, upload.single('file'), async (req, re
     }
 
     const { type } = req.body;
-    const resourceType = type?.startsWith('video/') ? 'video' : 'image';
+    const resourceType = req.file.mimetype.startsWith('video/') ? 'video' : 'image';
 
     console.log(`Uploading ${resourceType} file: ${req.file.originalname}`);
+    console.log('File details:', {
+      originalname: req.file.originalname,
+      mimetype: req.file.mimetype,
+      size: req.file.size,
+      bufferLength: req.file.buffer.length
+    });
 
     // Convert buffer to base64
     const fileBuffer = req.file.buffer;
     const base64File = fileBuffer.toString('base64');
     const dataURI = `data:${req.file.mimetype};base64,${base64File}`;
+    
+    console.log('Data URI length:', dataURI.length);
+    console.log('Data URI starts with:', dataURI.substring(0, 50) + '...');
 
     // Upload to Cloudinary (simplified)
     const uploadResult = await cloudinary.uploader.upload(dataURI, {

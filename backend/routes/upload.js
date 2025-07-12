@@ -27,6 +27,19 @@ const upload = multer({
   }
 });
 
+// Test endpoint to check if upload route is accessible
+router.get('/upload-to-cloudinary', (req, res) => {
+  res.json({ 
+    success: true, 
+    message: 'Upload endpoint is accessible',
+    cloudinaryConfig: {
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME ? 'SET' : 'NOT_SET',
+      api_key: process.env.CLOUDINARY_API_KEY ? 'SET' : 'NOT_SET',
+      api_secret: process.env.CLOUDINARY_API_SECRET ? 'SET' : 'NOT_SET'
+    }
+  });
+});
+
 // Route for uploading files to Cloudinary
 router.post('/upload-to-cloudinary', auth, upload.single('file'), async (req, res) => {
   console.log('Received upload request from:', req.user.username);
@@ -50,16 +63,11 @@ router.post('/upload-to-cloudinary', auth, upload.single('file'), async (req, re
     const base64File = fileBuffer.toString('base64');
     const dataURI = `data:${req.file.mimetype};base64,${base64File}`;
 
-    // Upload to Cloudinary
+    // Upload to Cloudinary (simplified)
     const uploadResult = await cloudinary.uploader.upload(dataURI, {
       resource_type: resourceType,
       folder: 'afex/shorts',
-      public_id: `short_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      transformation: resourceType === 'video' ? [
-        { width: 1080, height: 1920, crop: 'fill', gravity: 'center' }
-      ] : [
-        { width: 1080, height: 1920, crop: 'fill', gravity: 'center' }
-      ]
+      public_id: `short_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
     });
 
     console.log(`File uploaded successfully: ${uploadResult.public_id}`);
@@ -75,6 +83,15 @@ router.post('/upload-to-cloudinary', auth, upload.single('file'), async (req, re
 
   } catch (error) {
     console.error('Cloudinary upload error:', error);
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      cloudinaryConfig: {
+        cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+        api_key: process.env.CLOUDINARY_API_KEY ? '***' : 'NOT_SET',
+        api_secret: process.env.CLOUDINARY_API_SECRET ? '***' : 'NOT_SET'
+      }
+    });
     res.status(500).json({ 
       success: false,
       error: 'Upload failed', 

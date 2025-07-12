@@ -60,7 +60,7 @@ const Shorts = () => {
       signedFormData.append('file', selectedFile);
       signedFormData.append('type', selectedFile.type.startsWith('video/') ? 'video' : 'image');
 
-      const cloudinaryResponse = await fetch('https://afoxlys.onrender.com/api/upload-to-cloudinary', {
+      const cloudinaryResponse = await fetch('https://afoxlys.onrender.com/api/upload/upload-to-cloudinary', {
         method: 'POST',
         body: signedFormData,
         headers: {

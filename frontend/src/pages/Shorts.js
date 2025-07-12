@@ -26,12 +26,17 @@ const Shorts = () => {
       setLoading(true);
       const response = await shortsAPI.getAll();
       console.log('Shorts API response:', response);
-      setShorts(response.data.shorts || response.data);
+      if (response.data && response.data.success) {
+        setShorts(response.data.shorts || []);
+      } else {
+        setShorts([]);
+      }
     } catch (error) {
       console.error('Error fetching shorts:', error);
       if (error.response) {
         console.error('Error response data:', error.response.data);
       }
+      setShorts([]);
     } finally {
       setLoading(false);
     }
@@ -55,7 +60,7 @@ const Shorts = () => {
       signedFormData.append('file', selectedFile);
       signedFormData.append('type', selectedFile.type.startsWith('video/') ? 'video' : 'image');
 
-      const cloudinaryResponse = await fetch('/api/upload-to-cloudinary', {
+      const cloudinaryResponse = await fetch('https://afoxlys.onrender.com/api/upload-to-cloudinary', {
         method: 'POST',
         body: signedFormData,
         headers: {
@@ -85,8 +90,8 @@ const Shorts = () => {
         type: selectedFile.type.startsWith('video/') ? 'video' : 'image',
       });
 
-      if (response.data) {
-        setShorts(prev => [response.data, ...prev]);
+      if (response.data && response.data.success) {
+        setShorts(prev => [response.data.short, ...prev]);
         setShowUploadModal(false);
         setSelectedFile(null);
         setCaption('');

@@ -19,6 +19,7 @@ const navLinks = [
 
 const moreOptions = [
   { to: '/edit-profile', label: 'Edit Profile', icon: <FiEdit /> },
+  { to: '/premium', label: 'Premium', icon: <FiAward /> },
   { to: '/settings', label: 'Settings', icon: <FiSettings /> },
 ];
 

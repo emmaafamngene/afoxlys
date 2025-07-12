@@ -20,6 +20,10 @@ NODE_ENV=development
 # CORS Origins
 FRONTEND_URL=http://localhost:3000
 
+# Paystack Configuration
+PAYSTACK_SECRET_KEY=sk_test_your_paystack_secret_key_here
+PAYSTACK_PUBLIC_KEY=pk_test_your_paystack_public_key_here
+
 # Render Deployment Configuration
 # For Render, you'll need to set these environment variables in your Render dashboard
 # Go to your service > Environment > Environment Variables

@@ -2,6 +2,8 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const { auth } = require('../middlewares/auth');
 const Payment = require('../models/Payment');
+const User = require('../models/User');
+const axios = require('axios');
 const router = express.Router();
 
 // @route   POST /api/payments/create-payment-intent
@@ -225,6 +227,175 @@ router.get('/supported-methods', (req, res) => {
       }
     ]
   });
+});
+
+// ==================== PREMIUM SUBSCRIPTION ROUTES ====================
+
+// @route   POST /api/payments/premium/verify-payment
+// @desc    Verify Paystack payment and activate premium
+// @access  Private
+router.post('/premium/verify-payment', auth, async (req, res) => {
+  try {
+    const { reference, email } = req.body;
+    
+    if (!reference || !email) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Reference and email are required' 
+      });
+    }
+
+    // Verify payment with Paystack
+    const paystackResponse = await axios.get(
+      `https://api.paystack.co/transaction/verify/${reference}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    const transactionData = paystackResponse.data.data;
+
+    if (transactionData.status !== 'success') {
+      return res.json({ 
+        success: false, 
+        message: 'Payment not successful' 
+      });
+    }
+
+    // Find user by email
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'User not found' 
+      });
+    }
+
+    // Check if payment amount matches expected premium amount (₦1000 = 100000 kobo)
+    const expectedAmount = 100000; // ₦1000 in kobo
+    if (transactionData.amount !== expectedAmount) {
+      return res.json({ 
+        success: false, 
+        message: 'Invalid payment amount' 
+      });
+    }
+
+    // Activate premium subscription
+    await user.activatePremium('monthly', 30);
+    
+    // Add payment record
+    await user.addPaymentRecord(
+      transactionData.amount / 100, // Convert from kobo to naira
+      reference,
+      'completed'
+    );
+
+    res.json({ 
+      success: true, 
+      message: 'Premium activated successfully!',
+      user: {
+        isPremium: user.isPremium,
+        premiumExpiresAt: user.premiumExpiresAt,
+        daysUntilExpiry: user.getDaysUntilExpiry()
+      }
+    });
+
+  } catch (error) {
+    console.error('Premium payment verification error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Payment verification failed' 
+    });
+  }
+});
+
+// @route   GET /api/payments/premium/status
+// @desc    Get user's premium status
+// @access  Private
+router.get('/premium/status', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    
+    if (!user) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'User not found' 
+      });
+    }
+
+    res.json({
+      success: true,
+      isPremium: user.isPremium,
+      isPremiumActive: user.isPremiumActive(),
+      premiumExpiresAt: user.premiumExpiresAt,
+      premiumPlan: user.premiumPlan,
+      daysUntilExpiry: user.getDaysUntilExpiry(),
+      paymentHistory: user.premiumPaymentHistory
+    });
+
+  } catch (error) {
+    console.error('Get premium status error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to get premium status' 
+    });
+  }
+});
+
+// @route   POST /api/payments/premium/initialize
+// @desc    Initialize Paystack payment for premium
+// @access  Private
+router.post('/premium/initialize', auth, async (req, res) => {
+  try {
+    const { email, plan = 'monthly' } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Email is required' 
+      });
+    }
+
+    const amount = plan === 'yearly' ? 1000000 : 100000; // ₦10,000 yearly or ₦1,000 monthly in kobo
+
+    // Initialize Paystack payment
+    const paystackResponse = await axios.post(
+      'https://api.paystack.co/transaction/initialize',
+      {
+        email,
+        amount,
+        currency: 'NGN',
+        callback_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/premium/success`,
+        metadata: {
+          plan,
+          userId: req.user._id.toString()
+        }
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    res.json({
+      success: true,
+      authorizationUrl: paystackResponse.data.data.authorization_url,
+      reference: paystackResponse.data.data.reference,
+      amount: amount / 100 // Convert to naira
+    });
+
+  } catch (error) {
+    console.error('Premium payment initialization error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to initialize payment' 
+    });
+  }
 });
 
 module.exports = router; 

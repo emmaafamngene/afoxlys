@@ -89,6 +89,36 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    // Premium subscription fields
+    isPremium: {
+      type: Boolean,
+      default: false,
+    },
+    premiumExpiresAt: {
+      type: Date,
+    },
+    premiumPlan: {
+      type: String,
+      enum: ['monthly', 'yearly'],
+      default: 'monthly',
+    },
+    premiumPaymentHistory: [{
+      amount: Number,
+      currency: {
+        type: String,
+        default: 'NGN',
+      },
+      transactionId: String,
+      paymentDate: {
+        type: Date,
+        default: Date.now,
+      },
+      status: {
+        type: String,
+        enum: ['pending', 'completed', 'failed'],
+        default: 'pending',
+      },
+    }],
   },
   {
     timestamps: true,
@@ -136,5 +166,43 @@ userSchema.virtual('followingCount').get(function () {
 
 // Ensure virtuals are serialized
 userSchema.set('toJSON', { virtuals: true });
+
+// Premium subscription methods
+userSchema.methods.activatePremium = function(plan = 'monthly', duration = 30) {
+  this.isPremium = true;
+  this.premiumPlan = plan;
+  
+  const expiry = new Date();
+  if (plan === 'yearly') {
+    expiry.setFullYear(expiry.getFullYear() + 1);
+  } else {
+    expiry.setDate(expiry.getDate() + duration);
+  }
+  
+  this.premiumExpiresAt = expiry;
+  return this.save();
+};
+
+userSchema.methods.isPremiumActive = function() {
+  if (!this.isPremium) return false;
+  if (!this.premiumExpiresAt) return false;
+  return this.premiumExpiresAt > new Date();
+};
+
+userSchema.methods.addPaymentRecord = function(amount, transactionId, status = 'completed') {
+  this.premiumPaymentHistory.push({
+    amount,
+    transactionId,
+    status,
+  });
+  return this.save();
+};
+
+userSchema.methods.getDaysUntilExpiry = function() {
+  if (!this.isPremiumActive()) return 0;
+  const now = new Date();
+  const diffTime = this.premiumExpiresAt - now;
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+};
 
 module.exports = mongoose.model('User', userSchema); 

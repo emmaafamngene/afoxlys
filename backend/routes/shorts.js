@@ -29,6 +29,7 @@ router.get('/', async (req, res) => {
     const total = await Short.countDocuments();
     const hasMore = skip + limit < total;
 
+    console.log('Fetched shorts:', shorts); // Debug log
     res.json({
       shorts,
       pagination: {

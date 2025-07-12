@@ -27,6 +27,8 @@ import Chat from './pages/Chat';
 import Confessions from './pages/Confessions';
 import Leaderboard from './pages/Leaderboard';
 import Shorts from './pages/Shorts';
+import Premium from './pages/Premium';
+import PremiumSuccess from './pages/PremiumSuccess';
 
 // Component to redirect to current user's profile
 const CurrentUserProfile = () => {
@@ -155,6 +157,16 @@ function App() {
                 <Route path="/shorts" element={
                   <PrivateRoute>
                     <Shorts />
+                  </PrivateRoute>
+                } />
+                <Route path="/premium" element={
+                  <PrivateRoute>
+                    <Premium />
+                  </PrivateRoute>
+                } />
+                <Route path="/premium/success" element={
+                  <PrivateRoute>
+                    <PremiumSuccess />
                   </PrivateRoute>
                 } />
                 

@@ -25,9 +25,13 @@ const Shorts = () => {
     try {
       setLoading(true);
       const response = await shortsAPI.getAll();
+      console.log('Shorts API response:', response);
       setShorts(response.data.shorts || response.data);
     } catch (error) {
       console.error('Error fetching shorts:', error);
+      if (error.response) {
+        console.error('Error response data:', error.response.data);
+      }
     } finally {
       setLoading(false);
     }

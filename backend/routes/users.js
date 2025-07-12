@@ -214,7 +214,7 @@ router.post('/:id/avatar', auth, avatarUpload.single('avatar'), async (req, res)
 // @route   POST /api/users/:id/cover
 // @desc    Upload user cover photo
 // @access  Private
-router.post('/:id/cover', auth, uploadCoverPhoto, handleUploadError, async (req, res) => {
+router.post('/:id/cover', auth, avatarUpload.single('coverPhoto'), async (req, res) => {
   try {
     if (req.params.id !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Not authorized to update this profile' });
@@ -224,7 +224,16 @@ router.post('/:id/cover', auth, uploadCoverPhoto, handleUploadError, async (req,
       return res.status(400).json({ message: 'No file uploaded' });
     }
 
-    const coverUrl = `/uploads/covers/${req.file.filename}`;
+    // Upload cover photo to Cloudinary
+    const fileBuffer = req.file.buffer;
+    const base64File = fileBuffer.toString('base64');
+    const dataURI = `data:${req.file.mimetype};base64,${base64File}`;
+    const uploadResult = await cloudinary.uploader.upload(dataURI, {
+      resource_type: 'image',
+      folder: 'afex/covers',
+      public_id: `cover_${req.user._id}_${Date.now()}`
+    });
+    const coverUrl = uploadResult.secure_url;
     
     const user = await User.findByIdAndUpdate(
       req.params.id,

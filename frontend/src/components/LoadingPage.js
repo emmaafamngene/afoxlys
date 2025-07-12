@@ -16,13 +16,13 @@ export default function LoadingPage({ darkMode = false }) {
 
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-black dark:to-gray-900 flex items-center justify-center z-50">
-      <div className="flex flex-col items-center space-y-8">
+      <div className="flex flex-col items-center justify-center space-y-8 w-full h-full">
         {/* AFEX Logo with enhanced pulse animation */}
-        <div className="animate-pulse-slow transform hover:scale-105 transition-transform duration-300">
+        <div className="animate-pulse-slow transform hover:scale-105 transition-transform duration-300 flex items-center justify-center ml-24">
           <img 
-            src={darkMode ? "/logo1.png" : "/logo.png"}
+            src="/best.png"
             alt="AFEX Logo" 
-            className="h-48 w-auto mx-auto drop-shadow-2xl"
+            className="h-48 w-auto drop-shadow-2xl"
             style={{
               filter: 'brightness(1.1) contrast(1.2)',
               mixBlendMode: 'multiply'

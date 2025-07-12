@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { FiHome, FiSearch, FiMessageCircle, FiUser, FiPlus, FiBell, FiSettings, FiMoreHorizontal, FiSun, FiMoon, FiEdit, FiHeart, FiAward } from 'react-icons/fi';
 import { MdVideoLibrary } from 'react-icons/md';
-import { FaFire } from 'react-icons/fa';
+import { FaFire, FaCrown } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const navLinks = [
@@ -11,17 +11,12 @@ const navLinks = [
   { to: '/shorts', label: 'Shorts', icon: <FaFire /> },
   { to: '/chat', label: 'Messages', icon: <FiMessageCircle /> },
   { to: '/leaderboard', label: 'Leaderboard', icon: <FiAward /> },
-  { to: '/profile', label: 'Profile', icon: <FiUser /> },
-];
-
-const moreOptions = [
-  { to: '/edit-profile', label: 'Edit Profile & Settings', icon: <FiEdit /> },
-  { to: '/premium', label: 'Premium', icon: <FiAward /> },
+  { to: '/premium', label: 'Premium', icon: <FaCrown /> },
+  { to: '/edit-profile', label: 'Profile', icon: <FiUser /> },
 ];
 
 export default function Sidebar({ darkMode, setDarkMode }) {
   const [hovered, setHovered] = useState(false);
-  const [moreHovered, setMoreHovered] = useState(false);
 
   return (
     <>
@@ -115,43 +110,6 @@ export default function Sidebar({ darkMode, setDarkMode }) {
                 </AnimatePresence>
               </motion.div>
             ))}
-            
-            {/* More Options Dropdown */}
-            <div 
-              className={`relative ${hovered ? 'w-full' : 'w-14'}`}
-              onMouseEnter={() => setMoreHovered(true)}
-              onMouseLeave={() => setMoreHovered(false)}
-            >
-              <div className={`group relative flex items-center ${hovered ? 'gap-4 px-4 py-3 w-full justify-start' : 'justify-center py-3 w-14'} 
-                font-medium transition-all duration-200 text-base text-gray-600 dark:text-gray-300 
-                hover:bg-gray-100 dark:hover:bg-gray-800 hover:shadow-md hover:text-gray-900 dark:hover:text-white 
-                mx-1`}>
-                <span className="text-lg transition-all duration-200 group-hover:scale-105"
-                      style={{ minWidth: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <FiMoreHorizontal />
-                </span>
-                <span className={`ml-1 text-sm font-medium transition-all duration-200 ${hovered ? 'opacity-100 w-auto' : 'opacity-0 w-0 overflow-hidden pointer-events-none'}`}>More</span>
-              </div>
-              
-              {/* Dropdown Menu */}
-              {moreHovered && hovered && (
-                <div className="absolute left-full top-0 ml-3 bg-white dark:bg-gray-800 shadow-xl border border-gray-200 dark:border-gray-700 py-2 min-w-48 z-50">
-                  {moreOptions.map(option => (
-                    <NavLink
-                      key={option.to}
-                      to={option.to}
-                      className={({ isActive }) =>
-                        `flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors duration-200
-                        ${isActive ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`
-                      }
-                    >
-                      {option.icon}
-                      <span>{option.label}</span>
-                    </NavLink>
-                  ))}
-                </div>
-              )}
-            </div>
           </nav>
         </div>
         {/* Dark/Light Toggle always at the bottom */}
@@ -202,14 +160,6 @@ export default function Sidebar({ darkMode, setDarkMode }) {
             </NavLink>
           )
         ))}
-        
-        {/* Mobile More Button */}
-        <div className="relative flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-200 min-w-0 flex-1 mx-1 text-gray-500 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800">
-          <span className="text-xl sm:text-2xl mb-1.5">
-            <FiMoreHorizontal />
-          </span>
-          <span className="text-xs sm:text-sm font-medium">More</span>
-        </div>
       </nav>
 
       {/* Bottom padding for mobile to account for bottom bar */}

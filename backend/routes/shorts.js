@@ -17,7 +17,8 @@ router.get('/', async (req, res) => {
       .populate('comments.author', 'username firstName lastName avatar')
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limit);
+      .limit(limit)
+      .lean();
 
     // Add isLiked field for authenticated users
     if (req.user) {
@@ -29,8 +30,9 @@ router.get('/', async (req, res) => {
     const total = await Short.countDocuments();
     const hasMore = skip + limit < total;
 
-    console.log('Fetched shorts:', shorts); // Debug log
+    console.log(`Fetched ${shorts.length} shorts, page ${page}`);
     res.json({
+      success: true,
       shorts,
       pagination: {
         page,
@@ -41,7 +43,11 @@ router.get('/', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching shorts:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ 
+      success: false,
+      message: 'Failed to fetch shorts',
+      error: error.message 
+    });
   }
 });
 
@@ -50,17 +56,32 @@ router.post('/', auth, async (req, res) => {
   try {
     const { caption, mediaUrl, type } = req.body;
 
-    if (!caption || !mediaUrl || !type) {
-      return res.status(400).json({ message: 'Caption, mediaUrl, and type are required' });
+    // Validation
+    if (!caption || !caption.trim()) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Caption is required' 
+      });
     }
 
-    if (!['video', 'image'].includes(type)) {
-      return res.status(400).json({ message: 'Type must be either video or image' });
+    if (!mediaUrl) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Media URL is required' 
+      });
     }
 
+    if (!type || !['video', 'image'].includes(type)) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Type must be either video or image' 
+      });
+    }
+
+    // Create the short
     const short = new Short({
       author: req.user._id,
-      caption,
+      caption: caption.trim(),
       mediaUrl,
       type
     });
@@ -70,10 +91,18 @@ router.post('/', auth, async (req, res) => {
     // Populate author info
     await short.populate('author', 'username firstName lastName avatar');
 
-    res.status(201).json(short);
+    console.log(`Short created by ${req.user.username}: ${short._id}`);
+    res.status(201).json({
+      success: true,
+      short
+    });
   } catch (error) {
     console.error('Error creating short:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ 
+      success: false,
+      message: 'Failed to create short',
+      error: error.message 
+    });
   }
 });
 
@@ -82,25 +111,35 @@ router.get('/:id', async (req, res) => {
   try {
     const short = await Short.findById(req.params.id)
       .populate('author', 'username firstName lastName avatar')
-      .populate('comments.author', 'username firstName lastName avatar');
+      .populate('comments.author', 'username firstName lastName avatar')
+      .lean();
 
     if (!short) {
-      return res.status(404).json({ message: 'Short not found' });
+      return res.status(404).json({ 
+        success: false,
+        message: 'Short not found' 
+      });
     }
 
     // Increment views
-    short.views += 1;
-    await short.save();
+    await Short.findByIdAndUpdate(req.params.id, { $inc: { views: 1 } });
 
     // Add isLiked field for authenticated users
     if (req.user) {
       short.isLiked = short.likes.includes(req.user._id);
     }
 
-    res.json(short);
+    res.json({
+      success: true,
+      short
+    });
   } catch (error) {
     console.error('Error fetching short:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ 
+      success: false,
+      message: 'Failed to fetch short',
+      error: error.message 
+    });
   }
 });
 
@@ -110,10 +149,14 @@ router.post('/:id/like', auth, async (req, res) => {
     const short = await Short.findById(req.params.id);
 
     if (!short) {
-      return res.status(404).json({ message: 'Short not found' });
+      return res.status(404).json({ 
+        success: false,
+        message: 'Short not found' 
+      });
     }
 
     const likeIndex = short.likes.indexOf(req.user._id);
+    let isLiked = false;
 
     if (likeIndex > -1) {
       // Unlike
@@ -121,17 +164,24 @@ router.post('/:id/like', auth, async (req, res) => {
     } else {
       // Like
       short.likes.push(req.user._id);
+      isLiked = true;
     }
 
     await short.save();
 
+    console.log(`Short ${isLiked ? 'liked' : 'unliked'} by ${req.user.username}`);
     res.json({
-      isLiked: likeIndex === -1,
+      success: true,
+      isLiked,
       likes: short.likes.length
     });
   } catch (error) {
     console.error('Error liking/unliking short:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ 
+      success: false,
+      message: 'Failed to like/unlike short',
+      error: error.message 
+    });
   }
 });
 
@@ -141,18 +191,25 @@ router.post('/:id/comments', auth, async (req, res) => {
     const { content } = req.body;
 
     if (!content || !content.trim()) {
-      return res.status(400).json({ message: 'Comment content is required' });
+      return res.status(400).json({ 
+        success: false,
+        message: 'Comment content is required' 
+      });
     }
 
     const short = await Short.findById(req.params.id);
 
     if (!short) {
-      return res.status(404).json({ message: 'Short not found' });
+      return res.status(404).json({ 
+        success: false,
+        message: 'Short not found' 
+      });
     }
 
     const comment = {
       author: req.user._id,
-      content: content.trim()
+      content: content.trim(),
+      createdAt: new Date()
     };
 
     short.comments.push(comment);
@@ -163,10 +220,18 @@ router.post('/:id/comments', auth, async (req, res) => {
 
     const newComment = short.comments[short.comments.length - 1];
 
-    res.status(201).json(newComment);
+    console.log(`Comment added to short ${req.params.id} by ${req.user.username}`);
+    res.status(201).json({
+      success: true,
+      comment: newComment
+    });
   } catch (error) {
     console.error('Error adding comment:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ 
+      success: false,
+      message: 'Failed to add comment',
+      error: error.message 
+    });
   }
 });
 
@@ -189,16 +254,21 @@ router.get('/:id/comments', async (req, res) => {
           skip,
           limit
         }
-      });
+      })
+      .lean();
 
     if (!short) {
-      return res.status(404).json({ message: 'Short not found' });
+      return res.status(404).json({ 
+        success: false,
+        message: 'Short not found' 
+      });
     }
 
     const total = short.comments.length;
     const hasMore = skip + limit < total;
 
     res.json({
+      success: true,
       comments: short.comments,
       pagination: {
         page,
@@ -209,7 +279,11 @@ router.get('/:id/comments', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching comments:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ 
+      success: false,
+      message: 'Failed to fetch comments',
+      error: error.message 
+    });
   }
 });
 
@@ -219,19 +293,33 @@ router.delete('/:id', auth, async (req, res) => {
     const short = await Short.findById(req.params.id);
 
     if (!short) {
-      return res.status(404).json({ message: 'Short not found' });
+      return res.status(404).json({ 
+        success: false,
+        message: 'Short not found' 
+      });
     }
 
     if (short.author.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'Not authorized to delete this short' });
+      return res.status(403).json({ 
+        success: false,
+        message: 'Not authorized to delete this short' 
+      });
     }
 
-    await short.remove();
+    await Short.findByIdAndDelete(req.params.id);
 
-    res.json({ message: 'Short deleted successfully' });
+    console.log(`Short ${req.params.id} deleted by ${req.user.username}`);
+    res.json({ 
+      success: true,
+      message: 'Short deleted successfully' 
+    });
   } catch (error) {
     console.error('Error deleting short:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ 
+      success: false,
+      message: 'Failed to delete short',
+      error: error.message 
+    });
   }
 });
 
@@ -247,7 +335,8 @@ router.get('/user/:userId', async (req, res) => {
       .populate('comments.author', 'username firstName lastName avatar')
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limit);
+      .limit(limit)
+      .lean();
 
     // Add isLiked field for authenticated users
     if (req.user) {
@@ -260,6 +349,7 @@ router.get('/user/:userId', async (req, res) => {
     const hasMore = skip + limit < total;
 
     res.json({
+      success: true,
       shorts,
       pagination: {
         page,
@@ -270,7 +360,11 @@ router.get('/user/:userId', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching user shorts:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ 
+      success: false,
+      message: 'Failed to fetch user shorts',
+      error: error.message 
+    });
   }
 });
 

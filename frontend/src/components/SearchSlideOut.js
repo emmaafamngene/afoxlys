@@ -109,20 +109,23 @@ const SearchSlideOut = ({ isOpen, onClose }) => {
   };
 
   const UserCard = ({ user }) => (
-    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
-      <div className="flex items-center space-x-3">
-        <img
-          src={user.avatar || 'https://via.placeholder.com/48x48/6b7280/ffffff?text=U'}
-          alt={user.username}
-          className="w-12 h-12 rounded-full object-cover"
-          onError={(e) => {
-            e.target.src = 'https://via.placeholder.com/48x48/6b7280/ffffff?text=U';
-          }}
-        />
+    <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm hover:shadow-lg transition-all duration-200 border border-gray-100 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-700">
+      <div className="flex items-center space-x-4">
+        <div className="relative">
+          <img
+            src={user.avatar || 'https://via.placeholder.com/48x48/6b7280/ffffff?text=U'}
+            alt={user.username}
+            className="w-12 h-12 rounded-full object-cover border-2 border-white dark:border-gray-700 shadow-md"
+            onError={(e) => {
+              e.target.src = 'https://via.placeholder.com/48x48/6b7280/ffffff?text=U';
+            }}
+          />
+          <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full"></div>
+        </div>
         <div className="flex-1 min-w-0">
           <Link
             to={`/user/${user._id}`}
-            className="font-medium text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 truncate block"
+            className="font-semibold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 truncate block transition-colors"
             onClick={handleClose}
           >
             {user.firstName} {user.lastName}
@@ -132,8 +135,9 @@ const SearchSlideOut = ({ isOpen, onClose }) => {
             <p className="text-sm text-gray-600 dark:text-gray-300 mt-1 line-clamp-2">{user.bio}</p>
           )}
         </div>
-        <div className="text-right text-sm text-gray-500 dark:text-gray-400">
-          <div>{user.followerCount || 0} followers</div>
+        <div className="text-right">
+          <div className="text-sm font-medium text-gray-900 dark:text-white">{user.followerCount || 0}</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">followers</div>
         </div>
       </div>
     </div>
@@ -152,23 +156,28 @@ const SearchSlideOut = ({ isOpen, onClose }) => {
       {/* Slide-out panel */}
       <div 
         data-search-slideout
-        className={`fixed top-0 left-0 h-full w-full max-w-md bg-white dark:bg-gray-900 shadow-2xl transform transition-transform duration-300 ease-in-out z-50 ${
+        className={`fixed top-0 left-0 h-full w-full max-w-md bg-gradient-to-br from-white via-gray-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 shadow-2xl transform transition-transform duration-300 ease-in-out z-50 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Search</h2>
+        <div className="flex items-center justify-between p-6 bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-white bg-opacity-20 rounded-lg">
+              <FiSearch className="w-5 h-5" />
+            </div>
+            <h2 className="text-xl font-bold">Search AFEX</h2>
+          </div>
           <button
             onClick={handleClose}
-            className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+            className="p-2 text-white hover:bg-white hover:bg-opacity-20 rounded-lg transition-all duration-200 hover:scale-110"
           >
             <FiX className="w-5 h-5" />
           </button>
         </div>
 
         {/* Search Input */}
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="p-6 bg-white dark:bg-gray-800 shadow-sm">
           <form onSubmit={handleSearch}>
             <div className="relative">
               <input
@@ -177,79 +186,82 @@ const SearchSlideOut = ({ isOpen, onClose }) => {
                 placeholder="Search users, posts, clips..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-200 text-base"
               />
-              <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             </div>
           </form>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-900" style={{ height: 'calc(100vh - 200px)' }}>
           {searchQuery.trim() ? (
             <>
               {/* Tabs */}
-              <div className="flex space-x-1 bg-gray-100 dark:bg-gray-700 p-1 mx-4 mt-4 rounded-lg">
+              <div className="flex space-x-2 bg-white dark:bg-gray-800 p-2 mx-6 mt-6 rounded-xl shadow-sm">
                 <button
                   onClick={() => handleTabChange('all')}
-                  className={`flex items-center space-x-2 flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+                  className={`flex items-center space-x-2 flex-1 py-3 px-4 rounded-lg text-sm font-medium transition-all duration-200 ${
                     activeTab === 'all'
-                      ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+                      ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg transform scale-105'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700'
                   }`}
                 >
-                  <FiSearch className="w-3 h-3" />
+                  <FiSearch className="w-4 h-4" />
                   <span>All ({getTotalResults()})</span>
                 </button>
                 <button
                   onClick={() => handleTabChange('users')}
-                  className={`flex items-center space-x-2 flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+                  className={`flex items-center space-x-2 flex-1 py-3 px-4 rounded-lg text-sm font-medium transition-all duration-200 ${
                     activeTab === 'users'
-                      ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+                      ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg transform scale-105'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700'
                   }`}
                 >
-                  <FiUsers className="w-3 h-3" />
+                  <FiUsers className="w-4 h-4" />
                   <span>Users ({results.users.length})</span>
                 </button>
                 <button
                   onClick={() => handleTabChange('posts')}
-                  className={`flex items-center space-x-2 flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+                  className={`flex items-center space-x-2 flex-1 py-3 px-4 rounded-lg text-sm font-medium transition-all duration-200 ${
                     activeTab === 'posts'
-                      ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+                      ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg transform scale-105'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700'
                   }`}
                 >
-                  <FiFileText className="w-3 h-3" />
+                  <FiFileText className="w-4 h-4" />
                   <span>Posts ({results.posts.length})</span>
                 </button>
                 <button
                   onClick={() => handleTabChange('clips')}
-                  className={`flex items-center space-x-2 flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+                  className={`flex items-center space-x-2 flex-1 py-3 px-4 rounded-lg text-sm font-medium transition-all duration-200 ${
                     activeTab === 'clips'
-                      ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+                      ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg transform scale-105'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700'
                   }`}
                 >
-                  <FiVideo className="w-3 h-3" />
+                  <FiVideo className="w-4 h-4" />
                   <span>Clips ({results.clips.length})</span>
                 </button>
               </div>
 
               {/* Results */}
-              <div className="p-4">
+              <div className="p-6">
                 {loading ? (
-                  <div className="flex justify-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <div className="flex justify-center py-12">
+                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-6">
                     {activeTab === 'all' && (
                       <>
                         {/* Users */}
                         {results.users.length > 0 && (
                           <div>
-                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Users</h3>
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
+                              <FiUsers className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                              <span>Users</span>
+                            </h3>
                             <div className="space-y-3">
                               {results.users.slice(0, 3).map((user) => (
                                 <UserCard key={user._id} user={user} />
@@ -270,7 +282,10 @@ const SearchSlideOut = ({ isOpen, onClose }) => {
                         {/* Posts */}
                         {results.posts.length > 0 && (
                           <div>
-                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Posts</h3>
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
+                              <FiFileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                              <span>Posts</span>
+                            </h3>
                             <div className="space-y-3">
                               {results.posts.slice(0, 2).map((post) => (
                                 <div key={post._id} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
@@ -293,7 +308,10 @@ const SearchSlideOut = ({ isOpen, onClose }) => {
                         {/* Clips */}
                         {results.clips.length > 0 && (
                           <div>
-                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">AFEXClips</h3>
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
+                              <FiVideo className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                              <span>AFEXClips</span>
+                            </h3>
                             <div className="grid grid-cols-2 gap-3">
                               {results.clips.slice(0, 4).map((clip) => (
                                 <ClipCard key={clip._id} clip={clip} compact />
@@ -312,10 +330,15 @@ const SearchSlideOut = ({ isOpen, onClose }) => {
                         )}
 
                         {getTotalResults() === 0 && (
-                          <div className="text-center py-8">
-                            <FiSearch className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                            <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-1">No results found</h3>
-                            <p className="text-xs text-gray-600 dark:text-gray-400">Try adjusting your search terms</p>
+                          <div className="text-center py-16">
+                            <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 rounded-full mx-auto mb-6 flex items-center justify-center">
+                              <FiSearch className="w-10 h-10 text-blue-600 dark:text-blue-400" />
+                            </div>
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">No results found</h3>
+                            <p className="text-gray-600 dark:text-gray-400 mb-4">Try adjusting your search terms</p>
+                            <div className="text-sm text-gray-500 dark:text-gray-500">
+                              Search for users, posts, or AFEXClips
+                            </div>
                           </div>
                         )}
                       </>
@@ -377,10 +400,15 @@ const SearchSlideOut = ({ isOpen, onClose }) => {
               </div>
             </>
           ) : (
-            <div className="text-center py-12">
-              <FiSearch className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-              <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-1">Start searching</h3>
-              <p className="text-xs text-gray-600 dark:text-gray-400">Search for users, posts, or AFEXClips</p>
+            <div className="text-center py-16">
+              <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 rounded-full mx-auto mb-8 flex items-center justify-center">
+                <FiSearch className="w-12 h-12 text-blue-600 dark:text-blue-400" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Start searching</h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">Search for users, posts, or AFEXClips</p>
+              <div className="text-sm text-gray-500 dark:text-gray-500">
+                Type in the search box above to get started
+              </div>
             </div>
           )}
         </div>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { FiSearch, FiVideo, FiPlus, FiUser, FiLogOut, FiSettings, FiX, FiMessageCircle, FiBell, FiChevronDown, FiMenu, FiAward } from 'react-icons/fi';
+import { FiVideo, FiPlus, FiUser, FiLogOut, FiSettings, FiX, FiMessageCircle, FiBell, FiChevronDown, FiMenu, FiAward } from 'react-icons/fi';
 import AFEXLogo, { DefaultAvatar } from './AFEXLogo';
 import { getAvatarUrl } from '../../utils/avatarUtils';
 import XPBar from '../leveling/XPBar';
@@ -17,8 +17,6 @@ const Navbar = ({ darkMode = false }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState([]);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const desktopSearchButtonRef = useRef(null);
-  const mobileSearchButtonRef = useRef(null);
 
 
 
@@ -31,16 +29,10 @@ const Navbar = ({ darkMode = false }) => {
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (isSearchOpen) {
-        const isClickOnSearchButton = 
-          (desktopSearchButtonRef.current && desktopSearchButtonRef.current.contains(event.target)) ||
-          (mobileSearchButtonRef.current && mobileSearchButtonRef.current.contains(event.target));
-        
-        if (!isClickOnSearchButton) {
-          // Check if click is not on the search slide-out
-          const searchSlideOut = document.querySelector('[data-search-slideout]');
-          if (searchSlideOut && !searchSlideOut.contains(event.target)) {
-            setIsSearchOpen(false);
-          }
+        // Check if click is not on the search slide-out
+        const searchSlideOut = document.querySelector('[data-search-slideout]');
+        if (searchSlideOut && !searchSlideOut.contains(event.target)) {
+          setIsSearchOpen(false);
         }
       }
     };
@@ -53,6 +45,19 @@ const Navbar = ({ darkMode = false }) => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isSearchOpen]);
+
+  // Listen for custom event to open search from sidebar
+  useEffect(() => {
+    const handleOpenSearch = () => {
+      setIsSearchOpen(true);
+    };
+
+    window.addEventListener('openSearchSlideOut', handleOpenSearch);
+
+    return () => {
+      window.removeEventListener('openSearchSlideOut', handleOpenSearch);
+    };
+  }, []);
 
   const formatDate = (date) => {
     const now = new Date();
@@ -82,17 +87,7 @@ const Navbar = ({ darkMode = false }) => {
             </div>
           </Link>
 
-          {/* Search Button - Desktop */}
-          <div className="hidden sm:flex flex-1 max-w-2xl mx-4 lg:mx-8">
-            <button
-              ref={desktopSearchButtonRef}
-              onClick={() => setIsSearchOpen(true)}
-              className="w-full flex items-center space-x-3 px-4 py-2 sm:py-3 rounded-xl sm:rounded-2xl border-2 border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-400 transition-all duration-300 shadow-sm hover:shadow-md text-sm sm:text-base text-left text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800"
-            >
-              <FiSearch className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-              <span className="truncate">Search users, posts, clips...</span>
-            </button>
-          </div>
+
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-3 lg:space-x-6">
@@ -292,14 +287,7 @@ const Navbar = ({ darkMode = false }) => {
               </div>
             )}
             
-            {/* Mobile Search Button */}
-            <button
-              ref={mobileSearchButtonRef}
-              onClick={() => setIsSearchOpen(true)}
-              className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
-            >
-              <FiSearch className="w-5 h-5" />
-            </button>
+
             
             {/* Hamburger Menu */}
             <button

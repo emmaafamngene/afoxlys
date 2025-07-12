@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const navLinks = [
   { to: '/', label: 'Home', icon: <FiHome /> },
-  { to: '/search', label: 'Search', icon: <FiSearch /> },
+  { to: null, label: 'Search', icon: <FiSearch />, action: 'openSearch' },
   { to: '/shorts', label: 'Shorts', icon: <FaFire /> },
   { to: '/chat', label: 'Messages', icon: <FiMessageCircle /> },
   { to: '/leaderboard', label: 'Leaderboard', icon: <FiAward /> },
@@ -42,39 +42,67 @@ export default function Sidebar({ darkMode, setDarkMode }) {
           <nav className={`flex flex-col gap-2 w-full mt-6 px-3 ${hovered ? '' : 'items-center'}`}>
             {navLinks.map((link, index) => (
               <motion.div
-                key={link.to}
+                key={link.to || link.action}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1, duration: 0.3 }}
               >
-                <NavLink
-                  to={link.to}
-                  {...(link.to === '/leaderboard' ? { 'data-intro-leaderboard': true } : {})}
-                  className={({ isActive }) =>
-                    `group relative flex items-center ${hovered ? 'gap-4 px-4 py-3 w-full justify-start' : 'justify-center py-3 w-14'} 
+                {link.action === 'openSearch' ? (
+                  <button
+                    onClick={() => {
+                      // Dispatch custom event to open search
+                      window.dispatchEvent(new CustomEvent('openSearchSlideOut'));
+                    }}
+                    className={`group relative flex items-center ${hovered ? 'gap-4 px-4 py-3 w-full justify-start' : 'justify-center py-3 w-14'} 
                     font-medium transition-all duration-300 text-base mx-1
-                    ${isActive 
-                      ? 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white shadow-lg' 
-                      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:shadow-md hover:text-gray-900 dark:hover:text-white'
-                    }`
-                  }
-                >
-                  <motion.span 
-                    className="text-lg transition-all duration-200 group-hover:scale-105"
-                    whileHover={{ rotate: 2 }}
-                    whileTap={{ scale: 0.95 }}
-                    style={{ minWidth: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:shadow-md hover:text-gray-900 dark:hover:text-white`}
                   >
-                    {link.icon}
-                  </motion.span>
-                  <motion.span 
-                    className={`ml-1 text-sm font-medium transition-all duration-300 ${hovered ? 'opacity-100 w-auto' : 'opacity-0 w-0 overflow-hidden pointer-events-none'}`}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: hovered ? 1 : 0 }}
+                    <motion.span 
+                      className="text-lg transition-all duration-200 group-hover:scale-105"
+                      whileHover={{ rotate: 2 }}
+                      whileTap={{ scale: 0.95 }}
+                      style={{ minWidth: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                      {link.icon}
+                    </motion.span>
+                    <motion.span 
+                      className={`ml-1 text-sm font-medium transition-all duration-300 ${hovered ? 'opacity-100 w-auto' : 'opacity-0 w-0 overflow-hidden pointer-events-none'}`}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: hovered ? 1 : 0 }}
+                    >
+                      {link.label}
+                    </motion.span>
+                  </button>
+                ) : (
+                  <NavLink
+                    to={link.to}
+                    {...(link.to === '/leaderboard' ? { 'data-intro-leaderboard': true } : {})}
+                    className={({ isActive }) =>
+                      `group relative flex items-center ${hovered ? 'gap-4 px-4 py-3 w-full justify-start' : 'justify-center py-3 w-14'} 
+                      font-medium transition-all duration-300 text-base mx-1
+                      ${isActive 
+                        ? 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white shadow-lg' 
+                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:shadow-md hover:text-gray-900 dark:hover:text-white'
+                      }`
+                    }
                   >
-                    {link.label}
-                  </motion.span>
-                </NavLink>
+                    <motion.span 
+                      className="text-lg transition-all duration-200 group-hover:scale-105"
+                      whileHover={{ rotate: 2 }}
+                      whileTap={{ scale: 0.95 }}
+                      style={{ minWidth: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                      {link.icon}
+                    </motion.span>
+                    <motion.span 
+                      className={`ml-1 text-sm font-medium transition-all duration-300 ${hovered ? 'opacity-100 w-auto' : 'opacity-0 w-0 overflow-hidden pointer-events-none'}`}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: hovered ? 1 : 0 }}
+                    >
+                      {link.label}
+                    </motion.span>
+                  </NavLink>
+                )}
                 <AnimatePresence>
                   {window.location.pathname === link.to && (
                     <motion.div
@@ -148,17 +176,31 @@ export default function Sidebar({ darkMode, setDarkMode }) {
       <nav className="fixed bottom-0 left-0 right-0 z-40 flex lg:hidden justify-around items-center h-20 sm:h-22 
         bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 shadow-lg px-2">
         {navLinks.map(link => (
-          <NavLink
-            key={link.to}
-            to={link.to}
-            className={({ isActive }) =>
-              `flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-200 min-w-0 flex-1 mx-1
-              ${isActive ? 'text-gray-900 dark:text-white bg-gray-200 dark:bg-gray-700 shadow-md' : 'text-gray-500 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800'}`
-            }
-          >
-            <span className="text-xl sm:text-2xl mb-1.5">{link.icon}</span>
-            <span className="text-xs sm:text-sm font-medium truncate max-w-full">{link.label}</span>
-          </NavLink>
+          link.action === 'openSearch' ? (
+            <button
+              key={link.action}
+              onClick={() => {
+                // Dispatch custom event to open search
+                window.dispatchEvent(new CustomEvent('openSearchSlideOut'));
+              }}
+              className="flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-200 min-w-0 flex-1 mx-1 text-gray-500 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800"
+            >
+              <span className="text-xl sm:text-2xl mb-1.5">{link.icon}</span>
+              <span className="text-xs sm:text-sm font-medium truncate max-w-full">{link.label}</span>
+            </button>
+          ) : (
+            <NavLink
+              key={link.to}
+              to={link.to}
+              className={({ isActive }) =>
+                `flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-200 min-w-0 flex-1 mx-1
+                ${isActive ? 'text-gray-900 dark:text-white bg-gray-200 dark:bg-gray-700 shadow-md' : 'text-gray-500 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800'}`
+              }
+            >
+              <span className="text-xl sm:text-2xl mb-1.5">{link.icon}</span>
+              <span className="text-xs sm:text-sm font-medium truncate max-w-full">{link.label}</span>
+            </NavLink>
+          )
         ))}
         
         {/* Mobile More Button */}

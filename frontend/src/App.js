@@ -16,15 +16,10 @@ import Register from './pages/auth/Register';
 
 // Main Pages
 import Home from './pages/Home';
-import AFEXClips from './pages/AFEXClips';
-import Search from './pages/Search';
 import Profile from './pages/Profile';
-import Settings from './pages/Settings';
 import EditProfile from './pages/EditProfile';
 import CreatePost from './pages/CreatePost';
-import CreateClip from './pages/CreateClip';
 import Chat from './pages/Chat';
-import Confessions from './pages/Confessions';
 import Leaderboard from './pages/Leaderboard';
 import Shorts from './pages/Shorts';
 import Premium from './pages/Premium';
@@ -99,16 +94,7 @@ function App() {
                     </>
                   </PrivateRoute>
                 } />
-                <Route path="/clips" element={
-                  <PrivateRoute>
-                    <AFEXClips />
-                  </PrivateRoute>
-                } />
-                <Route path="/search" element={
-                  <PrivateRoute>
-                    <Search />
-                  </PrivateRoute>
-                } />
+
                 <Route path="/profile" element={
                   <PrivateRoute>
                     <CurrentUserProfile />
@@ -124,29 +110,14 @@ function App() {
                     <EditProfile />
                   </PrivateRoute>
                 } />
-                <Route path="/settings" element={
-                  <PrivateRoute>
-                    <Settings />
-                  </PrivateRoute>
-                } />
                 <Route path="/create-post" element={
                   <PrivateRoute>
                     <CreatePost />
                   </PrivateRoute>
                 } />
-                <Route path="/create-clip" element={
-                  <PrivateRoute>
-                    <CreateClip />
-                  </PrivateRoute>
-                } />
                 <Route path="/chat" element={
                   <PrivateRoute>
                     <Chat />
-                  </PrivateRoute>
-                } />
-                <Route path="/confessions" element={
-                  <PrivateRoute>
-                    <Confessions />
                   </PrivateRoute>
                 } />
                 <Route path="/leaderboard" element={

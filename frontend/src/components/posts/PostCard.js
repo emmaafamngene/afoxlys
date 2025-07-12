@@ -8,7 +8,7 @@ import CommentSection from '../comments/CommentSection';
 import DefaultAvatar from '../DefaultAvatar';
 import { getAvatarUrl } from '../../utils/avatarUtils';
 
-const PostCard = ({ post, onUpdate }) => {
+const PostCard = ({ post, onUpdate, compact = false }) => {
   const { user } = useAuth();
   const [isLiked, setIsLiked] = useState(post.likes?.some(like => like._id === user?._id) || false);
   const [likeCount, setLikeCount] = useState(post.likeCount || post.likes?.length || 0);
@@ -80,46 +80,46 @@ const PostCard = ({ post, onUpdate }) => {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-xl sm:rounded-2xl shadow-lg sm:shadow-xl overflow-hidden border border-gray-200 dark:border-gray-800 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
+    <div className={`bg-white dark:bg-gray-900 rounded-xl sm:rounded-2xl shadow-lg sm:shadow-xl overflow-hidden border border-gray-200 dark:border-gray-800 hover:shadow-2xl transition-all duration-300 ${compact ? '' : 'transform hover:-translate-y-1'}`}>
       {/* Header */}
-      <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-800 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900">
+      <div className={`${compact ? 'p-3' : 'p-4 sm:p-6'} border-b border-gray-200 dark:border-gray-800 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900`}>
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3 sm:space-x-4">
-            <Link to={`/user/${post.author._id}`} className="group">
-              {post.author.avatar ? (
-                <div className="relative">
-                  <img
-                    src={getAvatarUrl(post.author.avatar)}
-                    alt={post.author.username}
-                    className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover border-2 border-white dark:border-gray-800 shadow-lg group-hover:scale-110 transition-transform duration-300"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                      e.target.nextSibling.style.display = 'flex';
-                    }}
-                  />
+                      <div className="flex items-center space-x-3 sm:space-x-4">
+              <Link to={`/user/${post.author._id}`} className="group">
+                {post.author.avatar ? (
+                  <div className="relative">
+                    <img
+                      src={getAvatarUrl(post.author.avatar)}
+                      alt={post.author.username}
+                      className={`${compact ? 'w-8 h-8' : 'w-10 h-10 sm:w-12 sm:h-12'} rounded-full object-cover border-2 border-white dark:border-gray-800 shadow-lg group-hover:scale-110 transition-transform duration-300`}
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                    <DefaultAvatar 
+                      username={post.author.username} 
+                      size={compact ? 32 : 48}
+                      style={{ display: 'none' }}
+                    />
+                  </div>
+                ) : (
                   <DefaultAvatar 
                     username={post.author.username} 
-                    size={48}
-                    style={{ display: 'none' }}
+                    size={compact ? 32 : 48}
                   />
-                </div>
-              ) : (
-                <DefaultAvatar 
-                  username={post.author.username} 
-                  size={48}
-                />
-              )}
-            </Link>
-            <div className="min-w-0 flex-1">
-              <Link 
-                to={`/user/${post.author._id}`}
-                className="font-bold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-base sm:text-lg truncate block"
-              >
-                {post.author.firstName} {post.author.lastName}
+                )}
               </Link>
-              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">@{post.author.username}</p>
+              <div className="min-w-0 flex-1">
+                <Link 
+                  to={`/user/${post.author._id}`}
+                  className={`font-bold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors truncate block ${compact ? 'text-sm' : 'text-base sm:text-lg'}`}
+                >
+                  {post.author.firstName} {post.author.lastName}
+                </Link>
+                <p className={`text-gray-500 dark:text-gray-400 truncate ${compact ? 'text-xs' : 'text-xs sm:text-sm'}`}>@{post.author.username}</p>
+              </div>
             </div>
-          </div>
           <button className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors p-1.5 sm:p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 flex-shrink-0">
             <FiMoreVertical className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
@@ -127,8 +127,8 @@ const PostCard = ({ post, onUpdate }) => {
       </div>
 
       {/* Content */}
-      <div className="p-4 sm:p-6">
-        <p className="text-gray-900 dark:text-white mb-4 sm:mb-6 leading-relaxed text-sm sm:text-base lg:text-lg">
+      <div className={`${compact ? 'p-3' : 'p-4 sm:p-6'}`}>
+        <p className={`text-gray-900 dark:text-white ${compact ? 'mb-3 text-sm' : 'mb-4 sm:mb-6 leading-relaxed text-sm sm:text-base lg:text-lg'} line-clamp-3`}>
           {post.content}
         </p>
 

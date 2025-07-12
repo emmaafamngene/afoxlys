@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { FiSearch, FiVideo, FiPlus, FiUser, FiLogOut, FiSettings, FiX, FiMessageCircle, FiBell, FiChevronDown, FiMenu, FiAward } from 'react-icons/fi';
 import AFEXLogo, { DefaultAvatar } from './AFEXLogo';
 import { getAvatarUrl } from '../../utils/avatarUtils';
 import XPBar from '../leveling/XPBar';
+import SearchSlideOut from '../SearchSlideOut';
 
 const Navbar = ({ darkMode = false }) => {
   const { user, logout } = useAuth();
@@ -15,6 +16,9 @@ const Navbar = ({ darkMode = false }) => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState([]);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const desktopSearchButtonRef = useRef(null);
+  const mobileSearchButtonRef = useRef(null);
 
 
 
@@ -22,6 +26,33 @@ const Navbar = ({ darkMode = false }) => {
     await logout();
     navigate('/');
   };
+
+  // Handle clicking outside search to close it
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isSearchOpen) {
+        const isClickOnSearchButton = 
+          (desktopSearchButtonRef.current && desktopSearchButtonRef.current.contains(event.target)) ||
+          (mobileSearchButtonRef.current && mobileSearchButtonRef.current.contains(event.target));
+        
+        if (!isClickOnSearchButton) {
+          // Check if click is not on the search slide-out
+          const searchSlideOut = document.querySelector('[data-search-slideout]');
+          if (searchSlideOut && !searchSlideOut.contains(event.target)) {
+            setIsSearchOpen(false);
+          }
+        }
+      }
+    };
+
+    if (isSearchOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isSearchOpen]);
 
   const formatDate = (date) => {
     const now = new Date();
@@ -51,28 +82,16 @@ const Navbar = ({ darkMode = false }) => {
             </div>
           </Link>
 
-          {/* Search - Hidden on mobile, visible on tablet+ */}
+          {/* Search Button - Desktop */}
           <div className="hidden sm:flex flex-1 max-w-2xl mx-4 lg:mx-8">
-            <div className="relative w-full">
-              <div className="absolute inset-y-0 left-0 pl-3 sm:pl-4 flex items-center pointer-events-none">
-                <FiSearch className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
-              </div>
-              <input
-                type="text"
-                placeholder="Search users, posts, clips..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="search-input w-full pl-10 sm:pl-12 pr-4 py-2 sm:py-3 rounded-xl sm:rounded-2xl border-2 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-300 shadow-sm hover:shadow-md focus:shadow-lg text-sm sm:text-base"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute inset-y-0 right-0 pr-3 sm:pr-4 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                >
-                  <FiX className="h-4 w-4 sm:h-5 sm:w-5" />
-                </button>
-              )}
-            </div>
+            <button
+              ref={desktopSearchButtonRef}
+              onClick={() => setIsSearchOpen(true)}
+              className="w-full flex items-center space-x-3 px-4 py-2 sm:py-3 rounded-xl sm:rounded-2xl border-2 border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-400 transition-all duration-300 shadow-sm hover:shadow-md text-sm sm:text-base text-left text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800"
+            >
+              <FiSearch className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+              <span className="truncate">Search users, posts, clips...</span>
+            </button>
           </div>
 
           {/* Desktop Navigation */}
@@ -97,8 +116,8 @@ const Navbar = ({ darkMode = false }) => {
               </div>
             )}
             
-            {/* Create Buttons */}
-            <div className="flex items-center space-x-2 lg:space-x-3">
+            {/* Create Post Button - Only on Home */}
+            {window.location.pathname === '/' && (
               <Link
                 to="/create-post"
                 className="p-2.5 sm:p-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg sm:rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-105"
@@ -106,14 +125,7 @@ const Navbar = ({ darkMode = false }) => {
               >
                 <FiPlus className="w-4 h-4 sm:w-5 sm:h-5" />
               </Link>
-              <Link
-                to="/create-clip"
-                className="p-2.5 sm:p-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg sm:rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-105"
-                title="Create Clip"
-              >
-                <FiVideo className="w-4 h-4 sm:w-5 sm:h-5" />
-              </Link>
-            </div>
+            )}
 
             {/* Chat Button */}
             <Link
@@ -282,7 +294,8 @@ const Navbar = ({ darkMode = false }) => {
             
             {/* Mobile Search Button */}
             <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              ref={mobileSearchButtonRef}
+              onClick={() => setIsSearchOpen(true)}
               className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
             >
               <FiSearch className="w-5 h-5" />
@@ -305,29 +318,6 @@ const Navbar = ({ darkMode = false }) => {
         {/* Mobile Menu */}
         {isMenuOpen && (
           <div className="md:hidden border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
-            {/* Mobile Search */}
-            <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FiSearch className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  placeholder="Search users, posts, clips..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-300 shadow-sm focus:shadow-lg text-base"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                  >
-                    <FiX className="h-5 w-5" />
-                  </button>
-                )}
-              </div>
-            </div>
 
             {/* Mobile Navigation Items */}
             <div className="py-2">
@@ -407,6 +397,12 @@ const Navbar = ({ darkMode = false }) => {
           </div>
         )}
       </div>
+
+      {/* Search Slide-out */}
+      <SearchSlideOut 
+        isOpen={isSearchOpen} 
+        onClose={() => setIsSearchOpen(false)} 
+      />
     </nav>
   );
 };

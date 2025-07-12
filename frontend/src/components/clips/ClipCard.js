@@ -7,7 +7,7 @@ import { FaHeart } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { DefaultAvatar } from '../layout/AFEXLogo';
 
-const ClipCard = ({ clip, onUpdate }) => {
+const ClipCard = ({ clip, onUpdate, compact = false }) => {
   const { user } = useAuth();
   const [isLiked, setIsLiked] = useState(clip.likes?.some(like => like._id === user?._id) || false);
   const [likeCount, setLikeCount] = useState(clip.likeCount || clip.likes?.length || 0);
@@ -83,11 +83,11 @@ const ClipCard = ({ clip, onUpdate }) => {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl overflow-hidden border border-gray-200 dark:border-gray-800 group hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+    <div className={`bg-white dark:bg-gray-900 rounded-2xl shadow-xl overflow-hidden border border-gray-200 dark:border-gray-800 group hover:shadow-2xl transition-all duration-300 ${compact ? '' : 'transform hover:-translate-y-2'}`}>
       {/* Enhanced Video Container - Instagram-like aspect ratio */}
       <div 
         className="relative bg-gray-100 dark:bg-gray-800 cursor-pointer" 
-        style={{ aspectRatio: '9/16' }}
+        style={{ aspectRatio: compact ? '16/9' : '9/16' }}
         onClick={handleVideoClick}
         onMouseEnter={() => !isPlaying && setShowOverlay(true)}
         onMouseLeave={() => setShowOverlay(false)}
@@ -154,9 +154,9 @@ const ClipCard = ({ clip, onUpdate }) => {
       </div>
 
       {/* Enhanced Content */}
-      <div className="p-6">
+      <div className={`${compact ? 'p-3' : 'p-6'}`}>
         {/* Enhanced Header */}
-        <div className="flex items-center justify-between mb-4">
+        <div className={`flex items-center justify-between ${compact ? 'mb-2' : 'mb-4'}`}>
           <div className="flex items-center space-x-4">
             <Link to={`/user/${clip.author._id}`} className="group">
               {clip.author.avatar ? (
@@ -164,7 +164,7 @@ const ClipCard = ({ clip, onUpdate }) => {
                   <img
                     src={clip.author.avatar}
                     alt={clip.author.username}
-                    className="w-12 h-12 rounded-full object-cover border-2 border-white dark:border-gray-800 shadow-lg group-hover:scale-110 transition-transform duration-300"
+                    className={`${compact ? 'w-8 h-8' : 'w-12 h-12'} rounded-full object-cover border-2 border-white dark:border-gray-800 shadow-lg group-hover:scale-110 transition-transform duration-300`}
                     onError={(e) => {
                       e.target.style.display = 'none';
                       e.target.nextSibling.style.display = 'flex';
@@ -172,14 +172,14 @@ const ClipCard = ({ clip, onUpdate }) => {
                   />
                   <DefaultAvatar 
                     user={clip.author} 
-                    size="md" 
+                    size={compact ? "sm" : "md"}
                     className="hidden group-hover:scale-110 transition-transform duration-300"
                   />
                 </div>
               ) : (
                 <DefaultAvatar 
                   user={clip.author} 
-                  size="md"
+                  size={compact ? "sm" : "md"}
                   className="group-hover:scale-110 transition-transform duration-300"
                 />
               )}
@@ -187,17 +187,19 @@ const ClipCard = ({ clip, onUpdate }) => {
             <div>
               <Link 
                 to={`/user/${clip.author._id}`}
-                className="font-bold text-gray-900 dark:text-white hover:text-purple-600 dark:hover:text-purple-400 transition-colors text-lg"
+                className={`font-bold text-gray-900 dark:text-white hover:text-purple-600 dark:hover:text-purple-400 transition-colors ${compact ? 'text-sm' : 'text-lg'}`}
               >
                 {clip.author.firstName} {clip.author.lastName}
               </Link>
-              <p className="text-sm text-gray-500 dark:text-gray-400">@{clip.author.username}</p>
+              <p className={`text-gray-500 dark:text-gray-400 ${compact ? 'text-xs' : 'text-sm'}`}>@{clip.author.username}</p>
             </div>
           </div>
-          <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
-            <FiClock className="w-4 h-4" />
-            <span className="font-medium">{formatDate(clip.createdAt)}</span>
-          </div>
+          {!compact && (
+            <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
+              <FiClock className="w-4 h-4" />
+              <span className="font-medium">{formatDate(clip.createdAt)}</span>
+            </div>
+          )}
         </div>
 
         {/* Enhanced Title and Description */}

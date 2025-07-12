@@ -231,10 +231,10 @@ router.get('/supported-methods', (req, res) => {
 
 // ==================== PREMIUM SUBSCRIPTION ROUTES ====================
 
-// @route   POST /api/payments/premium/verify-payment
+// @route   POST /api/payments/premium/verify
 // @desc    Verify Paystack payment and activate premium
 // @access  Private
-router.post('/premium/verify-payment', auth, async (req, res) => {
+router.post('/premium/verify', auth, async (req, res) => {
   try {
     const { reference, email } = req.body;
     
@@ -242,6 +242,44 @@ router.post('/premium/verify-payment', auth, async (req, res) => {
       return res.status(400).json({ 
         success: false, 
         message: 'Reference and email are required' 
+      });
+    }
+
+    // Check if this is a development reference
+    if (reference.startsWith('dev_ref_')) {
+      console.log('⚠️ Development payment verification');
+      
+      // Find user by email
+      const user = await User.findOne({ email });
+      if (!user) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'User not found' 
+        });
+      }
+
+      // Activate premium subscription (monthly for development)
+      await user.activatePremium('monthly', 30);
+      
+      // Add payment record
+      await user.addPaymentRecord(1000, reference, 'completed');
+
+      return res.json({ 
+        success: true, 
+        message: 'Premium activated successfully! (Development Mode)',
+        user: {
+          isPremium: user.isPremium,
+          premiumExpiresAt: user.premiumExpiresAt,
+          daysUntilExpiry: user.getDaysUntilExpiry()
+        }
+      });
+    }
+
+    // Production mode - verify with Paystack
+    if (!process.env.PAYSTACK_SECRET_KEY || process.env.PAYSTACK_SECRET_KEY === 'sk_test_your_paystack_secret_key_here') {
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Paystack not configured for production payments' 
       });
     }
 
@@ -305,6 +343,15 @@ router.post('/premium/verify-payment', auth, async (req, res) => {
 
   } catch (error) {
     console.error('Premium payment verification error:', error);
+    
+    // If it's a Paystack API error, provide more specific error message
+    if (error.response?.data?.message) {
+      return res.status(500).json({ 
+        success: false, 
+        message: `Paystack error: ${error.response.data.message}` 
+      });
+    }
+    
     res.status(500).json({ 
       success: false, 
       message: 'Payment verification failed' 
@@ -361,7 +408,24 @@ router.post('/premium/initialize', auth, async (req, res) => {
 
     const amount = plan === 'yearly' ? 1000000 : 100000; // ₦10,000 yearly or ₦1,000 monthly in kobo
 
-    // Initialize Paystack payment
+    // Check if Paystack is configured
+    if (!process.env.PAYSTACK_SECRET_KEY || process.env.PAYSTACK_SECRET_KEY === 'sk_test_your_paystack_secret_key_here') {
+      // Development mode - simulate payment initialization
+      console.log('⚠️ Paystack not configured, using development mode');
+      
+      const mockReference = `dev_ref_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const mockAuthUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/premium/success?reference=${mockReference}&trxref=${mockReference}`;
+      
+      return res.json({
+        success: true,
+        authorizationUrl: mockAuthUrl,
+        reference: mockReference,
+        amount: amount / 100, // Convert to naira
+        isDevelopment: true
+      });
+    }
+
+    // Production mode - use actual Paystack
     const paystackResponse = await axios.post(
       'https://api.paystack.co/transaction/initialize',
       {
@@ -391,9 +455,72 @@ router.post('/premium/initialize', auth, async (req, res) => {
 
   } catch (error) {
     console.error('Premium payment initialization error:', error);
+    
+    // If it's a Paystack API error, provide more specific error message
+    if (error.response?.data?.message) {
+      return res.status(500).json({ 
+        success: false, 
+        message: `Paystack error: ${error.response.data.message}` 
+      });
+    }
+    
     res.status(500).json({ 
       success: false, 
       message: 'Failed to initialize payment' 
+    });
+  }
+});
+
+// @route   POST /api/payments/premium/activate-test
+// @desc    Manually activate premium for testing (development only)
+// @access  Private
+router.post('/premium/activate-test', auth, async (req, res) => {
+  try {
+    // Only allow in development
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Test activation not allowed in production' 
+      });
+    }
+
+    const { plan = 'monthly' } = req.body;
+    
+    // Get current user
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'User not found' 
+      });
+    }
+
+    // Activate premium
+    await user.activatePremium(plan, plan === 'yearly' ? 365 : 30);
+    
+    // Add test payment record
+    await user.addPaymentRecord(
+      plan === 'yearly' ? 10000 : 1000, 
+      `test_${Date.now()}`, 
+      'completed'
+    );
+
+    res.json({ 
+      success: true, 
+      message: 'Premium activated successfully! (Test Mode)',
+      user: {
+        isPremium: user.isPremium,
+        premiumExpiresAt: user.premiumExpiresAt,
+        premiumPlan: user.premiumPlan,
+        daysUntilExpiry: user.getDaysUntilExpiry()
+      }
+    });
+
+  } catch (error) {
+    console.error('Test premium activation error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to activate premium' 
     });
   }
 });

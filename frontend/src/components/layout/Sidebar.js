@@ -8,19 +8,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 const navLinks = [
   { to: '/', label: 'Home', icon: <FiHome /> },
   { to: '/search', label: 'Search', icon: <FiSearch /> },
-  { to: '/clips', label: 'Fliks', icon: <MdVideoLibrary /> },
   { to: '/shorts', label: 'Shorts', icon: <FaFire /> },
-  { to: '/confessions', label: 'Confessions', icon: <FiHeart /> },
   { to: '/chat', label: 'Messages', icon: <FiMessageCircle /> },
   { to: '/leaderboard', label: 'Leaderboard', icon: <FiAward /> },
-  { to: '/create-post', label: 'Create Post', icon: <FiPlus /> },
   { to: '/profile', label: 'Profile', icon: <FiUser /> },
 ];
 
 const moreOptions = [
-  { to: '/edit-profile', label: 'Edit Profile', icon: <FiEdit /> },
+  { to: '/edit-profile', label: 'Edit Profile & Settings', icon: <FiEdit /> },
   { to: '/premium', label: 'Premium', icon: <FiAward /> },
-  { to: '/settings', label: 'Settings', icon: <FiSettings /> },
 ];
 
 export default function Sidebar({ darkMode, setDarkMode }) {
@@ -149,33 +145,33 @@ export default function Sidebar({ darkMode, setDarkMode }) {
       </aside>
 
       {/* Mobile Bottom Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 flex lg:hidden justify-around items-center h-16 sm:h-18 
-        bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 shadow-lg">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 flex lg:hidden justify-around items-center h-20 sm:h-22 
+        bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 shadow-lg px-2">
         {navLinks.map(link => (
           <NavLink
             key={link.to}
             to={link.to}
             className={({ isActive }) =>
-              `flex flex-col items-center justify-center p-2 rounded-lg transition-all duration-200 min-w-0 flex-1
-              ${isActive ? 'text-gray-900 dark:text-white bg-gray-200 dark:bg-gray-700' : 'text-gray-500 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800'}`
+              `flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-200 min-w-0 flex-1 mx-1
+              ${isActive ? 'text-gray-900 dark:text-white bg-gray-200 dark:bg-gray-700 shadow-md' : 'text-gray-500 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800'}`
             }
           >
-            <span className="text-lg sm:text-xl mb-1">{link.icon}</span>
-            <span className="text-xs font-medium truncate max-w-full">{link.label}</span>
+            <span className="text-xl sm:text-2xl mb-1.5">{link.icon}</span>
+            <span className="text-xs sm:text-sm font-medium truncate max-w-full">{link.label}</span>
           </NavLink>
         ))}
         
         {/* Mobile More Button */}
-        <div className="relative flex flex-col items-center justify-center p-2 rounded-lg transition-all duration-200 min-w-0 flex-1 text-gray-500 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800">
-          <span className="text-lg sm:text-xl mb-1">
+        <div className="relative flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-200 min-w-0 flex-1 mx-1 text-gray-500 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800">
+          <span className="text-xl sm:text-2xl mb-1.5">
             <FiMoreHorizontal />
           </span>
-          <span className="text-xs font-medium">More</span>
+          <span className="text-xs sm:text-sm font-medium">More</span>
         </div>
       </nav>
 
       {/* Bottom padding for mobile to account for bottom bar */}
-      <div className="lg:hidden h-16 sm:h-18"></div>
+      <div className="lg:hidden h-20 sm:h-22"></div>
     </>
   );
 }

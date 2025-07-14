@@ -4,6 +4,8 @@ const authMiddleware = require('../middlewares/auth');
 const auth = authMiddleware.auth;
 const Short = require('../models/Short');
 const User = require('../models/User');
+const uploadMiddleware = require('../middlewares/upload');
+const { uploadClipVideo, validateVideoCodec, handleUploadError } = uploadMiddleware;
 
 // Get all shorts (with pagination)
 router.get('/', async (req, res) => {
@@ -78,6 +80,25 @@ router.post('/', auth, async (req, res) => {
       });
     }
 
+    // API-level validation for supported video formats
+    if (type === 'video') {
+      // Only allow .mp4 videos (H.264 + AAC enforced at upload)
+      if (!mediaUrl.toLowerCase().endsWith('.mp4')) {
+        return res.status(400).json({
+          success: false,
+          message: 'Only MP4 videos are supported. Please upload a video encoded with H.264 video and AAC audio.'
+        });
+      }
+    }
+
+    // Reject blob URLs or URLs not from /uploads
+    if (mediaUrl.startsWith('blob:') || !mediaUrl.startsWith('/uploads/')) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid media URL. Please upload your file through the official upload endpoint.'
+      });
+    }
+
     // Create the short
     const short = new Short({
       author: req.user._id,
@@ -104,6 +125,16 @@ router.post('/', auth, async (req, res) => {
       error: error.message 
     });
   }
+});
+
+// Upload endpoint for shorts media (video/image)
+router.post('/upload', auth, uploadClipVideo, handleUploadError, validateVideoCodec, (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: 'No file uploaded.' });
+  }
+  // Return the file URL (adjust as needed for your static file serving setup)
+  const fileUrl = `/uploads/clips/${req.file.filename}`;
+  res.status(201).json({ success: true, url: fileUrl });
 });
 
 // Get a specific short by ID

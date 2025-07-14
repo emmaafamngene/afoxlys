@@ -20,6 +20,7 @@ import Profile from './pages/Profile';
 import EditProfile from './pages/EditProfile';
 import CreatePost from './pages/CreatePost';
 import Chat from './pages/Chat';
+import AFEXAI from './pages/AFEXAI';
 import Leaderboard from './pages/Leaderboard';
 import Shorts from './pages/Shorts';
 import Premium from './pages/Premium';
@@ -118,6 +119,11 @@ function App() {
                 <Route path="/chat" element={
                   <PrivateRoute>
                     <Chat />
+                  </PrivateRoute>
+                } />
+                <Route path="/afex-ai" element={
+                  <PrivateRoute>
+                    <AFEXAI />
                   </PrivateRoute>
                 } />
                 <Route path="/leaderboard" element={

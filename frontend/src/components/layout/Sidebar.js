@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { FiHome, FiSearch, FiMessageCircle, FiUser, FiPlus, FiBell, FiSettings, FiMoreHorizontal, FiSun, FiMoon, FiEdit, FiHeart, FiAward } from 'react-icons/fi';
+import { FiHome, FiSearch, FiMessageCircle, FiUser, FiPlus, FiBell, FiSettings, FiMoreHorizontal, FiSun, FiMoon, FiEdit, FiHeart, FiAward, FiZap } from 'react-icons/fi';
 import { MdVideoLibrary } from 'react-icons/md';
 import { FaFire, FaCrown } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -10,6 +10,7 @@ const navLinks = [
   { to: null, label: 'Search', icon: <FiSearch />, action: 'openSearch' },
   { to: '/shorts', label: 'Shorts', icon: <FaFire /> },
   { to: '/chat', label: 'Messages', icon: <FiMessageCircle /> },
+  { to: '/afex-ai', label: 'AFEX AI', icon: <FiZap /> },
   { to: '/leaderboard', label: 'Leaderboard', icon: <FiAward /> },
   { to: '/premium', label: 'Premium', icon: <FaCrown /> },
   { to: '/edit-profile', label: 'Profile', icon: <FiUser /> },

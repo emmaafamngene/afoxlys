@@ -1,9 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 export default function LoadingPage({ darkMode = false }) {
   const [showWelcome, setShowWelcome] = useState(false);
+  const audioRef = useRef(null);
 
   useEffect(() => {
+    // Play sound on mount
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(() => {});
+    }
     // Show welcome message after a short delay
     const welcomeTimer = setTimeout(() => {
       setShowWelcome(true);
@@ -16,6 +22,8 @@ export default function LoadingPage({ darkMode = false }) {
 
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-black dark:to-gray-900 flex items-center justify-center z-50">
+      {/* Audio element for loading sound */}
+      <audio ref={audioRef} src="/notification-sound.mp3" preload="auto" />
       <div className="flex flex-col items-center justify-center space-y-8 w-full h-full">
         {/* AFEX Logo with enhanced pulse animation */}
         <div className="animate-pulse-slow transform hover:scale-105 transition-transform duration-300 flex items-center justify-center ml-24">
@@ -29,7 +37,6 @@ export default function LoadingPage({ darkMode = false }) {
             }}
           />
         </div>
-        
         {/* Welcome Message with Animation */}
         <div className="text-center space-y-4">
           <div className={`transition-all duration-1000 transform ${
@@ -42,18 +49,13 @@ export default function LoadingPage({ darkMode = false }) {
               Your social media experience awaits
             </p>
           </div>
-          
-          {/* User Name with Typing Animation */}
-  
         </div>
-        
         {/* Enhanced Loading Spinner */}
         <div className="flex items-center space-x-3">
           <div className="w-3 h-3 bg-blue-600 rounded-full animate-bounce"></div>
           <div className="w-3 h-3 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
           <div className="w-3 h-3 bg-pink-600 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
         </div>
-        
         {/* Loading text with gradient */}
         <p className="text-gray-500 dark:text-gray-400 text-sm font-medium animate-pulse">
           Loading your personalized experience...

@@ -147,4 +147,9 @@ export const shortsAPI = {
   getByUser: (userId, page = 1) => api.get(`/shorts/user/${userId}`, { params: { page, limit: 20 } }),
 };
 
+// AI API
+export const aiAPI = {
+  chat: (message) => api.post('/ai/chat', { message }),
+};
+
 export default api; 

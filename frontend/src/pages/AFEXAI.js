@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FiSend, FiZap, FiBrain, FiMessageCircle, FiSparkles, FiUser, FiBot } from 'react-icons/fi';
+import { FiSend, FiZap, FiBrain, FiMessageCircle, FiSparkles, FiUser, FiBot, FiEdit } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
+import { aiAPI } from '../services/api';
 
 const AFEXAI = () => {
   const [messages, setMessages] = useState([
@@ -38,34 +39,25 @@ const AFEXAI = () => {
     setInputMessage('');
     setIsTyping(true);
 
-    // Simulate AI response
-    setTimeout(() => {
+    try {
+      const res = await aiAPI.chat(userMessage.content);
       const aiResponse = {
         id: Date.now() + 1,
         type: 'ai',
-        content: generateAIResponse(inputMessage),
+        content: res.data.response,
         timestamp: new Date()
       };
       setMessages(prev => [...prev, aiResponse]);
+    } catch (error) {
+      setMessages(prev => [...prev, {
+        id: Date.now() + 2,
+        type: 'ai',
+        content: 'Sorry, I could not process your request. Please try again later.',
+        timestamp: new Date()
+      }]);
+    } finally {
       setIsTyping(false);
-    }, 1500);
-  };
-
-  const generateAIResponse = (userInput) => {
-    const responses = [
-      "That's an interesting question! Let me help you with that.",
-      "I understand what you're looking for. Here's what I can suggest...",
-      "Great question! Based on your request, I think you might want to consider...",
-      "I'm here to help! Let me provide you with some insights on that topic.",
-      "Thanks for asking! Here's what I know about that subject...",
-      "I'd be happy to assist you with that. Let me break it down for you...",
-      "That's a fantastic point! Here's my perspective on this...",
-      "I'm glad you brought that up. Let me share some thoughts on this...",
-      "Excellent question! Here's what I can tell you about that...",
-      "I understand your interest in this topic. Let me provide some guidance..."
-    ];
-    
-    return responses[Math.floor(Math.random() * responses.length)];
+    }
   };
 
   const handleKeyPress = (e) => {

@@ -105,6 +105,7 @@ app.use('/api/payments', require('./routes/payments'));
 app.use('/api/confessions', require('./routes/confessions'));
 app.use('/api/shorts', require('./routes/shorts'));
 app.use('/api/upload', require('./routes/upload'));
+app.use('/api/ai', require('./routes/ai'));
 
 // Patch the POST /api/chat/conversations route to emit a socket event
 app.post('/api/chat/conversations', require('./middlewares/auth').auth, async (req, res) => {

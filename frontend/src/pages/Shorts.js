@@ -2,14 +2,16 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { shortsAPI } from '../services/api';
-import { FiPlay, FiPause, FiPlus } from 'react-icons/fi';
+import { FiPlay, FiPause, FiPlus, FiHeart } from 'react-icons/fi';
 import DefaultAvatar from '../components/DefaultAvatar';
 import { getOptimizedAvatarUrl } from '../utils/avatarUtils';
 
-const VideoPlayer = ({ short, isPaused, onToggle, onVideoPlay, onVideoInView }) => {
+const VideoPlayer = ({ short, isPaused, onToggle, onVideoPlay, onVideoInView, onLike }) => {
   const videoRef = useRef(null);
   const containerRef = useRef(null);
   const [progress, setProgress] = useState(0);
+  const [showHeartAnimation, setShowHeartAnimation] = useState(false);
+  const [heartPosition, setHeartPosition] = useState({ x: 0, y: 0 });
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -104,12 +106,34 @@ const VideoPlayer = ({ short, isPaused, onToggle, onVideoPlay, onVideoInView }) 
     }
   };
 
+  const handleDoubleClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Get click position relative to the video container
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    setHeartPosition({ x, y });
+    setShowHeartAnimation(true);
+    
+    // Trigger like action
+    onLike(short._id);
+    
+    // Hide animation after 1.5 seconds
+    setTimeout(() => {
+      setShowHeartAnimation(false);
+    }, 1500);
+  };
+
   return (
     <div 
       ref={containerRef}
       className="relative bg-black rounded-2xl overflow-hidden shadow-2xl cursor-pointer" 
       style={{ width: '363.938px', height: '647px' }}
       onClick={handleManualToggle}
+      onDoubleClick={handleDoubleClick}
     >
       {short.type === 'video' ? (
         <video
@@ -154,6 +178,8 @@ const VideoPlayer = ({ short, isPaused, onToggle, onVideoPlay, onVideoInView }) 
         </p>
       </div>
 
+
+
       {/* Custom Video Progress Bar */}
       <div 
         className="absolute bottom-0 left-0 right-0 h-1 bg-gray-800 bg-opacity-30 cursor-pointer hover:h-3 hover:bg-opacity-50 transition-all duration-200"
@@ -167,6 +193,21 @@ const VideoPlayer = ({ short, isPaused, onToggle, onVideoPlay, onVideoInView }) 
           <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-1.5 h-1.5 bg-white rounded-full shadow-md opacity-0 hover:opacity-100 transition-opacity duration-200"></div>
         </div>
       </div>
+
+      {/* Heart Animation Overlay */}
+      {showHeartAnimation && (
+        <div 
+          className="absolute pointer-events-none z-50"
+          style={{
+            left: heartPosition.x - 50,
+            top: heartPosition.y - 50,
+          }}
+        >
+          <div className="animate-heart-burst">
+            <FiHeart className="w-20 h-20 text-red-500 fill-current drop-shadow-lg" />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -182,6 +223,10 @@ const Shorts = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [caption, setCaption] = useState('');
   const [currentPlayingVideo, setCurrentPlayingVideo] = useState(null);
+  const [fileError, setFileError] = useState('');
+  const [isValidFile, setIsValidFile] = useState(false);
+  const [likedShorts, setLikedShorts] = useState({});
+  const [showButtonHeartAnimation, setShowButtonHeartAnimation] = useState({});
 
   useEffect(() => {
     fetchShorts();
@@ -193,8 +238,19 @@ const Shorts = () => {
       const response = await shortsAPI.getAll();
       console.log('Shorts response:', response);
       if (response.data && response.data.success) {
-        setShorts(response.data.shorts || []);
-        console.log('Shorts data:', response.data.shorts);
+        const shortsData = response.data.shorts || [];
+        setShorts(shortsData);
+        
+        // Initialize liked state
+        const likedState = {};
+        shortsData.forEach(short => {
+          if (short.isLiked) {
+            likedState[short._id] = true;
+          }
+        });
+        setLikedShorts(likedState);
+        
+        console.log('Shorts data:', shortsData);
       } else {
         setShorts([]);
       }
@@ -239,10 +295,128 @@ const Shorts = () => {
     }
   };
 
-  const handleFileSelect = (e) => {
+  const validateFile = (file) => {
+    // Reset error state
+    setFileError('');
+    setIsValidFile(false);
+
+    if (!file) {
+      setFileError('Please select a file');
+      return false;
+    }
+
+    // Check file size (100MB limit)
+    const maxSize = 100 * 1024 * 1024; // 100MB in bytes
+    if (file.size > maxSize) {
+      setFileError(`File is too large. Maximum size is 100MB. Your file is ${(file.size / (1024 * 1024)).toFixed(1)}MB`);
+      return false;
+    }
+
+    // Check file type
+    const allowedVideoTypes = [
+      'video/mp4',
+      'video/quicktime',
+      'video/x-msvideo',
+      'video/x-ms-wmv',
+      'video/webm',
+      'video/ogg'
+    ];
+    
+    const allowedImageTypes = [
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/gif',
+      'image/webp'
+    ];
+
+    const isVideo = allowedVideoTypes.includes(file.type);
+    const isImage = allowedImageTypes.includes(file.type);
+
+    if (!isVideo && !isImage) {
+      setFileError(`File type not supported. Please use: ${allowedVideoTypes.join(', ').replace('video/', '')} for videos or ${allowedImageTypes.join(', ').replace('image/', '')} for images`);
+      return false;
+    }
+
+    // Additional video-specific checks
+    if (isVideo) {
+      // Check video duration (max 5 minutes for shorts)
+      return new Promise((resolve) => {
+        const video = document.createElement('video');
+        video.preload = 'metadata';
+        
+        video.onloadedmetadata = () => {
+          if (video.duration > 300) {
+            setFileError('Video is too long. Maximum duration is 5 minutes for shorts.');
+            resolve(false);
+          } else {
+            setIsValidFile(true);
+            resolve(true);
+          }
+        };
+        
+        video.onerror = () => {
+          setFileError('Unable to read video file. Please try a different video.');
+          resolve(false);
+        };
+        
+        video.src = URL.createObjectURL(file);
+      });
+    }
+
+    // Image is valid
+    setIsValidFile(true);
+    return true;
+  };
+
+  const handleFileSelect = async (e) => {
     const file = e.target.files[0];
     if (file) {
       setSelectedFile(file);
+      const isValid = await validateFile(file);
+      if (!isValid) {
+        setSelectedFile(null);
+      }
+    }
+  };
+
+  const handleLike = async (shortId) => {
+    try {
+      // Show heart animation immediately
+      setShowButtonHeartAnimation(prev => ({
+        ...prev,
+        [shortId]: true
+      }));
+
+      const response = await shortsAPI.like(shortId);
+      if (response.data && response.data.success) {
+        setLikedShorts(prev => ({
+          ...prev,
+          [shortId]: response.data.isLiked
+        }));
+        
+        // Update the shorts array with new like count
+        setShorts(prev => prev.map(short => 
+          short._id === shortId 
+            ? { ...short, likes: response.data.likes }
+            : short
+        ));
+      }
+
+      // Hide animation after 1.5 seconds
+      setTimeout(() => {
+        setShowButtonHeartAnimation(prev => ({
+          ...prev,
+          [shortId]: false
+        }));
+      }, 1500);
+    } catch (error) {
+      console.error('Error liking short:', error);
+      // Hide animation on error
+      setShowButtonHeartAnimation(prev => ({
+        ...prev,
+        [shortId]: false
+      }));
     }
   };
 
@@ -324,10 +498,12 @@ const Shorts = () => {
                 onToggle={toggleVideo}
                 onVideoPlay={handleVideoPlay}
                 onVideoInView={handleVideoInView}
+                onLike={handleLike}
               />
 
-              {/* User Avatar - Outside Video */}
-              <div className="flex flex-col items-center space-y-2">
+              {/* User Avatar and Like Button - Outside Video */}
+              <div className="flex flex-col items-center space-y-4">
+                {/* User Avatar */}
                 <button
                   onClick={() => {
                     if (currentUser?._id) {
@@ -346,6 +522,35 @@ const Shorts = () => {
                     <DefaultAvatar username={currentUser?.username || 'You'} />
                   )}
                 </button>
+
+                {/* Like Button */}
+                <div className="flex flex-col items-center space-y-2">
+                  <button
+                    onClick={() => handleLike(short._id)}
+                    className="group relative w-12 h-12 bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg hover:shadow-red-500/25 hover:scale-110"
+                  >
+                    <FiHeart 
+                      className={`w-6 h-6 transition-all duration-300 ${
+                        likedShorts[short._id] || short.isLiked
+                          ? 'text-white fill-current' 
+                          : 'text-white'
+                      }`} 
+                    />
+                    
+                    {/* Heart Animation for Button */}
+                    {showButtonHeartAnimation[short._id] && (
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <div className="animate-heart-burst">
+                          <FiHeart className="w-16 h-16 text-red-500 fill-current drop-shadow-lg" />
+                        </div>
+                      </div>
+                    )}
+                  </button>
+                  <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">
+                    {short.likes?.length || 0}
+                  </span>
+                </div>
+
                 <div className="w-1 h-8 bg-gradient-to-b from-gray-400 to-transparent rounded-full"></div>
                 <span className="text-xs text-gray-600 dark:text-gray-400 text-center max-w-16 truncate">
                   {currentUser?.username || 'You'}
@@ -388,7 +593,7 @@ const Shorts = () => {
                       {selectedFile ? selectedFile.name : 'Click to select video or image'}
                     </p>
                     <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">
-                      MP4, MOV, JPG, PNG up to 100MB
+                      MP4, MOV, JPG, PNG up to 100MB • Videos max 5 minutes
                     </p>
                   </div>
                 </div>

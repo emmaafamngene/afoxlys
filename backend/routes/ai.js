@@ -1,13 +1,11 @@
 const express = require('express');
-const OpenAI = require('openai');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { auth } = require('../middlewares/auth');
 require('dotenv').config();
 
 const router = express.Router();
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // POST /api/ai/chat
 router.post('/chat', auth, async (req, res) => {
@@ -16,19 +14,20 @@ router.post('/chat', auth, async (req, res) => {
     return res.status(400).json({ error: 'Message is required.' });
   }
   try {
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
-      messages: [
-        { role: 'system', content: 'You are AFEX AI, a helpful and friendly assistant for a social media platform.' },
-        { role: 'user', content: message }
-      ],
-      max_tokens: 256,
-      temperature: 0.7,
-    });
-    const aiResponse = completion.choices[0].message.content;
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    
+    const prompt = `You are AFEX AI, a helpful and friendly assistant for a social media platform. 
+    Respond to the user's message in a conversational and helpful way. 
+    Keep responses concise and engaging.
+    
+    User message: ${message}`;
+    
+    const result = await model.generateContent(prompt);
+    const aiResponse = result.response.text();
+    
     res.json({ response: aiResponse });
   } catch (error) {
-    console.error('OpenAI error:', error.response?.data || error.message);
+    console.error('Gemini error:', error);
     res.status(500).json({ error: 'Failed to get AI response.' });
   }
 });

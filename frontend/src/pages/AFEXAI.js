@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FiSend, FiZap, FiBrain, FiMessageCircle, FiSparkles, FiUser, FiBot, FiEdit } from 'react-icons/fi';
+import { FiSend, FiZap, FiCpu, FiMessageCircle, FiStar, FiUser, FiEdit } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { aiAPI } from '../services/api';
 
@@ -86,14 +86,14 @@ const AFEXAI = () => {
       id: 'analytics',
       title: 'Smart Analytics',
       description: 'Get AI-powered insights about your content',
-      icon: <FiBrain className="w-6 h-6" />,
+      icon: <FiCpu className="w-6 h-6" />,
       color: 'from-orange-500 to-red-600'
     },
     {
       id: 'ideas',
       title: 'Content Ideas',
       description: 'Discover trending topics and content suggestions',
-      icon: <FiSparkles className="w-6 h-6" />,
+      icon: <FiStar className="w-6 h-6" />,
       color: 'from-pink-500 to-rose-600'
     }
   ];
@@ -167,7 +167,7 @@ const AFEXAI = () => {
                         {message.type === 'user' ? (
                           <FiUser className="w-4 h-4 text-white" />
                         ) : (
-                          <FiBot className="w-4 h-4 text-white" />
+                          <FiUser className="w-4 h-4 text-white" />
                         )}
                       </div>
                       <div className={`px-4 py-3 rounded-2xl ${
@@ -196,7 +196,7 @@ const AFEXAI = () => {
                 >
                   <div className="flex items-start space-x-3">
                     <div className="w-8 h-8 rounded-full bg-gradient-to-r from-gray-500 to-gray-600 flex items-center justify-center">
-                      <FiBot className="w-4 h-4 text-white" />
+                      <FiUser className="w-4 h-4 text-white" />
                     </div>
                     <div className="px-4 py-3 rounded-2xl bg-gray-100 dark:bg-gray-700">
                       <div className="flex space-x-1">
@@ -265,7 +265,7 @@ const AFEXAI = () => {
           >
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-red-600 rounded-xl flex items-center justify-center">
-                <FiBrain className="w-5 h-5 text-white" />
+                <FiCpu className="w-5 h-5 text-white" />
               </div>
               <div className="text-left">
                 <h3 className="font-semibold text-gray-900 dark:text-white">Content Analysis</h3>
@@ -281,7 +281,7 @@ const AFEXAI = () => {
           >
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gradient-to-r from-pink-500 to-rose-600 rounded-xl flex items-center justify-center">
-                <FiSparkles className="w-5 h-5 text-white" />
+                <FiStar className="w-5 h-5 text-white" />
               </div>
               <div className="text-left">
                 <h3 className="font-semibold text-gray-900 dark:text-white">Trending Ideas</h3>

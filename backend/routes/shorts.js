@@ -128,7 +128,7 @@ router.post('/', auth, async (req, res) => {
 });
 
 // Upload endpoint for shorts media (video/image)
-router.post('/upload', auth, uploadClipVideo, handleUploadError, validateVideoCodec, (req, res) => {
+router.post('/upload', auth, uploadClipVideo, handleUploadError, (req, res) => {
   if (!req.file) {
     return res.status(400).json({ success: false, message: 'No file uploaded.' });
   }

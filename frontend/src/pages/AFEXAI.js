@@ -656,7 +656,7 @@ const AFEXAI = () => {
                       style={{ minHeight: '56px', maxHeight: '120px' }}
                     />
                     <motion.div
-                      className="absolute inset-0 rounded-2xl bg-gradient-to-r from-violet-500/20 to-purple-500/20 opacity-0"
+                      className="absolute inset-0 rounded-2xl bg-gradient-to-r from-violet-500/20 to-purple-500/20 opacity-0 pointer-events-none"
                       animate={{ opacity: isHovering ? 1 : 0 }}
                       transition={{ duration: 0.3 }}
                     />

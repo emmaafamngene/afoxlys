@@ -38,8 +38,8 @@ const Home = () => {
     } catch (error) {
       console.error('Error fetching feed:', error);
       if (retryCount < 2) {
-        // Retry after 2 seconds
-        setTimeout(() => fetchFeed(retryCount + 1), 2000);
+        // Retry after 0.5 seconds
+        setTimeout(() => fetchFeed(retryCount + 1), 500);
         return;
       }
       // Show fallback data or empty state

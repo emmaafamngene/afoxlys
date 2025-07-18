@@ -1,0 +1,139 @@
+body {
+  margin: 0;
+  padding: 0;
+  background: #181a20;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  color: #fff;
+  min-height: 100vh;
+}
+
+.afex-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #232526 0%, #181a20 100%);
+}
+
+.afex-video {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100vw;
+  height: 100vh;
+  object-fit: cover;
+  z-index: 1;
+}
+
+.afex-overlay-buttons {
+  position: absolute;
+  right: 5vw;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  z-index: 3;
+}
+
+.afex-btn {
+  background: rgba(24, 26, 32, 0.6);
+  border: none;
+  border-radius: 1.5rem;
+  padding: 1rem 1.2rem;
+  margin-bottom: 0.5rem;
+  box-shadow: 0 0 16px 2px #00fff7, 0 2px 8px rgba(0,0,0,0.2);
+  backdrop-filter: blur(8px);
+  color: #fff;
+  font-size: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: box-shadow 0.2s, transform 0.2s;
+  cursor: pointer;
+  outline: none;
+}
+
+.afex-btn:hover, .afex-btn:focus {
+  box-shadow: 0 0 24px 4px #00fff7, 0 2px 16px rgba(0,255,247,0.3);
+  transform: scale(1.08);
+}
+
+.btn-label {
+  font-size: 1rem;
+  margin-top: 0.3rem;
+  color: #00fff7;
+  text-shadow: 0 0 6px #00fff7;
+}
+
+.afex-user-info {
+  position: absolute;
+  left: 2vw;
+  bottom: 4vh;
+  display: flex;
+  align-items: flex-end;
+  z-index: 3;
+  background: rgba(24, 26, 32, 0.5);
+  border-radius: 1.5rem;
+  padding: 1rem 1.5rem 1rem 1rem;
+  box-shadow: 0 0 16px 2px #00fff7, 0 2px 8px rgba(0,0,0,0.2);
+  backdrop-filter: blur(8px);
+}
+
+.afex-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid #00fff7;
+  margin-right: 1rem;
+  box-shadow: 0 0 8px #00fff7;
+}
+
+.afex-user-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.afex-username {
+  font-weight: bold;
+  font-size: 1.1rem;
+  color: #00fff7;
+  text-shadow: 0 0 6px #00fff7;
+}
+
+.afex-caption {
+  font-size: 1rem;
+  margin-top: 0.2rem;
+  color: #fff;
+  text-shadow: 0 0 4px #232526;
+}
+
+.hashtags {
+  color: #00fff7;
+  margin-left: 0.5rem;
+}
+
+@media (max-width: 600px) {
+  .afex-overlay-buttons {
+    right: 2vw;
+    gap: 1.2rem;
+  }
+  .afex-user-info {
+    left: 1vw;
+    bottom: 2vh;
+    padding: 0.7rem 1rem 0.7rem 0.7rem;
+  }
+  .afex-avatar {
+    width: 36px;
+    height: 36px;
+    margin-right: 0.7rem;
+  }
+  .afex-username {
+    font-size: 1rem;
+  }
+  .afex-caption {
+    font-size: 0.95rem;
+  }
+} 

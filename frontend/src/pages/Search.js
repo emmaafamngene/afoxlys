@@ -7,6 +7,7 @@ import PostCard from '../components/posts/PostCard';
 import ClipCard from '../components/clips/ClipCard';
 import { FiSearch, FiUsers, FiFileText, FiVideo } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+import DefaultAvatar from '../components/DefaultAvatar';
 
 const Search = () => {
   const { user: currentUser } = useAuth();
@@ -84,13 +85,15 @@ const Search = () => {
     <div className="card p-4">
       <div className="flex items-center space-x-3">
         <img
-          src={user.avatar || 'https://via.placeholder.com/48x48/6b7280/ffffff?text=U'}
+          src={user.avatar}
           alt={user.username}
           className="w-12 h-12 rounded-full object-cover"
           onError={(e) => {
-            e.target.src = 'https://via.placeholder.com/48x48/6b7280/ffffff?text=U';
+            e.target.style.display = 'none';
+            e.target.nextSibling.style.display = 'flex';
           }}
         />
+        {!user.avatar && <DefaultAvatar username={user.username} size={48} />}
         <div className="flex-1">
           <Link
             to={`/user/${user._id}`}

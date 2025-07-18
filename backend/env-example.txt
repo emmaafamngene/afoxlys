@@ -46,3 +46,6 @@ PAYSTACK_PUBLIC_KEY=pk_test_your_paystack_public_key_here
 
 # CORS for Production
 # FRONTEND_URL=https://your-frontend-domain.com 
+
+# Gemini AI API Key
+GEMINI_API_KEY=your-gemini-api-key-here 

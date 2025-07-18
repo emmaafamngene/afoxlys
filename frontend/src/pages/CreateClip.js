@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { clipsAPI } from '../services/api';
 import { FiVideo, FiX, FiUpload, FiHash } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+import DefaultAvatar from '../components/DefaultAvatar';
 
 const CreateClip = () => {
   const navigate = useNavigate();
@@ -154,14 +155,19 @@ const CreateClip = () => {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* User Info */}
           <div className="flex items-center space-x-3">
-            <img
-              src={user?.avatar || 'https://via.placeholder.com/40x40/6b7280/ffffff?text=U'}
-              alt={user?.username}
-              className="w-10 h-10 rounded-full object-cover"
-              onError={(e) => {
-                e.target.src = 'https://via.placeholder.com/40x40/6b7280/ffffff?text=U';
-              }}
-            />
+            {user?.avatar ? (
+              <img
+                src={user.avatar}
+                alt={user?.username}
+                className="w-10 h-10 rounded-full object-cover"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.nextSibling.style.display = 'flex';
+                }}
+              />
+            ) : (
+              <DefaultAvatar username={user?.username || 'User'} size={40} />
+            )}
             <div>
               <p className="font-medium text-gray-900">
                 {user?.firstName} {user?.lastName}

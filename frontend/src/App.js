@@ -52,11 +52,7 @@ function App() {
 
   // Simulate loading time and initialize app
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 2000); // Show loading for 2 seconds
-
-    return () => clearTimeout(timer);
+    setIsLoading(false);
   }, []);
 
 

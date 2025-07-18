@@ -13,7 +13,7 @@ export default function LoadingPage({ darkMode = false }) {
     // Show welcome message after a short delay
     const welcomeTimer = setTimeout(() => {
       setShowWelcome(true);
-    }, 500);
+    }, 100);
 
     return () => {
       clearTimeout(welcomeTimer);

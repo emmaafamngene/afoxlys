@@ -6,6 +6,7 @@ import PostCard from './posts/PostCard';
 import ClipCard from './clips/ClipCard';
 import { FiSearch, FiUsers, FiFileText, FiVideo, FiX } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+import DefaultAvatar from './DefaultAvatar';
 
 const SearchSlideOut = ({ isOpen, onClose }) => {
   const { user: currentUser } = useAuth();
@@ -112,14 +113,19 @@ const SearchSlideOut = ({ isOpen, onClose }) => {
     <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm hover:shadow-lg transition-all duration-200 border border-gray-100 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-700">
       <div className="flex items-center space-x-4">
         <div className="relative">
-          <img
-            src={user.avatar || 'https://via.placeholder.com/48x48/6b7280/ffffff?text=U'}
-            alt={user.username}
-            className="w-12 h-12 rounded-full object-cover border-2 border-white dark:border-gray-700 shadow-md"
-            onError={(e) => {
-              e.target.src = 'https://via.placeholder.com/48x48/6b7280/ffffff?text=U';
-            }}
-          />
+          {user.avatar ? (
+            <img
+              src={user.avatar}
+              alt={user.username}
+              className="w-12 h-12 rounded-full object-cover border-2 border-white dark:border-gray-700 shadow-md"
+              onError={(e) => {
+                e.target.style.display = 'none';
+                e.target.nextSibling.style.display = 'flex';
+              }}
+            />
+          ) : (
+            <DefaultAvatar username={user.username} size={48} />
+          )}
           <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full"></div>
         </div>
         <div className="flex-1 min-w-0">

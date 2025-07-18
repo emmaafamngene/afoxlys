@@ -149,7 +149,11 @@ export const shortsAPI = {
 
 // AI API
 export const aiAPI = {
-  chat: (message) => api.post('/ai/chat', { message }),
+  chat: (message, chatId) => api.post('/ai/chat', { message, chatId }),
+  getChats: () => api.get('/ai/chats'),
+  getChat: (chatId) => api.get(`/ai/chats/${chatId}`),
+  createChat: () => api.post('/ai/chats'),
+  deleteChat: (chatId) => api.delete(`/ai/chats/${chatId}`),
 };
 
 export default api; 

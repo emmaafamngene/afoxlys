@@ -299,11 +299,11 @@ const OnboardingTutorial = () => {
       });
 
       // Start the tutorial with a delay to ensure smooth experience
-      setTimeout(() => intro.start(), 1000);
+      setTimeout(() => intro.start(), 200);
     };
 
     // Start the tutorial after a delay to ensure everything is loaded
-    setTimeout(startTutorial, 1500);
+    setTimeout(startTutorial, 300);
   }, [isAuthenticated, user]);
 
   return null;

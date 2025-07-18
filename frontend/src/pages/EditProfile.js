@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { usersAPI } from '../services/api';
 import { FiCamera, FiSave, FiX, FiUpload, FiUser, FiLock, FiBell, FiShield, FiLogOut } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+import DefaultAvatar from '../components/DefaultAvatar';
 
 const EditProfile = () => {
   const navigate = useNavigate();
@@ -148,10 +149,17 @@ const EditProfile = () => {
                   <div className="flex flex-col items-center space-y-4">
                     <div className="relative">
                       <img
-                        src={avatarPreview || user?.avatar || 'https://via.placeholder.com/150x150/6b7280/ffffff?text=U'}
+                        src={avatarPreview || user?.avatar}
                         alt="Profile"
                         className="w-32 h-32 rounded-full object-cover border-4 border-white dark:border-gray-700 shadow-lg"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
                       />
+                      {!(avatarPreview || user?.avatar) && (
+                        <DefaultAvatar username={user?.username || 'User'} size={128} />
+                      )}
                       <label className="absolute bottom-2 right-2 bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 transition-colors cursor-pointer">
                         <FiCamera className="w-5 h-5" />
                         <input

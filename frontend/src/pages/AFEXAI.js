@@ -194,30 +194,6 @@ const AFEXAI = () => {
       icon: <FiCpu className="w-6 h-6" />,
       color: 'from-violet-500 to-purple-600',
       gradient: 'from-violet-500/20 to-purple-600/20'
-    },
-    {
-      id: 'content',
-      title: 'Content Forge',
-      description: 'Generate viral content',
-      icon: <FiZap className="w-6 h-6" />,
-      color: 'from-emerald-500 to-teal-600',
-      gradient: 'from-emerald-500/20 to-teal-600/20'
-    },
-    {
-      id: 'analytics',
-      title: 'Insight Engine',
-      description: 'AI-powered analytics',
-      icon: <FiTrendingUp className="w-6 h-6" />,
-      color: 'from-orange-500 to-red-600',
-      gradient: 'from-orange-500/20 to-red-600/20'
-    },
-    {
-      id: 'ideas',
-      title: 'Trend Radar',
-      description: 'Discover viral trends',
-      icon: <FiGlobe className="w-6 h-6" />,
-      color: 'from-pink-500 to-rose-600',
-      gradient: 'from-pink-500/20 to-rose-600/20'
     }
   ];
 
@@ -267,7 +243,7 @@ const AFEXAI = () => {
           initial={{ opacity: 0, y: -50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
-          className="text-center mb-12"
+          className="text-center mb-8"
         >
           <motion.div
             animate={{ 
@@ -326,12 +302,12 @@ const AFEXAI = () => {
           </motion.div>
         </motion.div>
 
-        {/* Enhanced Feature Tabs */}
+        {/* Static Feature Tabs (AI Tab) - now outside chat */}
         <motion.div 
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12"
+          className="grid grid-cols-1 md:grid-cols-1 gap-6 mb-4"
         >
           {features.map((feature, index) => (
             <motion.button
@@ -381,9 +357,9 @@ const AFEXAI = () => {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.8, delay: 0.4 }}
-          className="bg-white/10 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/20 overflow-hidden"
+          className="bg-white/10 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/20 overflow-visible min-h-[700px] flex flex-col justify-between"
         >
-          <div className="h-[700px] flex">
+          <div className="flex flex-1">
             {/* Enhanced Chat List Sidebar */}
             <motion.div 
               className={`w-80 border-r border-white/20 flex flex-col transition-all duration-500 ${
@@ -416,7 +392,7 @@ const AFEXAI = () => {
               </div>
 
               {/* Chat List */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              <div className="flex-1 p-4 space-y-3">
                 {loading ? (
                   <div className="text-center text-gray-400 py-8">
                     <motion.div
@@ -489,7 +465,7 @@ const AFEXAI = () => {
             </motion.div>
 
             {/* Enhanced Chat Area */}
-            <div className="flex-1 flex flex-col">
+            <div className="flex-1 flex flex-col justify-between">
               {/* Chat Header */}
               <div className="p-6 border-b border-white/20 bg-gradient-to-r from-purple-500/20 to-pink-500/20 flex items-center justify-between">
                 <div className="flex items-center">
@@ -521,7 +497,7 @@ const AFEXAI = () => {
               </div>
 
               {/* Messages Area */}
-              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              <div className="flex-1 p-6 space-y-6">
                 {messages.length === 0 && !currentChat ? (
                   <motion.div 
                     initial={{ opacity: 0, scale: 0.8 }}
@@ -676,59 +652,6 @@ const AFEXAI = () => {
               </div>
             </div>
           </div>
-        </motion.div>
-
-        {/* Enhanced Quick Actions */}
-        <motion.div 
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.8 }}
-          className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6"
-        >
-          {[
-            {
-              title: "Content Forge",
-              description: "Generate viral content",
-                             icon: <FiZap className="w-6 h-6" />,
-              gradient: "from-emerald-500 to-teal-600",
-              bgGradient: "from-emerald-500/20 to-teal-600/20"
-            },
-            {
-              title: "Insight Engine",
-              description: "AI-powered analytics",
-              icon: <FiTrendingUp className="w-6 h-6" />,
-              gradient: "from-orange-500 to-red-600",
-              bgGradient: "from-orange-500/20 to-red-600/20"
-            },
-            {
-              title: "Trend Radar",
-              description: "Discover viral trends",
-              icon: <FiGlobe className="w-6 h-6" />,
-              gradient: "from-pink-500 to-rose-600",
-              bgGradient: "from-pink-500/20 to-rose-600/20"
-            }
-          ].map((action, index) => (
-            <motion.button
-              key={action.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.8 + index * 0.1 }}
-              whileHover={{ scale: 1.05, y: -5 }}
-              whileTap={{ scale: 0.95 }}
-              className="group relative p-6 bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 hover:border-purple-400/50 transition-all duration-500 overflow-hidden"
-            >
-              <div className={`absolute inset-0 bg-gradient-to-r ${action.bgGradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
-              <div className="relative z-10 flex items-center space-x-4">
-                <div className={`w-12 h-12 bg-gradient-to-r ${action.gradient} rounded-2xl flex items-center justify-center shadow-lg`}>
-                  {action.icon}
-                </div>
-                <div className="text-left">
-                  <h3 className="font-bold text-white text-lg">{action.title}</h3>
-                  <p className="text-gray-300">{action.description}</p>
-                </div>
-              </div>
-            </motion.button>
-          ))}
         </motion.div>
       </div>
     </div>

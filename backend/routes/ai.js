@@ -251,7 +251,7 @@ router.post('/chat', auth, async (req, res) => {
     }));
     
     console.log('🤖 AI Route: Getting generative model...');
-    const model = genAI.getGenerativeModel({ model: "gemini-pro-1.5" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash", apiVersion: "v1beta" });
     console.log('✅ AI Route: Generative model obtained');
     
     // Create chat session with history
@@ -289,7 +289,7 @@ router.post('/chat', auth, async (req, res) => {
     // Update chat title if this is the first message
     if (chat.messages.length === 2) { // User message + AI response
       try {
-        const titleModel = genAI.getGenerativeModel({ model: "gemini-pro-1.5" });
+        const titleModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash", apiVersion: "v1beta" });
         const titlePrompt = `Generate a short, descriptive title (max 50 characters) for this conversation based on the user's first message: "${message}"`;
         const titleResult = await titleModel.generateContent(titlePrompt);
         const generatedTitle = titleResult.response.text().replace(/["""]/g, '').trim();

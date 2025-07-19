@@ -13,6 +13,10 @@ const { router: notificationRoutes, createNotification } = require('./routes/not
 const chatRoutes = require('./routes/chat');
 const bodyParser = require('body-parser');
 const { xpAwarder } = require('./middlewares/xpAwarder');
+const { RtcTokenBuilder, RtcRole } = require('agora-access-token');
+
+const AGORA_APP_ID = process.env.AGORA_APP_ID;
+const AGORA_APP_CERTIFICATE = process.env.AGORA_APP_CERTIFICATE;
 
 const app = express();
 const server = http.createServer(app);
@@ -187,345 +191,66 @@ const onlineUsers = new Map();
 // Set socket.io instance for follow routes
 setSocketIO(io);
 
-io.on('connection', (socket) => {
-  console.log('✅ Socket.IO: User connected', socket.id);
-  console.log('🔍 Socket transport:', socket.conn.transport.name);
-  console.log('🔍 Socket remote address:', socket.handshake.address);
+app.get('/api/agora/token', (req, res) => {
+  const channelName = req.query.channel;
+  const uid = req.query.uid || 0; // 0 means let Agora assign a UID
+  const role = req.query.role === 'publisher' ? RtcRole.PUBLISHER : RtcRole.SUBSCRIBER;
+  if (!channelName) {
+    return res.status(400).json({ error: 'channel is required' });
+  }
 
-  // User joins chat (register userId)
-  socket.on('join', (userId) => {
-    onlineUsers.set(userId, socket.id);
+  const expireTimeSeconds = 3600; // 1 hour
+  const currentTimestamp = Math.floor(Date.now() / 1000);
+  const privilegeExpireTs = currentTimestamp + expireTimeSeconds;
+
+  const token = RtcTokenBuilder.buildTokenWithUid(
+    AGORA_APP_ID,
+    AGORA_APP_CERTIFICATE,
+    channelName,
+    Number(uid),
+    role,
+    privilegeExpireTs
+  );
+
+  res.json({ token });
+});
+
+// --- WebRTC Signaling for Calls ---
+let users = {};
+io.on('connection', socket => {
+  console.log('New user connected');
+
+  socket.on('register', userId => {
+    users[userId] = socket.id;
     socket.userId = userId;
-    console.log(`User ${userId} joined chat (socket ${socket.id})`);
   });
 
-  // --- Agora Call Signaling Relay ---
-  socket.on('call:invite', (data) => {
-    const toSocket = onlineUsers.get(data.to);
-    if (toSocket) {
-      io.to(toSocket).emit('call:invite', data);
-      console.log('🔔 Relayed call:invite to', data.to);
-    } else {
-      console.log('❌ call:invite recipient not online:', data.to);
-    }
-  });
-
-  socket.on('call:accept', (data) => {
-    const toSocket = onlineUsers.get(data.to);
-    if (toSocket) {
-      io.to(toSocket).emit('call:accept', data);
-      console.log('🔔 Relayed call:accept to', data.to);
-    } else {
-      console.log('❌ call:accept recipient not online:', data.to);
-    }
-  });
-
-  socket.on('call:reject', (data) => {
-    const toSocket = onlineUsers.get(data.to);
-    if (toSocket) {
-      io.to(toSocket).emit('call:reject', data);
-      console.log('🔔 Relayed call:reject to', data.to);
-    } else {
-      console.log('❌ call:reject recipient not online:', data.to);
-    }
-  });
-
-  socket.on('call:cancel', (data) => {
-    const toSocket = onlineUsers.get(data.to);
-    if (toSocket) {
-      io.to(toSocket).emit('call:cancel', data);
-      console.log('🔔 Relayed call:cancel to', data.to);
-    } else {
-      console.log('❌ call:cancel recipient not online:', data.to);
-    }
-  });
-
-  socket.on('call:end', (data) => {
-    const toSocket = onlineUsers.get(data.to);
-    if (toSocket) {
-      io.to(toSocket).emit('call:end', data);
-      console.log('🔔 Relayed call:end to', data.to);
-    } else {
-      console.log('❌ call:end recipient not online:', data.to);
-    }
-  });
-
-  // Send message
-  socket.on('send_message', async (data) => {
-    // data: { conversationId, sender, recipient, content }
-    console.log('🔍 Socket.IO send_message received:', data);
-    
-    try {
-      // Validate required fields
-      if (!data.conversationId || !data.sender || !data.recipient || !data.content) {
-        console.error('❌ Missing required fields:', {
-          conversationId: !!data.conversationId,
-          sender: !!data.sender,
-          recipient: !!data.recipient,
-          content: !!data.content
-        });
-        return;
-      }
-
-      // Save message to DB
-      const message = await Message.create({
-        conversation: data.conversationId,
-        sender: data.sender,
-        recipient: data.recipient,
-        content: data.content,
-        delivered: false,
-        viewed: false,
+  socket.on('call-user', ({ to, offer }) => {
+    const target = users[to];
+    if (target) {
+      io.to(target).emit('incoming-call', {
+        from: socket.userId,
+        offer
       });
-      
-      console.log('✅ Message saved to DB:', message._id);
-      
-      // Update conversation lastMessage/updatedAt
-      await Conversation.findByIdAndUpdate(data.conversationId, {
-        lastMessage: data.content,
-        updatedAt: Date.now(),
-      });
-      
-      // Emit to recipient if online
-      const recipientSocket = onlineUsers.get(data.recipient);
-      if (recipientSocket) {
-        io.to(recipientSocket).emit('receive_message', message);
-        // Mark as delivered
-        message.delivered = true;
-        await message.save();
-        // Notify sender
-        socket.emit('delivered', { messageId: message._id });
-        console.log('✅ Message delivered to recipient');
-      } else {
-        console.log('ℹ️ Recipient not online:', data.recipient);
-      }
-      
-      // Also emit back to sender for immediate UI update
-      socket.emit('receive_message', message);
-      
-      // Create notification for recipient
-      try {
-        // Get sender information for better notification
-        const User = require('./models/User');
-        const sender = await User.findById(data.sender).select('firstName lastName username avatar');
-        const senderName = sender ? (sender.firstName || sender.username) : 'Someone';
-        
-        await createNotification(
-          data.recipient,
-          data.sender,
-          'message',
-          'New Message',
-          `${senderName}: ${data.content.substring(0, 50)}${data.content.length > 50 ? '...' : ''}`,
-          data.conversationId,
-          null,
-          { conversationId: data.conversationId }
-        );
-        
-        // Emit notification to recipient
-        const recipientSocket = onlineUsers.get(data.recipient);
-        if (recipientSocket) {
-          io.to(recipientSocket).emit('newMessage', {
-            senderName: senderName,
-            senderAvatar: sender?.avatar
-          });
-        }
-      } catch (err) {
-        console.error('Error creating message notification:', err);
-      }
-      
-    } catch (err) {
-      console.error('Socket.IO send_message error:', err);
     }
   });
 
-  // View message (mark as viewed, emit seen, schedule deletion)
-  socket.on('view_message', async ({ messageId }) => {
-    try {
-      const message = await Message.findById(messageId);
-      if (!message) return;
-      message.viewed = true;
-      message.readAt = new Date();
-      await message.save();
-      // Notify sender
-      const senderSocket = onlineUsers.get(message.sender.toString());
-      if (senderSocket) {
-        io.to(senderSocket).emit('seen', { messageId });
-      }
-      // Schedule deletion after 60s
-      setTimeout(async () => {
-        await Message.findByIdAndDelete(messageId);
-      }, 60000);
-    } catch (err) {
-      console.error('Socket.IO view_message error:', err);
+  socket.on('answer-call', ({ to, answer }) => {
+    const target = users[to];
+    if (target) {
+      io.to(target).emit('call-answered', { answer });
     }
   });
 
-  // New follow notification
-  socket.on('new_follow', async (data) => {
-    try {
-      await createNotification(
-        data.followedUserId,
-        data.followerId,
-        'follow',
-        'New Follower',
-        `${data.followerName} started following you`,
-        null,
-        null,
-        { followerId: data.followerId }
-      );
-      
-      // Emit to followed user
-      const followedUserSocket = onlineUsers.get(data.followedUserId);
-      if (followedUserSocket) {
-        io.to(followedUserSocket).emit('newFollow', {
-          followerName: data.followerName,
-          followerAvatar: data.followerAvatar
-        });
-      }
-    } catch (err) {
-      console.error('Error creating follow notification:', err);
+  socket.on('ice-candidate', ({ to, candidate }) => {
+    const target = users[to];
+    if (target) {
+      io.to(target).emit('ice-candidate', { candidate });
     }
   });
 
-  // New like notification
-  socket.on('new_like', async (data) => {
-    try {
-      await createNotification(
-        data.contentOwnerId,
-        data.likerId,
-        'like',
-        'New Like',
-        `${data.likerName} liked your ${data.contentType}`,
-        data.contentId,
-        data.contentType,
-        { contentId: data.contentId, contentType: data.contentType }
-      );
-      
-      // Emit to content owner
-      const contentOwnerSocket = onlineUsers.get(data.contentOwnerId);
-      if (contentOwnerSocket) {
-        io.to(contentOwnerSocket).emit('newLike', {
-          likerName: data.likerName,
-          likerAvatar: data.likerAvatar,
-          contentType: data.contentType
-        });
-      }
-    } catch (err) {
-      console.error('Error creating like notification:', err);
-    }
-  });
-
-  // New comment notification
-  socket.on('new_comment', async (data) => {
-    try {
-      await createNotification(
-        data.contentOwnerId,
-        data.commenterId,
-        'comment',
-        'New Comment',
-        `${data.commenterName} commented on your ${data.contentType}`,
-        data.contentId,
-        data.contentType,
-        { contentId: data.contentId, contentType: data.contentType }
-      );
-      
-      // Emit to content owner
-      const contentOwnerSocket = onlineUsers.get(data.contentOwnerId);
-      if (contentOwnerSocket) {
-        io.to(contentOwnerSocket).emit('newComment', {
-          commenterName: data.commenterName,
-          commenterAvatar: data.commenterAvatar,
-          contentType: data.contentType
-        });
-      }
-    } catch (err) {
-      console.error('Error creating comment notification:', err);
-    }
-  });
-
-  // WebRTC Call Events
-  socket.on('call_offer', (data) => {
-    console.log('🔔 Call offer from', data.from, 'to', data.to);
-    const recipientSocket = onlineUsers.get(data.to);
-    if (recipientSocket) {
-      io.to(recipientSocket).emit('call_offer', {
-        from: data.from,
-        callType: data.callType
-      });
-      console.log('🔔 Call offer sent to recipient:', data.to);
-    } else {
-      console.log('❌ Recipient socket not found:', data.to);
-    }
-  });
-
-  socket.on('call_accept', (data) => {
-    console.log('🔔 Call accept from', data.from, 'to', data.to);
-    console.log('🔔 Online users:', Array.from(onlineUsers.keys()));
-    const callerSocket = onlineUsers.get(data.to);
-    if (callerSocket) {
-      io.to(callerSocket).emit('call_accepted', {
-        from: data.from
-      });
-      console.log('🔔 Call accepted event sent to caller:', data.to);
-    } else {
-      console.log('❌ Caller socket not found:', data.to);
-    }
-  });
-
-  socket.on('call_offer_webrtc', (data) => {
-    console.log('🔔 WebRTC offer from', data.from, 'to', data.to);
-    const recipientSocket = onlineUsers.get(data.to);
-    if (recipientSocket) {
-      io.to(recipientSocket).emit('call_offer_webrtc', {
-        from: data.from,
-        offer: data.offer
-      });
-      console.log('🔔 WebRTC offer sent to recipient:', data.to);
-    } else {
-      console.log('❌ Recipient socket not found for WebRTC offer:', data.to);
-    }
-  });
-
-  socket.on('call_answer', (data) => {
-    console.log('🔔 Call answer from', data.from, 'to', data.to);
-    const callerSocket = onlineUsers.get(data.to);
-    if (callerSocket) {
-      io.to(callerSocket).emit('call_answer', data);
-      console.log('🔔 Call answer sent to caller:', data.to);
-    } else {
-      console.log('❌ Caller socket not found for answer:', data.to);
-    }
-  });
-
-  socket.on('ice_candidate', (data) => {
-    console.log('🔔 ICE candidate from', data.from, 'to', data.to);
-    const recipientSocket = onlineUsers.get(data.to);
-    if (recipientSocket) {
-      io.to(recipientSocket).emit('ice_candidate', data);
-    }
-  });
-
-  socket.on('call_end', (data) => {
-    console.log('🔔 Call end from', data.from, 'to', data.to);
-    const recipientSocket = onlineUsers.get(data.to);
-    if (recipientSocket) {
-      io.to(recipientSocket).emit('call_ended', data);
-    }
-  });
-
-  socket.on('call_reject', (data) => {
-    console.log('🔔 Call reject from', data.from, 'to', data.to);
-    const recipientSocket = onlineUsers.get(data.to);
-    if (recipientSocket) {
-      io.to(recipientSocket).emit('call_rejected', data);
-    }
-  });
-
-  socket.on('disconnect', (reason) => {
-    console.log('❌ Socket.IO: User disconnected', socket.id, 'Reason:', reason);
-    if (socket.userId) {
-      onlineUsers.delete(socket.userId);
-      console.log(`User ${socket.userId} removed from online users`);
-    }
+  socket.on('disconnect', () => {
+    if (socket.userId) delete users[socket.userId];
   });
 });
 

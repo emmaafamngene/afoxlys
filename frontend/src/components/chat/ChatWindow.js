@@ -1,8 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import MessageBubble from './MessageBubble';
 import DefaultAvatar from '../DefaultAvatar';
-import AgoraCall from '../video/AgoraCall';
-import CallModal from './CallModal';
+
+// Helper to generate a safe Agora channel name
+function safeChannelName(...parts) {
+  // Only allow supported characters, join with dash, and trim to 63 chars
+  return parts
+    .map(p => (p || '').toString().replace(/[^a-zA-Z0-9!#$%&()+\-:;<=.>?@[\]^_{\}|~, ]/g, ''))
+    .join('-')
+    .slice(0, 63);
+}
 
 export default function ChatWindow({
   messages = [],
@@ -19,86 +26,146 @@ export default function ChatWindow({
   const [fadingMessages, setFadingMessages] = useState([]);
   const [deletingMessages, setDeletingMessages] = useState([]);
   const [showMenu, setShowMenu] = useState(false);
-  // Call state
-  const [showCallModal, setShowCallModal] = useState(false);
-  const [callType, setCallType] = useState(null);
-  const [channelName, setChannelName] = useState(null);
-  const [isIncomingCall, setIsIncomingCall] = useState(false);
-  const [callStatus, setCallStatus] = useState('idle'); // idle, calling, ringing, in-call, ended, rejected, cancelled
-  const [callFrom, setCallFrom] = useState(null); // user info of caller
-  const [isInCall, setIsInCall] = useState(false);
 
-  // Refs
-  const messagesEndRef = useRef(null);
-  const inputRef = useRef(null);
-  const menuRef = useRef(null);
+  // --- WebRTC Call State ---
+  const [callModal, setCallModal] = useState(false);
+  const [callType, setCallType] = useState('video');
+  const [isCalling, setIsCalling] = useState(false);
+  const [isIncoming, setIsIncoming] = useState(false);
+  const [callerId, setCallerId] = useState(null);
+  const [peer, setPeer] = useState(null);
+  const [localStream, setLocalStream] = useState(null);
+  const [remoteStream, setRemoteStream] = useState(null);
+  const [offer, setOffer] = useState(null);
+  const [callUserId, setCallUserId] = useState(null);
+
+  const localVideoRef = useRef();
+  const remoteVideoRef = useRef();
 
   // Get other user from conversation participants
   const participants = selectedConversation?.participants || [];
   const otherUser = participants.find(user => user._id !== currentUserId);
 
-  // --- Socket.IO Call Signaling ---
+  // --- WebRTC/Socket.IO Call Logic ---
   useEffect(() => {
-    if (!socket || !otherUser) return;
+    if (!socket) return;
 
-    // Incoming call invite
-    const handleCallInvite = (data) => {
-      if (data.to !== currentUserId) return;
-      setShowCallModal(true);
-      setCallType(data.callType);
-      setChannelName(data.channelName);
-      setIsIncomingCall(true);
-      setCallStatus('ringing');
-      setCallFrom(data.fromUser);
-    };
+    // Incoming call
+    socket.on('incoming-call', async ({ from, offer }) => {
+      setCallModal(true);
+      setIsIncoming(true);
+      setCallerId(from);
+      setOffer(offer);
+    });
 
-    // Call accepted by callee
-    const handleCallAccept = (data) => {
-      if (data.to !== currentUserId) return;
-      setCallStatus('in-call');
-      setIsInCall(true);
-      setShowCallModal(true);
-    };
+    // Call answered
+    socket.on('call-answered', async ({ answer }) => {
+      if (peer) {
+        await peer.setRemoteDescription(new RTCSessionDescription(answer));
+      }
+    });
 
-    // Call rejected by callee
-    const handleCallReject = (data) => {
-      if (data.to !== currentUserId) return;
-      setCallStatus('rejected');
-      setTimeout(() => setShowCallModal(false), 1500);
-    };
-
-    // Call cancelled by caller
-    const handleCallCancel = (data) => {
-      if (data.to !== currentUserId) return;
-      setCallStatus('cancelled');
-      setTimeout(() => setShowCallModal(false), 1500);
-    };
-
-    // Call ended by either
-    const handleCallEnd = (data) => {
-      setCallStatus('ended');
-      setIsInCall(false);
-      setTimeout(() => setShowCallModal(false), 1500);
-    };
-
-    socket.on('call:invite', handleCallInvite);
-    socket.on('call:accept', handleCallAccept);
-    socket.on('call:reject', handleCallReject);
-    socket.on('call:cancel', handleCallCancel);
-    socket.on('call:end', handleCallEnd);
+    // ICE candidate
+    socket.on('ice-candidate', async ({ candidate }) => {
+      if (peer && candidate) {
+        await peer.addIceCandidate(new RTCIceCandidate(candidate));
+      }
+    });
 
     return () => {
-      socket.off('call:invite', handleCallInvite);
-      socket.off('call:accept', handleCallAccept);
-      socket.off('call:reject', handleCallReject);
-      socket.off('call:cancel', handleCallCancel);
-      socket.off('call:end', handleCallEnd);
+      socket.off('incoming-call');
+      socket.off('call-answered');
+      socket.off('ice-candidate');
     };
-  }, [socket, currentUserId, otherUser]);
+  }, [socket, peer]);
+
+  // --- WebRTC Peer Setup ---
+  async function getMedia() {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    setLocalStream(stream);
+    if (localVideoRef.current) localVideoRef.current.srcObject = stream;
+    return stream;
+  }
+
+  async function startCall() {
+    if (!otherUser) return;
+    setCallType('video');
+    setCallModal(true);
+    setIsCalling(true);
+    setIsIncoming(false);
+    setCallUserId(otherUser._id);
+    const stream = await getMedia();
+    const pc = new RTCPeerConnection();
+    setPeer(pc);
+    stream.getTracks().forEach(track => pc.addTrack(track, stream));
+    pc.onicecandidate = (e) => {
+      if (e.candidate) {
+        socket.emit('ice-candidate', { to: otherUser._id, candidate: e.candidate });
+      }
+    };
+    pc.ontrack = (e) => {
+      setRemoteStream(e.streams[0]);
+      if (remoteVideoRef.current) remoteVideoRef.current.srcObject = e.streams[0];
+    };
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    socket.emit('call-user', { to: otherUser._id, offer });
+  }
+
+  async function acceptCall() {
+    setCallModal(true);
+    setIsCalling(false);
+    setIsIncoming(false);
+    setCallUserId(callerId);
+    const stream = await getMedia();
+    const pc = new RTCPeerConnection();
+    setPeer(pc);
+    stream.getTracks().forEach(track => pc.addTrack(track, stream));
+    pc.onicecandidate = (e) => {
+      if (e.candidate) {
+        socket.emit('ice-candidate', { to: callerId, candidate: e.candidate });
+      }
+    };
+    pc.ontrack = (e) => {
+      setRemoteStream(e.streams[0]);
+      if (remoteVideoRef.current) remoteVideoRef.current.srcObject = e.streams[0];
+    };
+    await pc.setRemoteDescription(new RTCSessionDescription(offer));
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+    socket.emit('answer-call', { to: callerId, answer });
+  }
+
+  function rejectCall() {
+    setCallModal(false);
+    setIsIncoming(false);
+    setCallerId(null);
+    setOffer(null);
+    // Optionally notify caller
+  }
+
+  function endCall() {
+    setCallModal(false);
+    setIsCalling(false);
+    setIsIncoming(false);
+    setCallerId(null);
+    setOffer(null);
+    setCallUserId(null);
+    if (peer) peer.close();
+    setPeer(null);
+    if (localStream) {
+      localStream.getTracks().forEach(track => track.stop());
+      setLocalStream(null);
+    }
+    if (remoteStream) {
+      remoteStream.getTracks().forEach(track => track.stop());
+      setRemoteStream(null);
+    }
+  }
 
   // Scroll to bottom on new messages
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); // Removed
   }, [messages]);
 
 
@@ -140,86 +207,86 @@ export default function ChatWindow({
   // --- Outgoing Call Handlers ---
   const handleVoiceCall = () => {
     if (!selectedConversation || !otherUser) return;
-    const channel = `call-${currentUserId}-${otherUser._id}-${Date.now()}`;
-    setCallType('voice');
-    setChannelName(channel);
-    setShowCallModal(true);
-    setIsIncomingCall(false);
-    setCallStatus('calling');
-    setIsInCall(false);
-    setCallFrom(null);
-    // Emit call invite
-    socket.emit('call:invite', {
-      to: otherUser._id,
-      from: currentUserId,
-      fromUser: { _id: currentUserId },
-      callType: 'voice',
-      channelName: channel,
-    });
+    // const channel = safeChannelName('call', currentUserId, otherUser._id, Date.now()); // Removed
+    // setCallType(data.callType); // Removed
+    // setChannelName(data.channelName); // Removed
+    // setShowCallModal(true); // Removed
+    // setIsIncomingCall(false); // Removed
+    // setCallStatus('calling'); // Removed
+    // setIsInCall(false); // Removed
+    // setCallFrom(null); // Removed
+    // // Emit call invite // Removed
+    // socket.emit('call:invite', { // Removed
+    //   to: otherUser._id, // Removed
+    //   from: currentUserId, // Removed
+    //   fromUser: { _id: currentUserId }, // Removed
+    //   callType: 'voice', // Removed
+    //   channelName: channel, // Removed
+    // }); // Removed
   };
 
   const handleVideoCall = () => {
     if (!selectedConversation || !otherUser) return;
-    const channel = `call-${currentUserId}-${otherUser._id}-${Date.now()}`;
-    setCallType('video');
-    setChannelName(channel);
-    setShowCallModal(true);
-    setIsIncomingCall(false);
-    setCallStatus('calling');
-    setIsInCall(false);
-    setCallFrom(null);
-    // Emit call invite
-    socket.emit('call:invite', {
-      to: otherUser._id,
-      from: currentUserId,
-      fromUser: { _id: currentUserId },
-      callType: 'video',
-      channelName: channel,
-    });
+    // const channel = safeChannelName('call', currentUserId, otherUser._id, Date.now()); // Removed
+    // setCallType('video'); // Removed
+    // setChannelName(channel); // Removed
+    // setShowCallModal(true); // Removed
+    // setIsIncomingCall(false); // Removed
+    // setCallStatus('calling'); // Removed
+    // setIsInCall(false); // Removed
+    // setCallFrom(null); // Removed
+    // // Emit call invite // Removed
+    // socket.emit('call:invite', { // Removed
+    //   to: otherUser._id, // Removed
+    //   from: currentUserId, // Removed
+    //   fromUser: { _id: currentUserId }, // Removed
+    //   callType: 'video', // Removed
+    //   channelName: channel, // Removed
+    // }); // Removed
   };
 
   // --- Incoming Call Handlers ---
   const handleAcceptCall = () => {
-    setCallStatus('in-call');
-    setIsInCall(true);
-    socket.emit('call:accept', {
-      to: callFrom?._id || otherUser._id,
-      from: currentUserId,
-      channelName,
-    });
+    // setCallStatus('in-call'); // Removed
+    // setIsInCall(true); // Removed
+    // socket.emit('call:accept', { // Removed
+    //   to: callFrom?._id || otherUser._id, // Removed
+    //   from: currentUserId, // Removed
+    //   channelName, // Removed
+    // }); // Removed
   };
 
   const handleRejectCall = () => {
-    setCallStatus('rejected');
-    setTimeout(() => setShowCallModal(false), 1500);
-    socket.emit('call:reject', {
-      to: callFrom?._id || otherUser._id,
-      from: currentUserId,
-      channelName,
-    });
+    // setCallStatus('rejected'); // Removed
+    // setTimeout(() => setShowCallModal(false), 1500); // Removed
+    // socket.emit('call:reject', { // Removed
+    //   to: callFrom?._id || otherUser._id, // Removed
+    //   from: currentUserId, // Removed
+    //   channelName, // Removed
+    // }); // Removed
   };
 
   // --- Outgoing Cancel ---
   const handleCancelCall = () => {
-    setCallStatus('cancelled');
-    setTimeout(() => setShowCallModal(false), 1500);
-    socket.emit('call:cancel', {
-      to: otherUser._id,
-      from: currentUserId,
-      channelName,
-    });
+    // setCallStatus('cancelled'); // Removed
+    // setTimeout(() => setShowCallModal(false), 1500); // Removed
+    // socket.emit('call:cancel', { // Removed
+    //   to: otherUser._id, // Removed
+    //   from: currentUserId, // Removed
+    //   channelName, // Removed
+    // }); // Removed
   };
 
   // --- End Call ---
   const handleEndCall = () => {
-    setCallStatus('ended');
-    setIsInCall(false);
-    setTimeout(() => setShowCallModal(false), 1500);
-    socket.emit('call:end', {
-      to: otherUser._id,
-      from: currentUserId,
-      channelName,
-    });
+    // setCallStatus('ended'); // Removed
+    // setIsInCall(false); // Removed
+    // setTimeout(() => setShowCallModal(false), 1500); // Removed
+    // socket.emit('call:end', { // Removed
+    //   to: otherUser._id, // Removed
+    //   from: currentUserId, // Removed
+    //   channelName, // Removed
+    // }); // Removed
   };
 
   // Menu handlers
@@ -273,9 +340,9 @@ export default function ChatWindow({
   // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setShowMenu(false);
-      }
+      // if (menuRef.current && !menuRef.current.contains(event.target)) { // Removed
+      //   setShowMenu(false); // Removed
+      // } // Removed
     };
 
     document.addEventListener('mousedown', handleClickOutside);
@@ -302,32 +369,33 @@ export default function ChatWindow({
 
   return (
     <div className="h-full flex flex-col bg-white dark:bg-gray-900">
-      {/* Call Modal (Signaling) */}
-      {showCallModal && !isInCall && (
-        <CallModal
-          isOpen={showCallModal}
-          callType={callType}
-          otherUser={isIncomingCall ? (callFrom || otherUser) : otherUser}
-          status={callStatus}
-          isIncoming={isIncomingCall}
-          isRinging={callStatus === 'ringing'}
-          isInCall={isInCall}
-          onAccept={handleAcceptCall}
-          onReject={isIncomingCall ? handleRejectCall : handleCancelCall}
-          onEnd={handleEndCall}
-        />
+      {/* WebRTC Call Modal */}
+      {callModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 max-w-md w-full flex flex-col items-center">
+            <div className="mb-4">
+              <video ref={localVideoRef} autoPlay muted playsInline className="w-32 h-32 rounded-lg border-2 border-blue-500 mb-2" />
+              <video ref={remoteVideoRef} autoPlay playsInline className="w-48 h-48 rounded-lg border-2 border-green-500" />
+            </div>
+            {isIncoming ? (
+              <>
+                <div className="text-lg font-semibold mb-2">Incoming Call</div>
+                <div className="mb-4">{callerId}</div>
+                <div className="flex gap-4">
+                  <button onClick={acceptCall} className="px-6 py-2 bg-green-500 text-white rounded-lg font-bold">Accept</button>
+                  <button onClick={rejectCall} className="px-6 py-2 bg-red-500 text-white rounded-lg font-bold">Reject</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="text-lg font-semibold mb-2">{isCalling ? 'Calling...' : 'In Call'}</div>
+                <div className="mb-4">{callUserId}</div>
+                <button onClick={endCall} className="px-6 py-2 bg-red-500 text-white rounded-lg font-bold">End Call</button>
+              </>
+            )}
+          </div>
+        </div>
       )}
-      {/* AgoraCall (In-Call) */}
-      {showCallModal && isInCall && (
-        <AgoraCall
-          channelName={channelName}
-          callType={callType}
-          onEndCall={handleEndCall}
-          isIncoming={isIncomingCall}
-          otherUser={isIncomingCall ? (callFrom || otherUser) : otherUser}
-        />
-      )}
-
       {/* Slim Chat Header */}
       <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
         <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -351,7 +419,6 @@ export default function ChatWindow({
               className={otherUser?.avatar ? 'hidden' : ''}
             />
           </div>
-          
           {/* User Info */}
           <div className="min-w-0 flex-1">
             <h2 className="text-sm font-medium text-gray-900 dark:text-white truncate">
@@ -362,97 +429,19 @@ export default function ChatWindow({
             </p>
           </div>
         </div>
-        
-        {/* Call Controls */}
+        {/* Call Button */}
         <div className="flex items-center gap-1 flex-shrink-0">
-          {/* Voice Call Button */}
           <button 
-            onClick={handleVoiceCall}
-            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-400"
-            title="Voice Call"
+            onClick={startCall}
+            className="p-2 rounded-full hover:bg-green-100 dark:hover:bg-green-800 transition-colors text-green-600 dark:text-green-400"
+            title="Start Call"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
             </svg>
           </button>
-          
-          {/* Video Call Button */}
-          <button 
-            onClick={handleVideoCall}
-            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-400"
-            title="Video Call"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-            </svg>
-          </button>
-          
-          {/* Menu Button */}
-          <div className="relative" ref={menuRef}>
-            <button 
-              onClick={handleMenuToggle}
-              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-400"
-              title="More Options"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-              </svg>
-            </button>
-            
-            {/* Menu Dropdown */}
-            {showMenu && (
-              <div className="absolute right-0 top-full mt-1 w-40 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
-                <div className="py-1">
-                  <button
-                    onClick={handleViewProfile}
-                    className="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                    View Profile
-                  </button>
-                  
-                  <button
-                    onClick={handleBlockUser}
-                    className="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728" />
-                    </svg>
-                    Block User
-                  </button>
-                  
-                  <button
-                    onClick={handleReportUser}
-                    className="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                    </svg>
-                    Report User
-                  </button>
-                  
-                  <hr className="my-1 border-gray-200 dark:border-gray-700" />
-                  
-                  <button
-                    onClick={handleClearChat}
-                    className="w-full px-3 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                    Clear Chat
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
         </div>
       </div>
-
-
-
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto px-4 py-2 bg-gray-50 dark:bg-gray-900 min-h-0">
         {messages.length > 0 ? (
@@ -472,7 +461,7 @@ export default function ChatWindow({
                   isDeleting={deletingMessages.includes(msg._id)}
                 />
               ))}
-            <div ref={messagesEndRef} />
+            {/* <div ref={messagesEndRef} /> */}
           </div>
         ) : (
           <div className="flex items-center justify-center h-full">
@@ -488,13 +477,12 @@ export default function ChatWindow({
           </div>
         )}
       </div>
-
       {/* Slim Input Area */}
       <div className="flex-shrink-0 px-4 py-3 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
         <form onSubmit={handleSend} className="flex items-end gap-2">
           <div className="flex-1 min-w-0">
             <textarea
-              ref={inputRef}
+              // ref={inputRef} // Removed
               value={input}
               onChange={handleInputChange}
               onKeyPress={handleKeyPress}

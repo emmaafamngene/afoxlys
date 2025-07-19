@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DefaultAvatar } from '../layout/AFEXLogo';
+import DefaultAvatar from '../DefaultAvatar';
 
 export default function MessageBubble({ 
   message, 
@@ -79,7 +79,7 @@ export default function MessageBubble({
   }
 
   return (
-    <div className={`flex items-end gap-3 group ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
+    <div className={`flex items-end gap-2 group ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
       {/* Avatar */}
       {showAvatar && !isOwn && (
         <div className="flex-shrink-0">
@@ -88,7 +88,7 @@ export default function MessageBubble({
               <img
                 src={sender.avatar}
                 alt={sender.username || 'User'}
-                className="w-8 h-8 rounded-full object-cover border border-white dark:border-gray-800 shadow-sm"
+                className="w-6 h-6 rounded-full object-cover border border-gray-200 dark:border-gray-700"
                 onError={(e) => {
                   e.target.style.display = 'none';
                   e.target.nextSibling.style.display = 'flex';
@@ -96,40 +96,40 @@ export default function MessageBubble({
               />
               <DefaultAvatar 
                 user={sender} 
-                size="sm" 
+                size="xs" 
                 className="hidden"
               />
             </div>
           ) : (
             <DefaultAvatar 
               user={sender} 
-              size="sm"
+              size="xs"
             />
           )}
         </div>
       )}
       
       {showAvatar && isOwn && (
-        <div className="flex-shrink-0 w-8"></div>
+        <div className="flex-shrink-0 w-6"></div>
       )}
 
       {/* Message Content */}
-      <div className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'} max-w-xs lg:max-w-md`}>
+      <div className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'} max-w-[75%] sm:max-w-xs lg:max-w-md`}>
         {/* Sender name for group chats */}
         {!isOwn && showAvatar && (
-          <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 px-2">
+          <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 px-1">
             {sender ? `${sender.firstName || ''} ${sender.lastName || ''}`.trim() || sender.username : 'Unknown User'}
           </div>
         )}
 
         {/* Message Bubble */}
         <div
-          className={`relative px-4 py-3 rounded-2xl shadow-sm transition-all duration-300 ${
+          className={`relative px-3 py-2 rounded-lg shadow-sm transition-all duration-300 ${
             isOwn
-              ? 'bg-blue-600 text-white rounded-br-md'
-              : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-bl-md'
+              ? 'bg-blue-500 text-white rounded-br-sm'
+              : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-bl-sm'
           } ${isFading ? 'opacity-50' : 'opacity-100'} ${
-            !message.viewed && !isOwn ? 'ring-2 ring-yellow-400 ring-opacity-50' : ''
+            !message.viewed && !isOwn ? 'ring-1 ring-yellow-400 ring-opacity-50' : ''
           }`}
           onClick={handleView}
           style={{ cursor: !message.viewed && !isOwn ? 'pointer' : 'default' }}
@@ -141,19 +141,19 @@ export default function MessageBubble({
 
           {/* Media content */}
           {message.media && (
-            <div className="mt-2 max-w-xs">
+            <div className="mt-2 max-w-full">
               {message.media.type?.startsWith('image/') ? (
                 <img
                   src={message.media.url}
                   alt="Message media"
-                  className="max-w-full rounded-lg shadow-sm"
+                  className="max-w-full rounded shadow-sm"
                   onError={e => { e.target.style.display = 'none'; }}
                 />
               ) : message.media.type?.startsWith('video/') ? (
                 <video
                   src={message.media.url}
                   controls
-                  className="max-w-full rounded-lg shadow-sm"
+                  className="max-w-full rounded shadow-sm"
                   preload="metadata"
                 />
               ) : null}
@@ -162,12 +162,12 @@ export default function MessageBubble({
 
           {/* View indicator for unviewed messages */}
           {!message.viewed && !isOwn && (
-            <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full animate-pulse"></div>
+            <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
           )}
         </div>
 
         {/* Message metadata */}
-        <div className={`flex items-center gap-1 mt-1 px-2 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
+        <div className={`flex items-center gap-1 mt-0.5 px-1 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
           <span className="text-xs text-gray-500 dark:text-gray-400">
             {formatTime(message.createdAt)}
           </span>
@@ -189,13 +189,26 @@ export default function MessageBubble({
 
         {/* Typing indicator */}
         {message.isTyping && (
-          <div className="flex items-center gap-1 mt-1 px-2">
+          <div className="flex items-center gap-1 mt-1 px-1">
             <div className="flex space-x-1">
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+              <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></div>
+              <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+              <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
             </div>
             <span className="text-xs text-gray-500 dark:text-gray-400">typing...</span>
+          </div>
+        )}
+
+        {/* Delete timer for Snapchat-style messages */}
+        {showDeleteTimer && (
+          <div className="flex items-center gap-1 mt-1 px-1">
+            <div className="w-16 bg-gray-200 dark:bg-gray-700 rounded-full h-1">
+              <div 
+                className="bg-red-500 h-1 rounded-full transition-all duration-1000"
+                style={{ width: `${(timeLeft / 60) * 100}%` }}
+              ></div>
+            </div>
+            <span className="text-xs text-red-500">{timeLeft}s</span>
           </div>
         )}
       </div>

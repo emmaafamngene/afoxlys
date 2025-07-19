@@ -6,7 +6,7 @@ import NewChatModal from '../components/chat/NewChatModal';
 import { io } from 'socket.io-client';
 import { chatAPI } from '../services/api';
 import { usePageTitle } from '../hooks/usePageTitle';
-import webrtcService from '../services/webrtcService';
+
 
 const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'https://afoxlys.onrender.com';
 
@@ -101,8 +101,7 @@ export default function Chat() {
     socket.emit('join', currentUserId);
     console.log('🔍 Emitted join event for user:', currentUserId);
     
-    // Initialize WebRTC service
-    webrtcService.init(socket, currentUserId);
+
     
     // Handle incoming messages
     socket.on('receive_message', (msg) => {
@@ -202,56 +201,37 @@ export default function Chat() {
       refreshConversations();
     });
 
-    // Listen for follow/unfollow events
-    socket.on('follow_status_changed', (data) => {
-      console.log('🔔 Follow status changed:', data);
-      // Refresh conversations to update following status
+    socket.on('friend_request_accepted', (data) => {
+      console.log('🔔 Friend request accepted:', data);
+      // Refresh conversations to show new chat
       const refreshConversations = async () => {
         try {
           const res = await chatAPI.getConversations(currentUserId);
           const conversationsWithUserId = res.data.map(c => ({ ...c, currentUserId }));
           setConversations(conversationsWithUserId);
         } catch (err) {
-          console.error('Error refreshing conversations after follow change:', err);
-        }
-      };
-      refreshConversations();
-    });
-
-    // Listen for user profile updates
-    socket.on('user_profile_updated', (data) => {
-      console.log('🔔 User profile updated:', data);
-      // Refresh conversations to get updated user info
-      const refreshConversations = async () => {
-        try {
-          const res = await chatAPI.getConversations(currentUserId);
-          const conversationsWithUserId = res.data.map(c => ({ ...c, currentUserId }));
-          setConversations(conversationsWithUserId);
-        } catch (err) {
-          console.error('Error refreshing conversations after profile update:', err);
+          console.error('Error refreshing conversations after friend request accepted:', err);
         }
       };
       refreshConversations();
     });
 
     return () => {
-      console.log('🔍 Cleaning up Socket.IO connection');
       if (socketRef.current) {
         socketRef.current.disconnect();
         socketRef.current = null;
       }
     };
-  }, [currentUserId, selectedConversation?._id]);
+  }, [currentUserId, selectedConversation]);
 
-  // Send message - Fixed with better error handling and temp message logic
-  const sendMessage = useCallback(async (content) => {
-    if (!content.trim() || !selectedConversation || !socketRef.current) return;
+  const handleSendMessage = useCallback(async (content, conversationId) => {
+    if (!content.trim() || !conversationId) return;
 
     const tempMessage = {
-      _id: `temp_${Date.now()}`,
+      _id: `temp-${Date.now()}`,
       content: content.trim(),
       sender: currentUserId,
-      conversationId: selectedConversation._id,
+      conversationId,
       timestamp: new Date().toISOString(),
       isTemp: true
     };
@@ -260,89 +240,57 @@ export default function Chat() {
     setMessages(prev => [...prev, tempMessage]);
 
     try {
-      // Find the recipient (other participant in the conversation)
-      const recipient = selectedConversation.participants.find(p => p._id !== currentUserId);
-      
-      if (!recipient) {
-        console.error('❌ No recipient found in conversation:', selectedConversation);
-        throw new Error('No recipient found');
-      }
-      
-      console.log('📨 Sending message to:', recipient._id);
-      
       const response = await chatAPI.sendMessage({
-        conversationId: selectedConversation._id,
-        sender: currentUserId,
-        recipient: recipient._id,
-        content: content.trim()
-      });
-      console.log('✅ Message sent successfully:', response.data);
-
-      // Emit socket event
-      socketRef.current.emit('send_message', {
-        conversationId: selectedConversation._id,
         content: content.trim(),
-        sender: currentUserId,
-        timestamp: new Date().toISOString()
+        recipient: selectedConversation.participants.find(p => p._id !== currentUserId)?._id,
+        conversationId
       });
 
-      // Update conversation list
-      setConversations(prev => 
-        prev.map(conv => 
-          conv._id === selectedConversation._id 
-            ? { ...conv, lastMessage: content.trim(), updatedAt: Date.now() }
-            : conv
-        )
-      );
-
+      console.log('🔍 Message sent successfully:', response.data);
+      
+      // Update delivery status
+      setDeliveryStatus(prev => ({ ...prev, [response.data._id]: 'sent' }));
+      
     } catch (error) {
-      console.error('❌ Error sending message:', error);
+      console.error('🔍 Error sending message:', error);
       // Remove temp message on error
       setMessages(prev => prev.filter(msg => msg._id !== tempMessage._id));
     }
-  }, [selectedConversation, currentUserId]);
+  }, [currentUserId, selectedConversation]);
 
-  // Handle conversation selection
-  const handleConversationSelect = useCallback((conversation) => {
-    setSelectedConversation(conversation);
-    // Close sidebar on mobile when conversation is selected
-    setShowSidebar(false);
-  }, []);
-
-  // Handle message viewing (for Snapchat-style functionality)
   const handleViewMessage = useCallback(async (messageId) => {
     try {
       await chatAPI.viewMessage(messageId);
-      // Update message as viewed locally
-      setMessages(prev => 
-        prev.map(msg => 
-          msg._id === messageId 
-            ? { ...msg, viewed: true }
-            : msg
-        )
-      );
+      console.log('🔍 Message viewed:', messageId);
     } catch (error) {
-      console.error('Error marking message as viewed:', error);
+      console.error('🔍 Error viewing message:', error);
     }
   }, []);
 
-  // Handle new conversation creation
   const handleNewConversation = useCallback((conversation) => {
-    const conversationWithUserId = { ...conversation, currentUserId };
-    setConversations(prev => [conversationWithUserId, ...prev]);
-    setSelectedConversation(conversationWithUserId);
+    setConversations(prev => {
+      const exists = prev.find(c => c._id === conversation._id);
+      if (!exists) {
+        return [...prev, { ...conversation, currentUserId }];
+      }
+      return prev;
+    });
+    setSelectedConversation({ ...conversation, currentUserId });
     setShowNewChatModal(false);
-    // Close sidebar on mobile
-    setShowSidebar(false);
-  }, [currentUserId]);
+  }, []);
 
-  // Auto-scroll to bottom when new messages arrive
-  useEffect(() => {
-    const chatWindow = document.getElementById('chat-window');
-    if (chatWindow) {
-      chatWindow.scrollTop = chatWindow.scrollHeight;
+  const handleConversationSelect = useCallback((conversation) => {
+    console.log('🔍 handleConversationSelect called with:', conversation);
+    setSelectedConversation(conversation);
+    // On mobile, hide sidebar when conversation is selected
+    if (window.innerWidth < 768) {
+      setShowSidebar(false);
     }
-  }, [messages]);
+  }, []);
+
+  const toggleSidebar = useCallback(() => {
+    setShowSidebar(prev => !prev);
+  }, []);
 
   // Close sidebar when clicking outside on mobile
   useEffect(() => {
@@ -359,18 +307,36 @@ export default function Chat() {
     };
 
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, [showSidebar]);
 
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="text-center">
+          <div className="w-16 h-16 mx-auto mb-4 bg-gray-200 dark:bg-gray-800 rounded-full flex items-center justify-center">
+            <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-1">Authentication Required</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400">Please log in to access messages</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex h-[calc(100vh-4rem)] lg:h-[calc(100vh-4rem)] bg-gray-50 dark:bg-gray-900">
+    <div className="h-screen flex bg-gray-50 dark:bg-gray-900">
       {/* Mobile Sidebar Toggle */}
       <button
         id="sidebar-toggle"
-        onClick={() => setShowSidebar(!showSidebar)}
-        className="lg:hidden fixed top-20 left-4 z-50 p-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700"
+        onClick={toggleSidebar}
+        className="md:hidden fixed top-4 left-4 z-50 p-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700"
       >
-        <svg className="w-6 h-6 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
         </svg>
       </button>
@@ -378,8 +344,8 @@ export default function Chat() {
       {/* Sidebar */}
       <div
         id="chat-sidebar"
-        className={`fixed lg:relative inset-y-0 left-0 z-40 w-80 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transform transition-transform duration-300 ease-in-out ${
-          showSidebar ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        className={`fixed md:relative inset-y-0 left-0 z-40 w-80 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 transform transition-transform duration-300 ease-in-out ${
+          showSidebar ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         }`}
       >
         <ChatSidebar
@@ -390,38 +356,17 @@ export default function Chat() {
         />
       </div>
 
-      {/* Chat Window */}
-      <div className="flex-1 flex flex-col">
-        {selectedConversation ? (
-          <ChatWindow
-            selectedConversation={selectedConversation}
-            messages={messages}
-            currentUserId={currentUserId}
-            onSendMessage={sendMessage}
-            onViewMessage={handleViewMessage}
-            deliveryStatus={deliveryStatus}
-          />
-        ) : (
-          <div className="flex-1 flex items-center justify-center p-4">
-            <div className="text-center">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
-              </div>
-              <h3 className="text-lg sm:text-xl font-medium text-gray-900 dark:text-white mb-2">Select a conversation</h3>
-              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-4">
-                Choose a conversation from the sidebar or start a new one
-              </p>
-              <button
-                onClick={() => setShowNewChatModal(true)}
-                className="btn btn-primary text-sm sm:text-base px-6 py-3"
-              >
-                Start New Chat
-              </button>
-            </div>
-          </div>
-        )}
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col min-w-0">
+        <ChatWindow
+          messages={messages}
+          currentUserId={currentUserId}
+          onSendMessage={handleSendMessage}
+          onViewMessage={handleViewMessage}
+          deliveryStatus={deliveryStatus}
+          selectedConversation={selectedConversation}
+          socket={socketRef.current}
+        />
       </div>
 
       {/* New Chat Modal */}
@@ -435,7 +380,7 @@ export default function Chat() {
       {/* Mobile Overlay */}
       {showSidebar && (
         <div 
-          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-30"
+          className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-30"
           onClick={() => setShowSidebar(false)}
         />
       )}

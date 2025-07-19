@@ -2,6 +2,23 @@ import React from 'react';
 import { DefaultAvatar } from '../layout/AFEXLogo';
 
 export default function ChatSidebar({ conversations = [], selectedConversationId, onSelectConversation, onNewChat }) {
+  // Add defensive check for onSelectConversation
+  const handleConversationSelect = (conversation) => {
+    if (typeof onSelectConversation === 'function') {
+      onSelectConversation(conversation);
+    } else {
+      console.warn('onSelectConversation is not a function:', onSelectConversation);
+    }
+  };
+
+  // Add defensive check for onNewChat
+  const handleNewChat = () => {
+    if (typeof onNewChat === 'function') {
+      onNewChat();
+    } else {
+      console.warn('onNewChat is not a function:', onNewChat);
+    }
+  };
   return (
     <aside className="w-80 h-full border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex flex-col shadow-sm">
       {/* Header - Fixed height */}
@@ -16,7 +33,7 @@ export default function ChatSidebar({ conversations = [], selectedConversationId
             </p>
           </div>
           <button
-            onClick={onNewChat}
+            onClick={handleNewChat}
             className="p-3 rounded-full bg-blue-600 hover:bg-blue-700 text-white transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
             title="New Message"
           >
@@ -53,7 +70,7 @@ export default function ChatSidebar({ conversations = [], selectedConversationId
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No conversations yet</h3>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Start a new chat to begin messaging</p>
             <button
-              onClick={onNewChat}
+              onClick={handleNewChat}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
             >
               Start New Chat
@@ -76,7 +93,7 @@ export default function ChatSidebar({ conversations = [], selectedConversationId
               return (
                 <button
                   key={conv._id}
-                  onClick={() => onSelectConversation(conv)}
+                  onClick={() => handleConversationSelect(conv)}
                   className={`w-full flex items-center gap-4 p-4 rounded-xl transition-all duration-200 mb-2 group hover:shadow-md
                     ${isSelected 
                       ? 'bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-800 shadow-sm' 

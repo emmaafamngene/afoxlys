@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import MessageBubble from './MessageBubble';
 import DefaultAvatar from '../DefaultAvatar';
+import { useNavigate } from 'react-router-dom';
 
-const RINGTONE_URL = '/ringtone.mp3'; // Place a ringtone file in public/
+// Use a free online ringtone
+const RINGTONE_URL = 'https://cdn.pixabay.com/audio/2022/07/26/audio_124bfa4c82.mp3';
 
 // Helper to generate a safe Agora channel name
 function safeChannelName(...parts) {
@@ -45,6 +47,8 @@ export default function ChatWindow({
 
   const localVideoRef = useRef();
   const remoteVideoRef = useRef();
+
+  const navigate = useNavigate();
 
   // Get other user from conversation participants
   const participants = selectedConversation?.participants || [];
@@ -114,29 +118,11 @@ export default function ChatWindow({
     return stream;
   }
 
+  // Remove in-chat call modal logic
+  // Instead, navigate to /call?user=otherUser._id when starting/accepting a call
   async function startCall() {
     if (!otherUser) return;
-    setCallType('video');
-    setCallModal(true);
-    setIsCalling(true);
-    setIsIncoming(false);
-    setCallUserId(otherUser._id);
-    const stream = await getMedia();
-    const pc = new RTCPeerConnection();
-    setPeer(pc);
-    stream.getTracks().forEach(track => pc.addTrack(track, stream));
-    pc.onicecandidate = (e) => {
-      if (e.candidate) {
-        socket.emit('ice-candidate', { to: otherUser._id, candidate: e.candidate });
-      }
-    };
-    pc.ontrack = (e) => {
-      setRemoteStream(e.streams[0]);
-      if (remoteVideoRef.current) remoteVideoRef.current.srcObject = e.streams[0];
-    };
-    const offer = await pc.createOffer();
-    await pc.setLocalDescription(offer);
-    socket.emit('call-user', { to: otherUser._id, offer });
+    navigate(`/call?user=${otherUser._id}`);
   }
 
   async function acceptCall() {

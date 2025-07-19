@@ -84,6 +84,8 @@ export default function Chat() {
     socket.on('connect', () => {
       console.log('✅ Socket.IO connected with ID:', socket.id);
       console.log('🔍 Current user ID:', currentUserId);
+      // Register userId for WebRTC signaling
+      socket.emit('register', currentUserId);
     });
     
     socket.on('connect_error', (error) => {

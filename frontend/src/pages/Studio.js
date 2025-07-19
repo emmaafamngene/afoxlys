@@ -24,17 +24,22 @@ const Studio = () => {
     if (!video || !user?._id) return;
     setUploading(true);
     try {
-      // 1. Upload to Cloudinary
+      // 1. Upload to Cloudinary via backend
       const formData = new FormData();
       formData.append('file', video);
-      formData.append('upload_preset', 'your_actual_preset'); // <-- Replace with your real preset
-      const cloudRes = await fetch('https://api.cloudinary.com/v1_1/your_actual_cloud_name/video/upload', {
+      formData.append('type', 'video');
+      
+      const cloudRes = await fetch('/api/upload/upload-to-cloudinary', {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
         body: formData
       });
+      
       const cloudData = await cloudRes.json();
-      if (!cloudData.secure_url) {
-        alert('Cloudinary upload failed: ' + (cloudData.error?.message || 'Unknown error'));
+      if (!cloudData.success || !cloudData.secure_url) {
+        alert('Upload failed: ' + (cloudData.error || 'Unknown error'));
         setUploading(false);
         return;
       }

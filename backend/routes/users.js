@@ -14,6 +14,58 @@ const router = express.Router();
 // Use memory storage for avatar uploads
 const avatarUpload = multer({ storage: multer.memoryStorage() });
 
+// @route   DELETE /api/users/cleanup/test-users
+// @desc    Clean up test users (emmanuel, onyekachi, test)
+// @access  Private (Admin only)
+router.delete('/cleanup/test-users', auth, async (req, res) => {
+  try {
+    // Find users with usernames starting with emmanuel, onyekachi, or test
+    const testUsers = await User.find({
+      $or: [
+        { username: { $regex: '^emmanuel', $options: 'i' } },
+        { username: { $regex: '^onyekachi', $options: 'i' } },
+        { username: { $regex: '^test', $options: 'i' } }
+      ]
+    });
+
+    console.log(`🔍 Found ${testUsers.length} test users to remove:`);
+    testUsers.forEach(user => {
+      console.log(`  - ${user.username} (${user.email})`);
+    });
+
+    if (testUsers.length === 0) {
+      return res.json({ 
+        message: 'No test users found',
+        deletedCount: 0 
+      });
+    }
+
+    // Delete the users
+    const deleteResult = await User.deleteMany({
+      $or: [
+        { username: { $regex: '^emmanuel', $options: 'i' } },
+        { username: { $regex: '^onyekachi', $options: 'i' } },
+        { username: { $regex: '^test', $options: 'i' } }
+      ]
+    });
+
+    console.log(`✅ Successfully deleted ${deleteResult.deletedCount} test users`);
+
+    res.json({
+      message: `Successfully deleted ${deleteResult.deletedCount} test users`,
+      deletedCount: deleteResult.deletedCount,
+      deletedUsers: testUsers.map(user => ({
+        username: user.username,
+        email: user.email
+      }))
+    });
+
+  } catch (error) {
+    console.error('Cleanup test users error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   GET /api/users
 // @desc    Get all users (with pagination)
 // @access  Public

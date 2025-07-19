@@ -6,6 +6,7 @@ import NewChatModal from '../components/chat/NewChatModal';
 import { io } from 'socket.io-client';
 import { chatAPI } from '../services/api';
 import { usePageTitle } from '../hooks/usePageTitle';
+import webrtcService from '../services/webrtcService';
 
 const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'https://afoxlys.onrender.com';
 
@@ -66,13 +67,17 @@ export default function Chat() {
     // Clean up existing socket
     if (socketRef.current) {
       socketRef.current.disconnect();
+      socketRef.current = null;
     }
     
     console.log('🔍 Setting up Socket.IO connection to:', SOCKET_URL);
     const socket = io(SOCKET_URL, {
-      transports: ['websocket', 'polling'],
+      transports: ['polling', 'websocket'],
       timeout: 20000,
-      forceNew: true
+      forceNew: true,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000
     });
     socketRef.current = socket;
     
@@ -95,6 +100,9 @@ export default function Chat() {
     
     socket.emit('join', currentUserId);
     console.log('🔍 Emitted join event for user:', currentUserId);
+    
+    // Initialize WebRTC service
+    webrtcService.init(socket, currentUserId);
     
     // Handle incoming messages
     socket.on('receive_message', (msg) => {
@@ -176,6 +184,54 @@ export default function Chat() {
         }
         return prev;
       });
+    });
+
+    // Listen for friend request events
+    socket.on('friend_request_received', (data) => {
+      console.log('🔔 Received friend request:', data);
+      // Refresh conversations to show new potential chat
+      const refreshConversations = async () => {
+        try {
+          const res = await chatAPI.getConversations(currentUserId);
+          const conversationsWithUserId = res.data.map(c => ({ ...c, currentUserId }));
+          setConversations(conversationsWithUserId);
+        } catch (err) {
+          console.error('Error refreshing conversations after friend request:', err);
+        }
+      };
+      refreshConversations();
+    });
+
+    // Listen for follow/unfollow events
+    socket.on('follow_status_changed', (data) => {
+      console.log('🔔 Follow status changed:', data);
+      // Refresh conversations to update following status
+      const refreshConversations = async () => {
+        try {
+          const res = await chatAPI.getConversations(currentUserId);
+          const conversationsWithUserId = res.data.map(c => ({ ...c, currentUserId }));
+          setConversations(conversationsWithUserId);
+        } catch (err) {
+          console.error('Error refreshing conversations after follow change:', err);
+        }
+      };
+      refreshConversations();
+    });
+
+    // Listen for user profile updates
+    socket.on('user_profile_updated', (data) => {
+      console.log('🔔 User profile updated:', data);
+      // Refresh conversations to get updated user info
+      const refreshConversations = async () => {
+        try {
+          const res = await chatAPI.getConversations(currentUserId);
+          const conversationsWithUserId = res.data.map(c => ({ ...c, currentUserId }));
+          setConversations(conversationsWithUserId);
+        } catch (err) {
+          console.error('Error refreshing conversations after profile update:', err);
+        }
+      };
+      refreshConversations();
     });
 
     return () => {

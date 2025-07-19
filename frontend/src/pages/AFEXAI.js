@@ -14,8 +14,61 @@ const AFEXAI = () => {
   const [loading, setLoading] = useState(true);
   const [isHovering, setIsHovering] = useState(false);
   const [particleCount, setParticleCount] = useState(0);
+  const [forceUpdate, setForceUpdate] = useState(0);
   const messagesEndRef = useRef(null);
   const controls = useAnimation();
+
+  // Theme detection
+  const [isDarkTheme, setIsDarkTheme] = useState(false);
+
+  useEffect(() => {
+    const checkTheme = () => {
+      const body = document.body;
+      const isDark = body.classList.contains('dark') || 
+                    body.style.backgroundColor === 'black' || 
+                    body.style.backgroundColor === 'rgb(0, 0, 0)' ||
+                    window.getComputedStyle(body).backgroundColor === 'rgb(0, 0, 0)' ||
+                    body.style.background === 'black' ||
+                    body.style.background === 'rgb(0, 0, 0)';
+      
+      const wasDark = isDarkTheme;
+      setIsDarkTheme(isDark);
+      
+      // Force re-render if theme actually changed
+      if (wasDark !== isDark) {
+        setForceUpdate(prev => prev + 1);
+      }
+    };
+
+    checkTheme();
+    
+    // Create a mutation observer to watch for theme changes
+    const observer = new MutationObserver(checkTheme);
+    observer.observe(document.body, { 
+      attributes: true, 
+      attributeFilter: ['class', 'style'],
+      subtree: false 
+    });
+
+    // Also listen for window resize and other events that might trigger theme changes
+    window.addEventListener('resize', checkTheme);
+    window.addEventListener('storage', checkTheme);
+    
+    // Listen for custom theme change event from sidebar
+    const handleThemeChange = (event) => {
+      const { isDark } = event.detail;
+      setIsDarkTheme(isDark);
+      setForceUpdate(prev => prev + 1);
+    };
+    window.addEventListener('themeChanged', handleThemeChange);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', checkTheme);
+      window.removeEventListener('storage', checkTheme);
+      window.removeEventListener('themeChanged', handleThemeChange);
+    };
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -192,8 +245,8 @@ const AFEXAI = () => {
       title: 'Neural Chat',
       description: 'Advanced AI conversations',
       icon: <FiCpu className="w-6 h-6" />,
-      color: 'from-violet-500 to-purple-600',
-      gradient: 'from-violet-500/20 to-purple-600/20'
+      color: 'from-gray-800 to-black',
+      gradient: 'from-gray-800/20 to-black/20'
     }
   ];
 
@@ -203,7 +256,7 @@ const AFEXAI = () => {
       {[...Array(20)].map((_, i) => (
         <motion.div
           key={i}
-          className="absolute w-2 h-2 bg-gradient-to-r from-violet-400 to-purple-500 rounded-full opacity-30"
+          className="absolute w-2 h-2 bg-gradient-to-r from-gray-400 to-gray-600 rounded-full opacity-30"
           animate={{
             x: [0, Math.random() * 400 - 200],
             y: [0, Math.random() * 600 - 300],
@@ -226,12 +279,28 @@ const AFEXAI = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
+    <div 
+      key={`afex-ai-${forceUpdate}`}
+      className={`min-h-screen relative overflow-hidden transition-all duration-200 ${
+        isDarkTheme 
+          ? 'bg-gradient-to-br from-gray-900 via-black to-gray-900' 
+          : 'bg-gradient-to-br from-white via-gray-50 to-blue-50'
+      }`}>
       {/* Animated Background */}
       <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(139,92,246,0.1),transparent_50%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(236,72,153,0.1),transparent_50%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(34,197,94,0.1),transparent_50%)]" />
+        {isDarkTheme ? (
+          <>
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(139,92,246,0.1),transparent_50%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(236,72,153,0.1),transparent_50%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(34,197,94,0.1),transparent_50%)]" />
+          </>
+        ) : (
+          <>
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(59,130,246,0.1),transparent_50%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(147,197,253,0.1),transparent_50%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(191,219,254,0.1),transparent_50%)]" />
+          </>
+        )}
       </div>
 
       {/* Floating Particles */}
@@ -258,11 +327,19 @@ const AFEXAI = () => {
             className="flex items-center justify-center mb-6"
           >
             <div className="relative">
-              <div className="w-20 h-20 bg-gradient-to-r from-violet-500 via-purple-500 to-pink-500 rounded-3xl flex items-center justify-center mr-6 shadow-2xl shadow-purple-500/50">
-                <FiZap className="w-10 h-10 text-white" />
-              </div>
-              <motion.div
-                className="absolute -inset-4 bg-gradient-to-r from-violet-500 to-pink-500 rounded-3xl opacity-20 blur-xl"
+                              <div className={`w-20 h-20 rounded-3xl flex items-center justify-center mr-6 shadow-2xl transition-all duration-200 ${
+                  isDarkTheme 
+                    ? 'bg-gradient-to-r from-gray-600 via-gray-700 to-black shadow-gray-500/50' 
+                    : 'bg-gradient-to-r from-blue-500 via-blue-400 to-blue-300 shadow-blue-500/50'
+                }`}>
+                  <FiZap className="w-10 h-10 text-white" />
+                </div>
+                          <motion.div
+              className={`absolute -inset-4 rounded-3xl opacity-20 blur-xl transition-all duration-200 ${
+                isDarkTheme 
+                  ? 'bg-gradient-to-r from-gray-600 to-black' 
+                  : 'bg-gradient-to-r from-blue-500 to-blue-400'
+              }`}
                 animate={{
                   scale: [1, 1.2, 1],
                   opacity: [0.2, 0.4, 0.2]
@@ -276,7 +353,11 @@ const AFEXAI = () => {
             </div>
             <div>
               <motion.h1 
-                className="text-6xl font-black bg-gradient-to-r from-violet-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-2"
+                className={`text-6xl font-black bg-clip-text text-transparent mb-2 transition-all duration-200 ${
+                  isDarkTheme 
+                    ? 'bg-gradient-to-r from-gray-300 via-gray-400 to-white' 
+                    : 'bg-gradient-to-r from-blue-600 via-blue-500 to-blue-400'
+                }`}
                 animate={{
                   backgroundPosition: ['0% 50%', '100% 50%', '0% 50%']
                 }}
@@ -292,7 +373,9 @@ const AFEXAI = () => {
                 AFEX AI
               </motion.h1>
               <motion.p 
-                className="text-xl text-gray-300 font-medium"
+                className={`text-xl font-medium transition-colors duration-200 ${
+                  isDarkTheme ? 'text-gray-300' : 'text-gray-600'
+                }`}
                 animate={{ opacity: [0.7, 1, 0.7] }}
                 transition={{ duration: 2, repeat: Infinity }}
               >
@@ -302,113 +385,87 @@ const AFEXAI = () => {
           </motion.div>
         </motion.div>
 
-        {/* Static Feature Tabs (AI Tab) - now outside chat */}
-        <motion.div 
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          className="grid grid-cols-1 md:grid-cols-1 gap-6 mb-4"
-        >
-          {features.map((feature, index) => (
-            <motion.button
-              key={feature.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              onClick={() => setSelectedFeature(feature.id)}
-              className={`group relative p-6 rounded-3xl border-2 transition-all duration-500 overflow-hidden ${
-                selectedFeature === feature.id
-                  ? `bg-gradient-to-r ${feature.color} border-transparent text-white shadow-2xl shadow-purple-500/25`
-                  : 'bg-white/10 backdrop-blur-xl border-white/20 text-gray-300 hover:border-purple-400/50 hover:bg-white/20'
-              }`}
-              whileHover={{ 
-                scale: 1.05,
-                y: -5
-              }}
-              whileTap={{ scale: 0.95 }}
-            >
-              {/* Animated background */}
-              <div className={`absolute inset-0 bg-gradient-to-r ${feature.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
-              
-              <div className="relative z-10 flex flex-col items-center text-center">
-                <motion.div 
-                  className={`mb-4 p-3 rounded-2xl ${
-                    selectedFeature === feature.id 
-                      ? 'bg-white/20 backdrop-blur-sm' 
-                      : 'bg-white/10 backdrop-blur-sm'
-                  }`}
-                  animate={selectedFeature === feature.id ? {
-                    rotate: [0, 10, -10, 0],
-                    scale: [1, 1.1, 1]
-                  } : {}}
-                  transition={{ duration: 2, repeat: Infinity }}
-                >
-                  {feature.icon}
-                </motion.div>
-                <h3 className="font-bold text-lg mb-2">{feature.title}</h3>
-                <p className="text-sm opacity-80 leading-relaxed">{feature.description}</p>
-              </div>
-            </motion.button>
-          ))}
-        </motion.div>
+
 
         {/* Main Chat Interface */}
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.8, delay: 0.4 }}
-          className="bg-white/10 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/20 overflow-visible min-h-[700px] flex flex-col justify-between"
+          className={`backdrop-blur-2xl rounded-3xl shadow-2xl overflow-hidden min-h-[700px] flex flex-row transition-all duration-200 ${
+            isDarkTheme 
+              ? 'bg-white/10 border border-white/20' 
+              : 'bg-white/90 border border-blue-200'
+          }`}
         >
-          <div className="flex flex-1">
-            {/* Enhanced Chat List Sidebar */}
-            <motion.div 
-              className={`w-80 border-r border-white/20 flex flex-col transition-all duration-500 ${
-                showChatList ? 'translate-x-0' : '-translate-x-full'
-              } md:translate-x-0`}
-              initial={{ x: -300 }}
-              animate={{ x: 0 }}
-              transition={{ duration: 0.5, delay: 0.6 }}
-            >
+          {/* Enhanced Chat List Sidebar - fixed position */}
+          <motion.div 
+            className={`w-80 border-r flex flex-col transition-all duration-200 h-[700px] ${
+              isDarkTheme ? 'border-white/20' : 'border-blue-200'
+            }`}
+            initial={{ x: -300 }}
+            animate={{ x: 0 }}
+            style={{ flex: 'none', position: 'sticky', top: 0 }}
+          >
               {/* Chat List Header */}
-              <div className="p-6 border-b border-white/20 bg-gradient-to-r from-violet-500/20 to-purple-500/20">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xl font-bold text-white">Neural Chats</h3>
-                  <motion.button
-                    onClick={createNewChat}
-                    className="w-10 h-10 bg-gradient-to-r from-violet-500 to-purple-600 rounded-xl flex items-center justify-center text-white hover:from-violet-600 hover:to-purple-700 transition-all duration-300 shadow-lg"
+              <div className={`p-6 border-b bg-gradient-to-r transition-all duration-200 ${
+                isDarkTheme 
+                  ? 'border-white/20 from-gray-500/20 to-black/20' 
+                  : 'border-blue-200 from-blue-500/20 to-blue-400/20'
+              }`}>
+                <div className="flex items-center justify-end mb-4">
+                                      <motion.button
+                      onClick={createNewChat}
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center text-white transition-all duration-200 shadow-lg ${
+                        isDarkTheme 
+                          ? 'bg-gradient-to-r from-gray-600 to-black hover:from-gray-700 hover:to-gray-900' 
+                          : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700'
+                      }`}
                     whileHover={{ scale: 1.1, rotate: 90 }}
                     whileTap={{ scale: 0.9 }}
                   >
                     <FiPlus className="w-5 h-5" />
                   </motion.button>
                 </div>
-                <button
-                  onClick={() => setShowChatList(false)}
-                  className="md:hidden w-full p-3 text-sm text-gray-300 hover:text-white transition-colors bg-white/10 rounded-xl"
-                >
+                                  <button
+                    onClick={() => setShowChatList(false)}
+                    className={`md:hidden w-full p-3 text-sm transition-colors rounded-xl ${
+                      isDarkTheme 
+                        ? 'text-gray-300 hover:text-white bg-white/10' 
+                        : 'text-gray-600 hover:text-gray-800 bg-blue-100'
+                    }`}
+                  >
                   <FiChevronLeft className="w-4 h-4 inline mr-2" />
                   Back to Chat
                 </button>
               </div>
 
               {/* Chat List */}
-              <div className="flex-1 p-4 space-y-3">
+              <div className="flex-1 p-4 space-y-3 overflow-y-auto">
                 {loading ? (
-                  <div className="text-center text-gray-400 py-8">
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                      className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full mx-auto mb-4"
-                    />
+                  <div className={`text-center py-8 ${
+                    isDarkTheme ? 'text-gray-400' : 'text-gray-600'
+                  }`}>
+                                          <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                        className={`w-8 h-8 border-2 border-t-transparent rounded-full mx-auto mb-4 ${
+                          isDarkTheme ? 'border-gray-500' : 'border-blue-500'
+                        }`}
+                      />
                     Loading neural networks...
                   </div>
-                ) : chats.length === 0 ? (
-                  <div className="text-center text-gray-400 py-8">
-                                         <FiCpu className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                                ) : chats.length === 0 ? (
+                  <div className={`text-center py-8 ${
+                    isDarkTheme ? 'text-gray-400' : 'text-gray-600'
+                  }`}>
+                    <FiCpu className="w-12 h-12 mx-auto mb-4 opacity-50" />
                     <p className="mb-4">No conversations yet</p>
                     <button
                       onClick={createNewChat}
-                      className="text-violet-400 hover:text-violet-300 transition-colors font-medium"
+                      className={`transition-colors font-medium ${
+                        isDarkTheme ? 'text-gray-400 hover:text-gray-300' : 'text-blue-500 hover:text-blue-600'
+                      }`}
                     >
                       Initialize new neural session
                     </button>
@@ -424,8 +481,12 @@ const AFEXAI = () => {
                         transition={{ duration: 0.3, delay: index * 0.05 }}
                         className={`p-4 rounded-2xl cursor-pointer transition-all duration-300 ${
                           currentChat?._id === chat._id
-                            ? 'bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-lg'
-                            : 'bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white'
+                            ? isDarkTheme 
+                              ? 'bg-gradient-to-r from-gray-800 to-black text-white shadow-lg'
+                              : 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg'
+                            : isDarkTheme
+                              ? 'bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white'
+                              : 'bg-blue-50 hover:bg-blue-100 text-gray-700 hover:text-gray-900'
                         }`}
                         onClick={() => loadChat(chat._id)}
                         whileHover={{ scale: 1.02, x: 5 }}
@@ -433,12 +494,14 @@ const AFEXAI = () => {
                         <div className="flex items-center justify-between">
                           <div className="flex-1 min-w-0">
                             <h4 className={`font-semibold truncate ${
-                              currentChat?._id === chat._id ? 'text-white' : 'text-white'
+                              currentChat?._id === chat._id ? 'text-white' : isDarkTheme ? 'text-white' : 'text-gray-800'
                             }`}>
                               {chat.title}
                             </h4>
                             <p className={`text-sm truncate mt-1 ${
-                              currentChat?._id === chat._id ? 'text-violet-100' : 'text-gray-400'
+                              currentChat?._id === chat._id 
+                                ? isDarkTheme ? 'text-gray-300' : 'text-blue-100'
+                                : isDarkTheme ? 'text-gray-400' : 'text-gray-500'
                             }`}>
                               {chat.lastMessage || 'No messages yet'}
                             </p>
@@ -449,7 +512,7 @@ const AFEXAI = () => {
                               deleteChat(chat._id);
                             }}
                             className={`ml-2 p-2 rounded-lg hover:bg-opacity-20 transition-all duration-200 ${
-                              currentChat?._id === chat._id ? 'hover:bg-white' : 'hover:bg-gray-300'
+                              currentChat?._id === chat._id ? 'hover:bg-white' : isDarkTheme ? 'hover:bg-gray-300' : 'hover:bg-gray-200'
                             }`}
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.9 }}
@@ -462,24 +525,36 @@ const AFEXAI = () => {
                   </AnimatePresence>
                 )}
               </div>
-            </motion.div>
+          </motion.div>
 
-            {/* Enhanced Chat Area */}
-            <div className="flex-1 flex flex-col justify-between">
+          {/* Enhanced Chat Area - flex-1, scrollable if needed */}
+          <div className="flex-1 flex flex-col justify-between h-[700px] overflow-hidden">
               {/* Chat Header */}
-              <div className="p-6 border-b border-white/20 bg-gradient-to-r from-purple-500/20 to-pink-500/20 flex items-center justify-between">
+              <div className={`p-6 border-b bg-gradient-to-r flex items-center justify-between ${
+                isDarkTheme 
+                  ? 'border-white/20 from-gray-500/20 to-black/20' 
+                  : 'border-blue-200 from-blue-500/20 to-blue-400/20'
+              }`}>
                 <div className="flex items-center">
-                  <button
-                    onClick={() => setShowChatList(true)}
-                    className="md:hidden mr-4 p-3 text-gray-300 hover:text-white transition-colors bg-white/10 rounded-xl"
-                  >
+                                      <button
+                      onClick={() => setShowChatList(true)}
+                      className={`md:hidden mr-4 p-3 transition-colors rounded-xl ${
+                        isDarkTheme 
+                          ? 'text-gray-300 hover:text-white bg-white/10' 
+                          : 'text-gray-600 hover:text-gray-800 bg-blue-100'
+                      }`}
+                    >
                     <FiMessageCircle className="w-5 h-5" />
                   </button>
                   <div>
-                    <h3 className="text-xl font-bold text-white">
+                    <h3 className={`text-xl font-bold ${
+                      isDarkTheme ? 'text-white' : 'text-gray-800'
+                    }`}>
                       {currentChat?.title || 'Neural Interface'}
                     </h3>
-                    <p className="text-sm text-gray-400">
+                    <p className={`text-sm ${
+                      isDarkTheme ? 'text-gray-400' : 'text-gray-600'
+                    }`}>
                       {currentChat ? 'Active neural session' : 'Ready to connect'}
                     </p>
                   </div>
@@ -487,7 +562,11 @@ const AFEXAI = () => {
                 {!currentChat && (
                   <motion.button
                     onClick={createNewChat}
-                    className="px-6 py-3 bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-xl hover:from-violet-600 hover:to-purple-700 transition-all duration-300 shadow-lg"
+                    className={`px-6 py-3 text-white rounded-xl transition-all duration-200 shadow-lg ${
+                      isDarkTheme 
+                        ? 'bg-gradient-to-r from-gray-800 to-black hover:from-gray-700 hover:to-gray-900' 
+                        : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700'
+                    }`}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
@@ -497,12 +576,14 @@ const AFEXAI = () => {
               </div>
 
               {/* Messages Area */}
-              <div className="flex-1 p-6 space-y-6">
+              <div className="flex-1 p-6 space-y-6 overflow-y-auto" style={{ maxHeight: 'calc(700px - 200px)' }}>
                 {messages.length === 0 && !currentChat ? (
                   <motion.div 
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="text-center text-gray-400 mt-20"
+                    className={`text-center mt-20 ${
+                      isDarkTheme ? 'text-gray-400' : 'text-gray-600'
+                    }`}
                   >
                     <motion.div
                       animate={{ 
@@ -513,17 +594,31 @@ const AFEXAI = () => {
                         rotate: { duration: 8, repeat: Infinity, ease: "linear" },
                         scale: { duration: 2, repeat: Infinity, ease: "easeInOut" }
                       }}
-                      className="w-24 h-24 bg-gradient-to-r from-violet-500/20 to-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-6 backdrop-blur-xl"
+                      className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 backdrop-blur-xl transition-all duration-200 ${
+                        isDarkTheme 
+                          ? 'bg-gradient-to-r from-gray-800/20 to-black/20' 
+                          : 'bg-gradient-to-r from-blue-500/20 to-blue-400/20'
+                      }`}
                     >
-                      <FiCpu className="w-12 h-12 text-violet-400" />
+                      <FiCpu className={`w-12 h-12 transition-colors duration-200 ${
+                        isDarkTheme ? 'text-gray-300' : 'text-blue-500'
+                      }`} />
                     </motion.div>
-                    <h3 className="text-2xl font-bold mb-4 text-white">Welcome to AFEX AI</h3>
-                    <p className="mb-6 text-lg leading-relaxed max-w-md mx-auto">
-                      I'm your advanced neural assistant, ready to revolutionize your social media experience with cutting-edge AI technology.
-                    </p>
-                    <motion.button
-                      onClick={createNewChat}
-                      className="px-8 py-4 bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-2xl hover:from-violet-600 hover:to-purple-700 transition-all duration-300 shadow-2xl shadow-purple-500/25 font-semibold"
+                                          <h3 className={`text-2xl font-bold mb-4 ${
+                        isDarkTheme ? 'text-white' : 'text-gray-800'
+                      }`}>Welcome to AFEX AI</h3>
+                      <p className={`mb-6 text-lg leading-relaxed max-w-md mx-auto ${
+                        isDarkTheme ? 'text-gray-400' : 'text-gray-600'
+                      }`}>
+                        I'm your advanced neural assistant, ready to revolutionize your social media experience with cutting-edge AI technology.
+                      </p>
+                      <motion.button
+                        onClick={createNewChat}
+                        className={`px-8 py-4 text-white rounded-2xl transition-all duration-200 shadow-2xl font-semibold ${
+                          isDarkTheme 
+                            ? 'bg-gradient-to-r from-gray-800 to-black hover:from-gray-700 hover:to-gray-900 shadow-gray-500/25' 
+                            : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-blue-500/25'
+                        }`}
                       whileHover={{ scale: 1.05, y: -2 }}
                       whileTap={{ scale: 0.95 }}
                     >
@@ -543,30 +638,22 @@ const AFEXAI = () => {
                       >
                         <div className={`flex items-start space-x-4 max-w-[80%] ${message.type === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}>
                           <motion.div 
-                            className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
-                              message.type === 'user' 
-                                ? 'bg-gradient-to-r from-violet-500 to-purple-600 shadow-lg' 
-                                : 'bg-gradient-to-r from-gray-600 to-gray-700 shadow-lg'
-                            }`}
-                            whileHover={{ scale: 1.1, rotate: 5 }}
-                          >
-                            {message.type === 'user' ? (
-                              <FiUser className="w-6 h-6 text-white" />
-                            ) : (
-                              <FiCpu className="w-6 h-6 text-white" />
-                            )}
-                          </motion.div>
-                          <motion.div 
                             className={`px-6 py-4 rounded-3xl backdrop-blur-xl ${
                               message.type === 'user'
-                                ? 'bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-lg'
-                                : 'bg-white/20 text-white border border-white/20'
+                                ? isDarkTheme 
+                                  ? 'bg-gradient-to-r from-gray-800 to-black text-white shadow-lg'
+                                  : 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg'
+                                : isDarkTheme
+                                  ? 'bg-white/20 text-white border border-white/20'
+                                  : 'bg-blue-50 text-gray-800 border border-blue-200'
                             }`}
                             whileHover={{ scale: 1.02 }}
                           >
                             <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
                             <p className={`text-xs mt-3 ${
-                              message.type === 'user' ? 'text-violet-100' : 'text-gray-400'
+                              message.type === 'user' 
+                                ? isDarkTheme ? 'text-gray-300' : 'text-blue-100'
+                                : isDarkTheme ? 'text-gray-400' : 'text-gray-500'
                             }`}>
                               {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </p>
@@ -586,26 +673,40 @@ const AFEXAI = () => {
                   >
                     <div className="flex items-start space-x-4">
                       <motion.div 
-                        className="w-12 h-12 rounded-2xl bg-gradient-to-r from-gray-600 to-gray-700 flex items-center justify-center shadow-lg"
+                        className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg transition-all duration-200 ${
+                          isDarkTheme 
+                            ? 'bg-gradient-to-r from-gray-800 to-black' 
+                            : 'bg-gradient-to-r from-blue-500 to-blue-600'
+                        }`}
                         animate={{ rotate: [0, 360] }}
                         transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                       >
                                                  <FiCpu className="w-6 h-6 text-white" />
                       </motion.div>
-                      <div className="px-6 py-4 rounded-3xl bg-white/20 backdrop-blur-xl border border-white/20">
+                      <div className={`px-6 py-4 rounded-3xl backdrop-blur-xl border ${
+                        isDarkTheme 
+                          ? 'bg-white/20 border-white/20' 
+                          : 'bg-blue-50 border-blue-200'
+                      }`}>
                         <div className="flex space-x-2">
                           <motion.div 
-                            className="w-3 h-3 bg-violet-400 rounded-full"
+                            className={`w-3 h-3 rounded-full transition-colors duration-200 ${
+                              isDarkTheme ? 'bg-gray-400' : 'bg-blue-400'
+                            }`}
                             animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
                             transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }}
                           />
                           <motion.div 
-                            className="w-3 h-3 bg-purple-400 rounded-full"
+                            className={`w-3 h-3 rounded-full transition-colors duration-200 ${
+                              isDarkTheme ? 'bg-gray-500' : 'bg-blue-500'
+                            }`}
                             animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
                             transition={{ duration: 1, repeat: Infinity, ease: "easeInOut", delay: 0.2 }}
                           />
                           <motion.div 
-                            className="w-3 h-3 bg-pink-400 rounded-full"
+                            className={`w-3 h-3 rounded-full transition-colors duration-200 ${
+                              isDarkTheme ? 'bg-gray-600' : 'bg-blue-600'
+                            }`}
                             animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
                             transition={{ duration: 1, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
                           />
@@ -619,7 +720,11 @@ const AFEXAI = () => {
               </div>
 
               {/* Enhanced Input Area */}
-              <div className="border-t border-white/20 p-6 bg-gradient-to-r from-slate-800/50 to-purple-900/50">
+              <div className={`border-t p-6 bg-gradient-to-r flex-shrink-0 ${
+                isDarkTheme 
+                  ? 'border-white/20 from-gray-800/50 to-black/50' 
+                  : 'border-blue-200 from-blue-50/50 to-blue-100/50'
+              }`}>
                 <div className="flex items-end space-x-4">
                   <div className="flex-1 relative">
                     <textarea
@@ -627,12 +732,20 @@ const AFEXAI = () => {
                       onChange={(e) => setInputMessage(e.target.value)}
                       onKeyPress={handleKeyPress}
                       placeholder={currentChat ? "Transmit your thoughts to the neural network..." : "Initialize neural interface to begin..."}
-                      className="w-full p-4 border border-white/20 rounded-2xl resize-none bg-white/10 backdrop-blur-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all duration-300"
+                      className={`w-full p-4 border rounded-2xl resize-none backdrop-blur-xl transition-all duration-300 text-lg min-w-[400px] max-w-[900px] mx-auto ${
+                        isDarkTheme 
+                          ? 'border-white/20 bg-white/10 text-white placeholder-gray-400 focus:ring-2 focus:ring-gray-500 focus:border-transparent' 
+                          : 'border-blue-200 bg-white text-gray-800 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+                      }`}
                       rows="1"
                       style={{ minHeight: '56px', maxHeight: '120px' }}
                     />
                     <motion.div
-                      className="absolute inset-0 rounded-2xl bg-gradient-to-r from-violet-500/20 to-purple-500/20 opacity-0 pointer-events-none"
+                      className={`absolute inset-0 rounded-2xl opacity-0 pointer-events-none ${
+                        isDarkTheme 
+                          ? 'bg-gradient-to-r from-gray-500/20 to-black/20' 
+                          : 'bg-gradient-to-r from-blue-500/20 to-blue-400/20'
+                      }`}
                       animate={{ opacity: isHovering ? 1 : 0 }}
                       transition={{ duration: 0.3 }}
                     />
@@ -640,7 +753,11 @@ const AFEXAI = () => {
                   <motion.button
                     onClick={handleSendMessage}
                     disabled={!inputMessage.trim() || !currentChat}
-                    className="w-14 h-14 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl flex items-center justify-center text-white transition-all duration-300 shadow-2xl shadow-purple-500/25"
+                    className={`w-14 h-14 disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl flex items-center justify-center text-white transition-all duration-200 shadow-2xl ${
+                      isDarkTheme 
+                        ? 'bg-gradient-to-r from-gray-800 to-black hover:from-gray-700 hover:to-gray-900 shadow-gray-500/25' 
+                        : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-blue-500/25'
+                    }`}
                     whileHover={{ scale: 1.1, rotate: 5 }}
                     whileTap={{ scale: 0.9 }}
                     onHoverStart={() => setIsHovering(true)}
@@ -649,8 +766,8 @@ const AFEXAI = () => {
                     <FiSend className="w-6 h-6" />
                   </motion.button>
                 </div>
+
               </div>
-            </div>
           </div>
         </motion.div>
       </div>

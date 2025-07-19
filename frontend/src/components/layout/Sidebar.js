@@ -116,7 +116,15 @@ export default function Sidebar({ darkMode, setDarkMode }) {
         {/* Dark/Light Toggle always at the bottom */}
         <div className={`flex flex-col items-center p-4 w-full border-t border-gray-200 dark:border-gray-700 transition-all duration-300`}>
           <button
-            onClick={() => setDarkMode((prev) => !prev)}
+            onClick={() => {
+              const newMode = !darkMode;
+              setDarkMode(newMode);
+              
+              // Dispatch custom event for AFEXAI page to listen to
+              window.dispatchEvent(new CustomEvent('themeChanged', { 
+                detail: { isDark: newMode } 
+              }));
+            }}
             className={`flex items-center gap-3 px-4 py-3 text-gray-600 dark:text-gray-300 
               hover:bg-gray-100 dark:hover:bg-gray-800 hover:shadow-md hover:text-gray-900 dark:hover:text-white 
               transition-all duration-200 w-full font-medium`}

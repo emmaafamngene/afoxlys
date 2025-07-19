@@ -5,6 +5,12 @@ const { createNotification } = require('./notifications');
 
 const router = express.Router();
 
+// Get socket.io instance
+let io;
+const setSocketIO = (socketIO) => {
+  io = socketIO;
+};
+
 // @route   POST /api/follow/:userId
 // @desc    Follow/unfollow a user
 // @access  Private
@@ -32,6 +38,16 @@ router.post('/:userId', auth, async (req, res) => {
       await User.findByIdAndUpdate(req.params.userId, {
         $pull: { followers: req.user._id }
       });
+
+      // Emit socket event for unfollow
+      if (io) {
+        io.emit('follow_status_changed', {
+          followerId: req.user._id,
+          followedId: req.params.userId,
+          action: 'unfollow',
+          followerName: req.user.firstName || req.user.username
+        });
+      }
 
       res.json({ 
         message: 'User unfollowed', 
@@ -62,6 +78,23 @@ router.post('/:userId', auth, async (req, res) => {
         );
       } catch (error) {
         console.error('Error creating follow notification:', error);
+      }
+
+      // Emit socket event for follow
+      if (io) {
+        io.emit('follow_status_changed', {
+          followerId: req.user._id,
+          followedId: req.params.userId,
+          action: 'follow',
+          followerName: req.user.firstName || req.user.username
+        });
+        
+        // Also emit friend request event
+        io.emit('friend_request_received', {
+          followerId: req.user._id,
+          followedId: req.params.userId,
+          followerName: req.user.firstName || req.user.username
+        });
       }
 
       res.json({ 
@@ -173,4 +206,4 @@ router.get('/:userId/following', async (req, res) => {
   }
 });
 
-module.exports = router; 
+module.exports = { router, setSocketIO }; 

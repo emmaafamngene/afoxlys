@@ -3,28 +3,23 @@ import { useAuth } from '../../contexts/AuthContext';
 import { followAPI, usersAPI, chatAPI } from '../../services/api';
 import { DefaultAvatar } from '../layout/AFEXLogo';
 
-export default function NewChatModal({ isOpen, onClose, onStartChat }) {
+export default function NewChatModal({ isOpen, onClose, onNewConversation }) {
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [following, setFollowing] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [startingChat, setStartingChat] = useState(false);
 
   // Fetch user's following list
   useEffect(() => {
     if (!user?._id) return;
     
-    setLoading(true);
     followAPI.getFollowing(user._id)
       .then(res => {
         setFollowing(res.data.following);
       })
       .catch(err => {
         console.error('Error fetching following:', err);
-      })
-      .finally(() => {
-        setLoading(false);
       });
   }, [user?._id]);
 
@@ -86,7 +81,7 @@ export default function NewChatModal({ isOpen, onClose, onStartChat }) {
       // Create or get existing conversation
       const res = await chatAPI.createConversation(user._id, selectedUser._id);
       
-      onStartChat(res.data);
+      onNewConversation(res.data);
       onClose();
     } catch (err) {
       console.error('Error starting chat:', err);
@@ -135,12 +130,7 @@ export default function NewChatModal({ isOpen, onClose, onStartChat }) {
 
         {/* User List */}
         <div className="flex-1 overflow-y-auto">
-          {loading ? (
-            <div className="p-8 text-center text-zinc-500">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              Loading...
-            </div>
-          ) : searchResults.length === 0 ? (
+          {searchResults.length === 0 ? (
             <div className="p-8 text-center text-zinc-500">
               {searchTerm.length >= 2 ? (
                 <>

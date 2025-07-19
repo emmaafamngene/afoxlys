@@ -99,7 +99,8 @@ app.use('/api/posts', require('./routes/posts'));
 app.use('/api/clips', xpAwarder, require('./routes/clips'));
 app.use('/api/comments', xpAwarder, require('./routes/comments'));
 app.use('/api/likes', xpAwarder, require('./routes/likes'));
-app.use('/api/follow', xpAwarder, require('./routes/follow'));
+const { router: followRoutes, setSocketIO } = require('./routes/follow');
+app.use('/api/follow', xpAwarder, followRoutes);
 app.use('/api/search', require('./routes/search'));
 app.use('/api/payments', require('./routes/payments'));
 app.use('/api/confessions', require('./routes/confessions'));
@@ -182,6 +183,9 @@ const PORT = process.env.PORT || 5000;
 
 // In-memory map of userId <-> socketId
 const onlineUsers = new Map();
+
+// Set socket.io instance for follow routes
+setSocketIO(io);
 
 io.on('connection', (socket) => {
   console.log('✅ Socket.IO: User connected', socket.id);
@@ -384,6 +388,47 @@ io.on('connection', (socket) => {
       }
     } catch (err) {
       console.error('Error creating comment notification:', err);
+    }
+  });
+
+  // WebRTC Call Events
+  socket.on('call_offer', (data) => {
+    console.log('🔔 Call offer from', data.from, 'to', data.to);
+    const recipientSocket = onlineUsers.get(data.to);
+    if (recipientSocket) {
+      io.to(recipientSocket).emit('call_offer', data);
+    }
+  });
+
+  socket.on('call_answer', (data) => {
+    console.log('🔔 Call answer from', data.from, 'to', data.to);
+    const recipientSocket = onlineUsers.get(data.to);
+    if (recipientSocket) {
+      io.to(recipientSocket).emit('call_answer', data);
+    }
+  });
+
+  socket.on('ice_candidate', (data) => {
+    console.log('🔔 ICE candidate from', data.from, 'to', data.to);
+    const recipientSocket = onlineUsers.get(data.to);
+    if (recipientSocket) {
+      io.to(recipientSocket).emit('ice_candidate', data);
+    }
+  });
+
+  socket.on('call_end', (data) => {
+    console.log('🔔 Call end from', data.from, 'to', data.to);
+    const recipientSocket = onlineUsers.get(data.to);
+    if (recipientSocket) {
+      io.to(recipientSocket).emit('call_ended', data);
+    }
+  });
+
+  socket.on('call_reject', (data) => {
+    console.log('🔔 Call reject from', data.from, 'to', data.to);
+    const recipientSocket = onlineUsers.get(data.to);
+    if (recipientSocket) {
+      io.to(recipientSocket).emit('call_rejected', data);
     }
   });
 

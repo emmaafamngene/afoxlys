@@ -199,6 +199,57 @@ io.on('connection', (socket) => {
     console.log(`User ${userId} joined chat (socket ${socket.id})`);
   });
 
+  // --- Agora Call Signaling Relay ---
+  socket.on('call:invite', (data) => {
+    const toSocket = onlineUsers.get(data.to);
+    if (toSocket) {
+      io.to(toSocket).emit('call:invite', data);
+      console.log('🔔 Relayed call:invite to', data.to);
+    } else {
+      console.log('❌ call:invite recipient not online:', data.to);
+    }
+  });
+
+  socket.on('call:accept', (data) => {
+    const toSocket = onlineUsers.get(data.to);
+    if (toSocket) {
+      io.to(toSocket).emit('call:accept', data);
+      console.log('🔔 Relayed call:accept to', data.to);
+    } else {
+      console.log('❌ call:accept recipient not online:', data.to);
+    }
+  });
+
+  socket.on('call:reject', (data) => {
+    const toSocket = onlineUsers.get(data.to);
+    if (toSocket) {
+      io.to(toSocket).emit('call:reject', data);
+      console.log('🔔 Relayed call:reject to', data.to);
+    } else {
+      console.log('❌ call:reject recipient not online:', data.to);
+    }
+  });
+
+  socket.on('call:cancel', (data) => {
+    const toSocket = onlineUsers.get(data.to);
+    if (toSocket) {
+      io.to(toSocket).emit('call:cancel', data);
+      console.log('🔔 Relayed call:cancel to', data.to);
+    } else {
+      console.log('❌ call:cancel recipient not online:', data.to);
+    }
+  });
+
+  socket.on('call:end', (data) => {
+    const toSocket = onlineUsers.get(data.to);
+    if (toSocket) {
+      io.to(toSocket).emit('call:end', data);
+      console.log('🔔 Relayed call:end to', data.to);
+    } else {
+      console.log('❌ call:end recipient not online:', data.to);
+    }
+  });
+
   // Send message
   socket.on('send_message', async (data) => {
     // data: { conversationId, sender, recipient, content }

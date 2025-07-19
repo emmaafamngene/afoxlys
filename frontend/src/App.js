@@ -9,6 +9,7 @@ import LoadingPage from './components/LoadingPage';
 import { AnimatePresence } from 'framer-motion';
 import OnboardingTutorial from './components/OnboardingTutorial';
 import useAdSense from './hooks/useAdSense';
+import { CallProvider } from './contexts/CallContext';
 
 // Auth Pages
 import Login from './pages/auth/Login';
@@ -25,6 +26,7 @@ import Leaderboard from './pages/Leaderboard';
 import Shorts from './pages/Shorts';
 import Premium from './pages/Premium';
 import PremiumSuccess from './pages/PremiumSuccess';
+import CallPage from './pages/Call';
 
 // Component to redirect to current user's profile
 const CurrentUserProfile = () => {
@@ -65,117 +67,120 @@ function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="min-h-screen flex bg-gray-50 dark:bg-gray-950 transition-colors duration-300">
-          {/* Sidebar - Hidden on mobile, visible on large screens */}
-          <Sidebar darkMode={darkMode} setDarkMode={setDarkMode} />
-          
-          {/* Main Content Area */}
-          <div className="flex-1 flex flex-col min-h-screen w-full lg:ml-16 transition-all duration-300">
-            {/* Navbar */}
-            <Navbar darkMode={darkMode} />
+        <CallProvider>
+          <div className="min-h-screen flex bg-gray-50 dark:bg-gray-950 transition-colors duration-300">
+            {/* Sidebar - Hidden on mobile, visible on large screens */}
+            <Sidebar darkMode={darkMode} setDarkMode={setDarkMode} />
             
-            {/* Main Content */}
-            <main className="flex-1 pt-16 lg:pt-16 px-3 sm:px-4 md:px-6 lg:px-8 pb-20 lg:pb-6">
-              <AnimatePresence mode="wait">
-                <Routes>
-                {/* Public Routes */}
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                
-                {/* Protected Routes */}
-                <Route path="/" element={
-                  <PrivateRoute>
-                    <>
-                      <OnboardingTutorial />
-                      <Home />
-                    </>
-                  </PrivateRoute>
-                } />
+            {/* Main Content Area */}
+            <div className="flex-1 flex flex-col min-h-screen w-full lg:ml-16 transition-all duration-300">
+              {/* Navbar */}
+              <Navbar darkMode={darkMode} />
+              
+              {/* Main Content */}
+              <main className="flex-1 pt-16 lg:pt-16 px-3 sm:px-4 md:px-6 lg:px-8 pb-20 lg:pb-6">
+                <AnimatePresence mode="wait">
+                  <Routes>
+                  {/* Public Routes */}
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
+                  
+                  {/* Protected Routes */}
+                  <Route path="/" element={
+                    <PrivateRoute>
+                      <>
+                        <OnboardingTutorial />
+                        <Home />
+                      </>
+                    </PrivateRoute>
+                  } />
 
-                <Route path="/profile" element={
-                  <PrivateRoute>
-                    <CurrentUserProfile />
-                  </PrivateRoute>
-                } />
-                <Route path="/user/:userId" element={
-                  <PrivateRoute>
-                    <Profile />
-                  </PrivateRoute>
-                } />
-                <Route path="/edit-profile" element={
-                  <PrivateRoute>
-                    <EditProfile />
-                  </PrivateRoute>
-                } />
-                <Route path="/create-post" element={
-                  <PrivateRoute>
-                    <CreatePost />
-                  </PrivateRoute>
-                } />
-                <Route path="/chat" element={
-                  <PrivateRoute>
-                    <Chat />
-                  </PrivateRoute>
-                } />
-                <Route path="/afex-ai" element={
-                  <PrivateRoute>
-                    <AFEXAI />
-                  </PrivateRoute>
-                } />
-                <Route path="/leaderboard" element={
-                  <PrivateRoute>
-                    <Leaderboard />
-                  </PrivateRoute>
-                } />
-                <Route path="/shorts" element={
-                  <PrivateRoute>
-                    <Shorts />
-                  </PrivateRoute>
-                } />
-                <Route path="/premium" element={
-                  <PrivateRoute>
-                    <Premium />
-                  </PrivateRoute>
-                } />
-                <Route path="/premium/success" element={
-                  <PrivateRoute>
-                    <PremiumSuccess />
-                  </PrivateRoute>
-                } />
-                
-                {/* Redirect unknown routes to home */}
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-              </AnimatePresence>
-            </main>
+                  <Route path="/profile" element={
+                    <PrivateRoute>
+                      <CurrentUserProfile />
+                    </PrivateRoute>
+                  } />
+                  <Route path="/user/:userId" element={
+                    <PrivateRoute>
+                      <Profile />
+                    </PrivateRoute>
+                  } />
+                  <Route path="/edit-profile" element={
+                    <PrivateRoute>
+                      <EditProfile />
+                    </PrivateRoute>
+                  } />
+                  <Route path="/create-post" element={
+                    <PrivateRoute>
+                      <CreatePost />
+                    </PrivateRoute>
+                  } />
+                  <Route path="/chat" element={
+                    <PrivateRoute>
+                      <Chat />
+                    </PrivateRoute>
+                  } />
+                  <Route path="/afex-ai" element={
+                    <PrivateRoute>
+                      <AFEXAI />
+                    </PrivateRoute>
+                  } />
+                  <Route path="/leaderboard" element={
+                    <PrivateRoute>
+                      <Leaderboard />
+                    </PrivateRoute>
+                  } />
+                  <Route path="/shorts" element={
+                    <PrivateRoute>
+                      <Shorts />
+                    </PrivateRoute>
+                  } />
+                  <Route path="/premium" element={
+                    <PrivateRoute>
+                      <Premium />
+                    </PrivateRoute>
+                  } />
+                  <Route path="/premium/success" element={
+                    <PrivateRoute>
+                      <PremiumSuccess />
+                    </PrivateRoute>
+                  } />
+                  <Route path="/call" element={<CallPage />} />
+                  
+                  {/* Redirect unknown routes to home */}
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+                </AnimatePresence>
+              </main>
+            </div>
           </div>
-        </div>
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            duration: 4000,
-            style: {
-              background: '#363636',
-              color: '#fff',
-              fontSize: '14px',
-              padding: '12px 16px',
-            },
-            success: {
-              duration: 3000,
-              iconTheme: {
-                primary: '#10B981',
-                secondary: '#fff',
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              duration: 4000,
+              style: {
+                background: '#363636',
+                color: '#fff',
+                fontSize: '14px',
+                padding: '12px 16px',
               },
-            },
-            error: {
-              duration: 5000,
-              iconTheme: {
-                primary: '#EF4444',
-                secondary: '#fff',
+              success: {
+                duration: 3000,
+                iconTheme: {
+                  primary: '#10B981',
+                  secondary: '#fff',
+                },
               },
-            },
-          }}
-        />
+              error: {
+                duration: 5000,
+                iconTheme: {
+                  primary: '#EF4444',
+                  secondary: '#fff',
+                },
+              },
+            }}
+          />
+        </CallProvider>
       </Router>
     </AuthProvider>
   );

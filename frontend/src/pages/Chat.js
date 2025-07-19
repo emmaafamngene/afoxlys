@@ -228,7 +228,11 @@ export default function Chat() {
 
   const handleSendMessage = useCallback(async (content, conversationId) => {
     if (!content.trim() || !conversationId) return;
-
+    const recipient = selectedConversation?.participants?.find(p => p._id !== currentUserId)?._id;
+    if (!recipient) {
+      alert('Cannot send message: missing recipient or conversation.');
+      return;
+    }
     const tempMessage = {
       _id: `temp-${Date.now()}`,
       content: content.trim(),
@@ -237,25 +241,18 @@ export default function Chat() {
       timestamp: new Date().toISOString(),
       isTemp: true
     };
-
-    // Add temp message immediately
     setMessages(prev => [...prev, tempMessage]);
-
     try {
-      const response = await chatAPI.sendMessage({
+      const payload = {
         content: content.trim(),
-        recipient: selectedConversation.participants.find(p => p._id !== currentUserId)?._id,
+        recipient,
         conversationId
-      });
-
-      console.log('🔍 Message sent successfully:', response.data);
-      
-      // Update delivery status
+      };
+      console.log('Sending message payload:', payload);
+      const response = await chatAPI.sendMessage(payload);
       setDeliveryStatus(prev => ({ ...prev, [response.data._id]: 'sent' }));
-      
     } catch (error) {
       console.error('🔍 Error sending message:', error);
-      // Remove temp message on error
       setMessages(prev => prev.filter(msg => msg._id !== tempMessage._id));
     }
   }, [currentUserId, selectedConversation]);

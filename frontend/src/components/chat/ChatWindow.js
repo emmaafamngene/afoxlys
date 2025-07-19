@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import MessageBubble from './MessageBubble';
 import DefaultAvatar from '../DefaultAvatar';
 
+const RINGTONE_URL = '/ringtone.mp3'; // Place a ringtone file in public/
+
 // Helper to generate a safe Agora channel name
 function safeChannelName(...parts) {
   // Only allow supported characters, join with dash, and trim to 63 chars
@@ -38,6 +40,8 @@ export default function ChatWindow({
   const [remoteStream, setRemoteStream] = useState(null);
   const [offer, setOffer] = useState(null);
   const [callUserId, setCallUserId] = useState(null);
+  const [ringtoneAudio, setRingtoneAudio] = useState(null);
+  const [callStatus, setCallStatus] = useState('idle'); // idle, ringing, connecting, in-call
 
   const localVideoRef = useRef();
   const remoteVideoRef = useRef();
@@ -78,6 +82,29 @@ export default function ChatWindow({
       socket.off('ice-candidate');
     };
   }, [socket, peer]);
+
+  // --- Play/Stop Ringtone ---
+  useEffect(() => {
+    if (isIncoming && callModal) {
+      // Play ringtone
+      const audio = new window.Audio(RINGTONE_URL);
+      audio.loop = true;
+      audio.volume = 0.5;
+      audio.play().catch(() => {});
+      setRingtoneAudio(audio);
+    } else if (ringtoneAudio) {
+      ringtoneAudio.pause();
+      ringtoneAudio.currentTime = 0;
+      setRingtoneAudio(null);
+    }
+    // Stop on unmount
+    return () => {
+      if (ringtoneAudio) {
+        ringtoneAudio.pause();
+        ringtoneAudio.currentTime = 0;
+      }
+    };
+  }, [isIncoming, callModal]);
 
   // --- WebRTC Peer Setup ---
   async function getMedia() {
@@ -367,31 +394,75 @@ export default function ChatWindow({
     );
   }
 
+  // --- UI ---
   return (
     <div className="h-full flex flex-col bg-white dark:bg-gray-900">
-      {/* WebRTC Call Modal */}
+      {/* Modern WebRTC Call Modal */}
       {callModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 max-w-md w-full flex flex-col items-center">
-            <div className="mb-4">
-              <video ref={localVideoRef} autoPlay muted playsInline className="w-32 h-32 rounded-lg border-2 border-blue-500 mb-2" />
-              <video ref={remoteVideoRef} autoPlay playsInline className="w-48 h-48 rounded-lg border-2 border-green-500" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white/80 dark:bg-gray-900/90 rounded-3xl shadow-2xl p-8 max-w-xs w-full flex flex-col items-center border border-gray-200 dark:border-gray-800 relative">
+            {/* Avatar */}
+            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center mb-4 shadow-lg">
+              {otherUser?.avatar ? (
+                <img src={otherUser.avatar} alt={otherUser.username} className="w-24 h-24 rounded-full object-cover" />
+              ) : (
+                <svg className="w-12 h-12 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              )}
             </div>
+            {/* Name & Type */}
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1 animate-fade-in-slow">
+              {otherUser?.firstName || otherUser?.username || 'User'}
+            </h2>
+            <div className="text-sm text-gray-500 dark:text-gray-300 mb-2 animate-fade-in-slow">
+              Video Call
+            </div>
+            {/* Status */}
+            <div className="text-base font-medium text-blue-600 dark:text-blue-400 mb-6 animate-pulse">
+              {isIncoming && callStatus === 'ringing' && 'Ringing...'}
+              {isCalling && callStatus === 'connecting' && 'Connecting...'}
+              {!isIncoming && !isCalling && callStatus === 'in-call' && 'In Call'}
+            </div>
+            {/* Video Area */}
+            <div className="mb-4 flex flex-col items-center gap-2">
+              <video ref={localVideoRef} autoPlay muted playsInline className="w-24 h-24 rounded-lg border-2 border-blue-500 bg-black/40" />
+              <video ref={remoteVideoRef} autoPlay playsInline className="w-40 h-40 rounded-lg border-2 border-green-500 bg-black/40" />
+            </div>
+            {/* Buttons */}
             {isIncoming ? (
-              <>
-                <div className="text-lg font-semibold mb-2">Incoming Call</div>
-                <div className="mb-4">{callerId}</div>
-                <div className="flex gap-4">
-                  <button onClick={acceptCall} className="px-6 py-2 bg-green-500 text-white rounded-lg font-bold">Accept</button>
-                  <button onClick={rejectCall} className="px-6 py-2 bg-red-500 text-white rounded-lg font-bold">Reject</button>
-                </div>
-              </>
+              <div className="flex gap-6 mt-2">
+                <button
+                  onClick={acceptCall}
+                  className="w-16 h-16 rounded-full bg-green-500 hover:bg-green-600 flex items-center justify-center shadow-lg transition-colors animate-pop-in"
+                  title="Accept Call"
+                >
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  </svg>
+                </button>
+                <button
+                  onClick={rejectCall}
+                  className="w-16 h-16 rounded-full bg-red-500 hover:bg-red-600 flex items-center justify-center shadow-lg transition-colors animate-pop-in"
+                  title="Reject Call"
+                >
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 8l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  </svg>
+                </button>
+              </div>
             ) : (
-              <>
-                <div className="text-lg font-semibold mb-2">{isCalling ? 'Calling...' : 'In Call'}</div>
-                <div className="mb-4">{callUserId}</div>
-                <button onClick={endCall} className="px-6 py-2 bg-red-500 text-white rounded-lg font-bold">End Call</button>
-              </>
+              <div className="flex gap-6 mt-2">
+                <button
+                  onClick={endCall}
+                  className="w-16 h-16 rounded-full bg-red-600 hover:bg-red-700 flex items-center justify-center shadow-lg transition-colors animate-pop-in"
+                  title="End Call"
+                >
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 8l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  </svg>
+                </button>
+              </div>
             )}
           </div>
         </div>

@@ -473,6 +473,14 @@ const Shorts = () => {
 
   return (
     <div className="bg-gray-50 dark:bg-gray-900">
+      <div className="flex justify-end mb-6">
+        <button
+          className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl shadow-lg hover:from-blue-700 hover:to-purple-700 transition-all font-bold text-lg"
+          onClick={() => navigate('/studio')}
+        >
+          Go to AFEX Studio
+        </button>
+      </div>
       {/* Post Button */}
       <div className="fixed bottom-6 right-6 z-50">
         <button

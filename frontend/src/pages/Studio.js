@@ -27,12 +27,17 @@ const Studio = () => {
       // 1. Upload to Cloudinary
       const formData = new FormData();
       formData.append('file', video);
-      formData.append('upload_preset', 'YOUR_CLOUDINARY_PRESET'); // TODO: Replace with actual preset
-      const cloudRes = await fetch('https://api.cloudinary.com/v1_1/YOUR_CLOUD_NAME/video/upload', {
+      formData.append('upload_preset', 'your_actual_preset'); // <-- Replace with your real preset
+      const cloudRes = await fetch('https://api.cloudinary.com/v1_1/your_actual_cloud_name/video/upload', {
         method: 'POST',
         body: formData
       });
       const cloudData = await cloudRes.json();
+      if (!cloudData.secure_url) {
+        alert('Cloudinary upload failed: ' + (cloudData.error?.message || 'Unknown error'));
+        setUploading(false);
+        return;
+      }
       const videoUrl = cloudData.secure_url;
 
       // 2. Save flick metadata in your backend

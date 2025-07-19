@@ -28,6 +28,10 @@ export default function ChatWindow({
   const inputRef = useRef(null);
   const menuRef = useRef(null);
 
+  // Get other user from conversation participants
+  const participants = selectedConversation?.participants || [];
+  const otherUser = participants.find(user => user._id !== currentUserId);
+
   // Scroll to bottom on new messages
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -104,24 +108,36 @@ export default function ChatWindow({
 
   // Handle WebRTC events
   const handleWebRTCEvent = (event, data) => {
+    console.log('🔔 WebRTC Event:', event, data);
     switch (event) {
       case 'callReceived':
+        console.log('🔔 Call received - setting incoming call state');
         setIsIncomingCall(true);
         setIncomingCallData(data);
         setCallType(data.callType);
         setShowCallModal(true);
         break;
+      case 'callRinging':
+        console.log('🔔 Call ringing - setting ringing state');
+        setIsCallActive(false);
+        setIsIncomingCall(false);
+        setCallType(data.callType);
+        setShowCallModal(true);
+        break;
       case 'callStarted':
+        console.log('🔔 Call started - setting active state');
         setIsCallActive(true);
         setCallType(data.callType);
         setShowCallModal(true);
         break;
       case 'callAccepted':
+        console.log('🔔 Call accepted - updating state');
         setIsIncomingCall(false);
         setIsCallActive(true);
         break;
       case 'callEnded':
       case 'callRejected':
+        console.log('🔔 Call ended/rejected - cleaning up');
         setIsCallActive(false);
         setIsIncomingCall(false);
         setShowCallModal(false);
@@ -130,15 +146,20 @@ export default function ChatWindow({
         setRemoteStream(null);
         break;
       case 'localStreamReceived':
+        console.log('🔔 Local stream received');
         setLocalStream(data);
         break;
       case 'remoteStreamReceived':
+        console.log('🔔 Remote stream received');
         setRemoteStream(data);
         break;
       case 'callConnected':
         console.log('🔔 Call connected successfully');
+        setIsCallActive(true);
+        setIsIncomingCall(false);
         break;
       case 'callFailed':
+        console.log('🔔 Call failed');
         alert('Call failed to connect. Please try again.');
         handleEndCall();
         break;
@@ -278,9 +299,7 @@ export default function ChatWindow({
     );
   }
 
-  // Add null checks for participants
-  const participants = selectedConversation.participants || [];
-  const otherUser = participants.find(user => user._id !== currentUserId);
+  // Add null checks for participants (already defined above)
 
   return (
     <div className="h-full flex flex-col bg-white dark:bg-gray-900">
@@ -293,6 +312,7 @@ export default function ChatWindow({
         onAcceptCall={handleAcceptCall}
         onRejectCall={handleRejectCall}
         isIncoming={isIncomingCall}
+        isRinging={showCallModal && !isIncomingCall && !isCallActive}
         localStream={localStream}
         remoteStream={remoteStream}
       />

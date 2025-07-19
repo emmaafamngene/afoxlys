@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 export default function CallModal({ 
   isOpen, 
@@ -8,14 +8,94 @@ export default function CallModal({
   onAcceptCall, 
   onRejectCall,
   isIncoming = false,
+  isRinging = false,
   localStream = null,
   remoteStream = null
 }) {
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
+  const ringtoneRef = useRef(null);
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [callDuration, setCallDuration] = useState(0);
+
+  // Call duration timer
+  useEffect(() => {
+    let interval;
+    if (isOpen && !isIncoming && !isRinging) {
+      interval = setInterval(() => {
+        setCallDuration(prev => prev + 1);
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isOpen, isIncoming, isRinging]);
+
+  // Play ringtone for incoming calls
+  useEffect(() => {
+    console.log('🔔 Ringtone effect - isOpen:', isOpen, 'isIncoming:', isIncoming);
+    
+    if (isOpen && isIncoming) {
+      console.log('🔔 Attempting to play ringtone');
+      
+      // Try to play the audio file first
+      if (ringtoneRef.current) {
+        ringtoneRef.current.play().catch(err => {
+          console.log('Could not play ringtone file:', err);
+          // Fallback: create a simple beep sound
+          createBeepSound();
+        });
+      } else {
+        // Fallback: create a simple beep sound
+        createBeepSound();
+      }
+    } else {
+      // Stop ringtone
+      if (ringtoneRef.current) {
+        ringtoneRef.current.pause();
+        ringtoneRef.current.currentTime = 0;
+      }
+    }
+  }, [isOpen, isIncoming]);
+
+  // Create beep sound as fallback
+  const createBeepSound = () => {
+    try {
+      console.log('🔔 Creating fallback beep sound');
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      
+      const playBeep = () => {
+        if (!isOpen || !isIncoming) return;
+        
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.5);
+      };
+      
+      // Play initial beep
+      playBeep();
+      
+      // Repeat the beep every 2 seconds
+      const beepInterval = setInterval(playBeep, 2000);
+      
+      // Cleanup interval when component unmounts or call ends
+      return () => clearInterval(beepInterval);
+    } catch (fallbackErr) {
+      console.log('Could not create fallback ringtone:', fallbackErr);
+    }
+  };
 
   // Update local video stream
   useEffect(() => {
@@ -31,19 +111,6 @@ export default function CallModal({
     }
   }, [remoteStream]);
 
-  // Call duration timer
-  useEffect(() => {
-    let interval;
-    if (isOpen && !isIncoming) {
-      interval = setInterval(() => {
-        setCallDuration(prev => prev + 1);
-      }, 1000);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isOpen, isIncoming]);
-
   // Format call duration
   const formatDuration = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -55,6 +122,13 @@ export default function CallModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+      {/* Hidden ringtone audio */}
+      <audio 
+        ref={ringtoneRef} 
+        loop 
+        src="/notification-sound.mp3"
+        preload="auto"
+      />
       <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-md mx-4">
         {/* Call Header */}
         <div className="text-center mb-6">
@@ -75,12 +149,23 @@ export default function CallModal({
             {otherUser?.firstName ? `${otherUser.firstName} ${otherUser.lastName}` : otherUser?.username}
           </h3>
           <p className="text-gray-600 dark:text-gray-400">
-            {isIncoming ? `Incoming ${callType} call...` : `${callType} call`}
+            {isIncoming ? `Incoming ${callType} call...` : 
+             isRinging ? `Calling ${otherUser?.username || 'user'}...` : 
+             `${callType} call`}
           </p>
-          {!isIncoming && callDuration > 0 && (
+          {!isIncoming && !isRinging && callDuration > 0 && (
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               {formatDuration(callDuration)}
             </p>
+          )}
+          {isRinging && !isIncoming && (
+            <div className="flex items-center justify-center mt-2">
+              <div className="flex space-x-1">
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+              </div>
+            </div>
           )}
         </div>
 
@@ -144,6 +229,18 @@ export default function CallModal({
               {/* Reject Call */}
               <button
                 onClick={onRejectCall}
+                className="w-16 h-16 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center transition-colors"
+              >
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 8l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                </svg>
+              </button>
+            </>
+          ) : isRinging ? (
+            <>
+              {/* End Call (while ringing) */}
+              <button
+                onClick={onEndCall}
                 className="w-16 h-16 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center transition-colors"
               >
                 <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">

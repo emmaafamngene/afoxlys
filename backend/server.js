@@ -396,15 +396,52 @@ io.on('connection', (socket) => {
     console.log('🔔 Call offer from', data.from, 'to', data.to);
     const recipientSocket = onlineUsers.get(data.to);
     if (recipientSocket) {
-      io.to(recipientSocket).emit('call_offer', data);
+      io.to(recipientSocket).emit('call_offer', {
+        from: data.from,
+        callType: data.callType
+      });
+      console.log('🔔 Call offer sent to recipient:', data.to);
+    } else {
+      console.log('❌ Recipient socket not found:', data.to);
+    }
+  });
+
+  socket.on('call_accept', (data) => {
+    console.log('🔔 Call accept from', data.from, 'to', data.to);
+    console.log('🔔 Online users:', Array.from(onlineUsers.keys()));
+    const callerSocket = onlineUsers.get(data.to);
+    if (callerSocket) {
+      io.to(callerSocket).emit('call_accepted', {
+        from: data.from
+      });
+      console.log('🔔 Call accepted event sent to caller:', data.to);
+    } else {
+      console.log('❌ Caller socket not found:', data.to);
+    }
+  });
+
+  socket.on('call_offer_webrtc', (data) => {
+    console.log('🔔 WebRTC offer from', data.from, 'to', data.to);
+    const recipientSocket = onlineUsers.get(data.to);
+    if (recipientSocket) {
+      io.to(recipientSocket).emit('call_offer_webrtc', {
+        from: data.from,
+        offer: data.offer
+      });
+      console.log('🔔 WebRTC offer sent to recipient:', data.to);
+    } else {
+      console.log('❌ Recipient socket not found for WebRTC offer:', data.to);
     }
   });
 
   socket.on('call_answer', (data) => {
     console.log('🔔 Call answer from', data.from, 'to', data.to);
-    const recipientSocket = onlineUsers.get(data.to);
-    if (recipientSocket) {
-      io.to(recipientSocket).emit('call_answer', data);
+    const callerSocket = onlineUsers.get(data.to);
+    if (callerSocket) {
+      io.to(callerSocket).emit('call_answer', data);
+      console.log('🔔 Call answer sent to caller:', data.to);
+    } else {
+      console.log('❌ Caller socket not found for answer:', data.to);
     }
   });
 

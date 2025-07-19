@@ -48,6 +48,9 @@ const Profile = () => {
     try {
       await followAPI.toggleFollow(userId);
       setIsFollowing((prev) => !prev);
+      // Refetch the profile user to update followers count
+      const res = await usersAPI.getById(userId);
+      setProfileUser(res.data.user);
       toast.success(isFollowing ? 'Unfollowed user' : 'Followed user');
     } catch (err) {
       toast.error('Failed to update follow status');

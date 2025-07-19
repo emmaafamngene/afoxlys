@@ -27,6 +27,7 @@ import Shorts from './pages/Shorts';
 import Premium from './pages/Premium';
 import PremiumSuccess from './pages/PremiumSuccess';
 import CallPage from './pages/Call';
+import Studio from './pages/Studio';
 
 // Component to redirect to current user's profile
 const CurrentUserProfile = () => {
@@ -130,7 +131,7 @@ function App() {
                       <Leaderboard />
                     </PrivateRoute>
                   } />
-                  <Route path="/shorts" element={
+                  <Route path="/flicks" element={
                     <PrivateRoute>
                       <Shorts />
                     </PrivateRoute>
@@ -146,6 +147,11 @@ function App() {
                     </PrivateRoute>
                   } />
                   <Route path="/call" element={<CallPage />} />
+                  <Route path="/studio" element={
+                    <PrivateRoute>
+                      <Studio />
+                    </PrivateRoute>
+                  } />
                   
                   {/* Redirect unknown routes to home */}
                   <Route path="*" element={<Navigate to="/" replace />} />

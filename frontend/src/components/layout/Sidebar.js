@@ -9,12 +9,12 @@ import { useAuth } from '../../contexts/AuthContext';
 const navLinks = [
   { to: '/', label: 'Home', icon: <FiHome /> },
   { to: null, label: 'Search', icon: <FiSearch />, action: 'openSearch' },
-  { to: '/shorts', label: 'Shorts', icon: <FaFire /> },
+  { to: '/flicks', label: 'Flicks', icon: <FaFire /> }, // Renamed from Shorts
   { to: '/chat', label: 'Messages', icon: <FiMessageCircle /> },
   { to: '/afex-ai', label: 'AFEX AI', icon: <FiZap /> },
   { to: '/leaderboard', label: 'Leaderboard', icon: <FiAward /> },
   { to: '/premium', label: 'Premium', icon: <FaCrown /> },
-  { to: '/profile', label: 'Profile', icon: <FiUser /> }, // Changed from '/edit-profile' to '/profile'
+  { to: '/profile', label: 'Profile', icon: <FiUser /> },
 ];
 
 export default function Sidebar({ darkMode, setDarkMode }) {

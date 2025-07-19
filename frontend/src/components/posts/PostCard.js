@@ -84,7 +84,8 @@ const PostCard = ({ post, onUpdate, compact = false }) => {
       {/* Header */}
       <div className={`${compact ? 'p-3' : 'p-4 sm:p-6'} border-b border-gray-200 dark:border-gray-800 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900`}>
         <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3 sm:space-x-4">
+          <div className="flex items-center space-x-3 sm:space-x-4">
+            {post.author && post.author._id ? (
               <Link to={`/user/${post.author._id}`} className="group">
                 {post.author.avatar ? (
                   <div className="relative">
@@ -110,16 +111,23 @@ const PostCard = ({ post, onUpdate, compact = false }) => {
                   />
                 )}
               </Link>
-              <div className="min-w-0 flex-1">
+            ) : (
+              <span className="text-gray-400">Unknown Author</span>
+            )}
+            <div className="min-w-0 flex-1">
+              {post.author && post.author._id ? (
                 <Link 
                   to={`/user/${post.author._id}`}
                   className={`font-bold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors truncate block ${compact ? 'text-sm' : 'text-base sm:text-lg'}`}
                 >
                   {post.author.firstName} {post.author.lastName}
                 </Link>
-                <p className={`text-gray-500 dark:text-gray-400 truncate ${compact ? 'text-xs' : 'text-xs sm:text-sm'}`}>@{post.author.username}</p>
-              </div>
+              ) : (
+                <span className="text-gray-400">Unknown Author</span>
+              )}
+              <p className={`text-gray-500 dark:text-gray-400 truncate ${compact ? 'text-xs' : 'text-xs sm:text-sm'}`}>@{post.author?.username || 'unknown'}</p>
             </div>
+          </div>
           <button className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors p-1.5 sm:p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 flex-shrink-0">
             <FiMoreVertical className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>

@@ -15,9 +15,12 @@ const Profile = () => {
   const { userId } = useParams();
   const [avatarError, setAvatarError] = useState(false);
   const [profileUser, setProfileUser] = useState(null);
+  const [followersCount, setFollowersCount] = useState(0);
   const [isFollowing, setIsFollowing] = useState(false);
   const [loadingFollow, setLoadingFollow] = useState(false);
   const [loadingChat, setLoadingChat] = useState(false);
+  // Add forceUpdate for forced re-render
+  const [, forceUpdate] = useState(0);
 
   // Fetch profile user and follow status
   React.useEffect(() => {
@@ -43,19 +46,33 @@ const Profile = () => {
     navigate('/edit-profile');
   };
 
+  // Remove all previous follow logic and rewrite:
+  React.useEffect(() => {
+    if (profileUser && currentUser && profileUser._id !== currentUser._id) {
+      // Set initial followers count and follow state
+      setFollowersCount(profileUser.followers?.length || 0);
+      setIsFollowing(profileUser.followers?.some(f => (typeof f === 'string' ? f : f._id) === currentUser._id));
+    }
+  }, [profileUser, currentUser]);
+
   const handleFollow = async () => {
-    setLoadingFollow(true);
+    const endpoint = isFollowing ? '/unfollow/' : '/follow/';
     try {
-      await followAPI.toggleFollow(userId);
-      setIsFollowing((prev) => !prev);
-      // Refetch the profile user to update followers count
-      const res = await usersAPI.getById(userId);
-      setProfileUser(res.data.user);
-      toast.success(isFollowing ? 'Unfollowed user' : 'Followed user');
+      const res = await fetch(`${process.env.REACT_APP_API_URL}${endpoint}${profileUser._id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ myId: currentUser._id })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setIsFollowing(!isFollowing);
+        setFollowersCount(count => isFollowing ? Math.max(0, count - 1) : count + 1);
+        toast.success(data.message);
+      } else {
+        toast.error(data.message);
+      }
     } catch (err) {
-      toast.error('Failed to update follow status');
-    } finally {
-      setLoadingFollow(false);
+      toast.error('Network error');
     }
   };
 
@@ -98,7 +115,7 @@ const Profile = () => {
                 <span className="text-xs text-gray-500 dark:text-gray-400">Posts</span>
               </div>
               <div className="flex flex-col items-center">
-                <span className="font-bold text-lg text-gray-900 dark:text-white">{profileUser?.followers?.length || 0}</span>
+                <span className="font-bold text-lg text-gray-900 dark:text-white">{followersCount}</span>
                 <span className="text-xs text-gray-500 dark:text-gray-400">Followers</span>
               </div>
               <div className="flex flex-col items-center">
@@ -113,6 +130,14 @@ const Profile = () => {
         </div>
         {/* Action Buttons */}
         <div className="flex flex-row gap-4 mt-8 w-full justify-center">
+          {isOwnProfile && (
+            <button
+              onClick={() => window.open('/studio', '_blank')}
+              className="flex items-center gap-2 px-5 py-2 rounded-xl bg-purple-600 dark:bg-purple-500 text-white font-semibold shadow hover:bg-purple-700 dark:hover:bg-purple-400 transition-colors"
+            >
+              Create Flick
+            </button>
+          )}
           {isOwnProfile ? (
             <>
               <button onClick={handleEditProfile} className="flex items-center gap-2 px-5 py-2 rounded-xl bg-blue-600 dark:bg-blue-500 text-white font-semibold shadow hover:bg-blue-700 dark:hover:bg-blue-400 transition-colors">
@@ -128,10 +153,8 @@ const Profile = () => {
             <>
               <button
                 onClick={handleFollow}
-                disabled={loadingFollow}
                 className={`flex items-center gap-2 px-5 py-2 rounded-xl ${isFollowing ? 'bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200' : 'bg-blue-600 dark:bg-blue-500 text-white'} font-semibold shadow hover:bg-blue-700 dark:hover:bg-blue-400 transition-colors`}
               >
-                <FiUser className="w-4 h-4" />
                 {isFollowing ? 'Unfollow' : 'Follow'}
               </button>
               <button
@@ -139,7 +162,6 @@ const Profile = () => {
                 disabled={loadingChat}
                 className="flex items-center gap-2 px-5 py-2 rounded-xl bg-green-600 dark:bg-green-500 text-white font-semibold shadow hover:bg-green-700 dark:hover:bg-green-400 transition-colors"
               >
-                <FiUsers className="w-4 h-4" />
                 Chat
               </button>
             </>

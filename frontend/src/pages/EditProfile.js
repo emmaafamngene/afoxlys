@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { usersAPI } from '../services/api';
+import { usersAPI, authAPI } from '../services/api';
 import { FiCamera, FiSave, FiX, FiUpload, FiUser, FiLock, FiBell, FiShield, FiLogOut } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import DefaultAvatar from '../components/DefaultAvatar';
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://afoxlys.onrender.com/api';
 
 const EditProfile = () => {
   const navigate = useNavigate();
@@ -19,6 +21,13 @@ const EditProfile = () => {
     location: user?.location || '',
     website: user?.website || '',
   });
+
+  let avatarUrl = '';
+  if (user?.avatar) {
+    avatarUrl = user.avatar.startsWith('http')
+      ? user.avatar
+      : `${API_BASE_URL.replace(/\/api$/, '')}/uploads/avatars/${user.avatar}`;
+  }
 
   const tabs = [
     { id: 'profile', label: 'Profile', icon: <FiUser /> },
@@ -69,7 +78,8 @@ const EditProfile = () => {
       }
 
       // Update user context
-      await updateUser();
+      const response = await authAPI.getCurrentUser();
+      updateUser(response.data.user);
 
       toast.success('Profile updated successfully');
       navigate(`/user/${user._id}`);
@@ -148,16 +158,17 @@ const EditProfile = () => {
                   {/* Avatar Section */}
                   <div className="flex flex-col items-center space-y-4">
                     <div className="relative">
-                      <img
-                        src={avatarPreview || user?.avatar}
-                        alt="Profile"
-                        className="w-32 h-32 rounded-full object-cover border-4 border-white dark:border-gray-700 shadow-lg"
-                        onError={(e) => {
-                          e.target.style.display = 'none';
-                          e.target.nextSibling.style.display = 'flex';
-                        }}
-                      />
-                      {!(avatarPreview || user?.avatar) && (
+                      {avatarPreview || avatarUrl ? (
+                        <img
+                          src={avatarPreview || avatarUrl}
+                          alt="Profile"
+                          className="w-32 h-32 rounded-full object-cover border-4 border-white dark:border-gray-700 shadow-lg"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'flex';
+                          }}
+                        />
+                      ) : (
                         <DefaultAvatar username={user?.username || 'User'} size={128} />
                       )}
                       <label className="absolute bottom-2 right-2 bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 transition-colors cursor-pointer">

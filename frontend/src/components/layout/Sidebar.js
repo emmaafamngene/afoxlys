@@ -4,6 +4,7 @@ import { FiHome, FiSearch, FiMessageCircle, FiUser, FiPlus, FiBell, FiSettings, 
 import { MdVideoLibrary } from 'react-icons/md';
 import { FaFire, FaCrown } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../../contexts/AuthContext';
 
 const navLinks = [
   { to: '/', label: 'Home', icon: <FiHome /> },
@@ -13,11 +14,12 @@ const navLinks = [
   { to: '/afex-ai', label: 'AFEX AI', icon: <FiZap /> },
   { to: '/leaderboard', label: 'Leaderboard', icon: <FiAward /> },
   { to: '/premium', label: 'Premium', icon: <FaCrown /> },
-  { to: '/edit-profile', label: 'Profile', icon: <FiUser /> },
+  { to: '/profile', label: 'Profile', icon: <FiUser /> }, // Changed from '/edit-profile' to '/profile'
 ];
 
 export default function Sidebar({ darkMode, setDarkMode }) {
   const [hovered, setHovered] = useState(false);
+  const { user } = useAuth();
 
   return (
     <>

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import MessageBubble from './MessageBubble';
 import DefaultAvatar from '../DefaultAvatar';
 import { useNavigate } from 'react-router-dom';
+import { getAvatarUrl } from '../../utils/avatarUtils';
 
 // Use a free online ringtone
 const RINGTONE_URL = 'https://cdn.pixabay.com/audio/2022/07/26/audio_124bfa4c82.mp3';
@@ -460,7 +461,7 @@ export default function ChatWindow({
           <div className="flex-shrink-0">
             {otherUser?.avatar ? (
               <img
-                src={otherUser.avatar}
+                src={getAvatarUrl(otherUser.avatar)}
                 alt={otherUser.username || 'User'}
                 className="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-gray-700"
                 onError={(e) => {

@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { postsAPI } from '../services/api';
 import { FiX, FiSend, FiEdit3, FiStar } from 'react-icons/fi';
 import DefaultAvatar from '../components/DefaultAvatar';
+import { getAvatarUrl } from '../utils/avatarUtils';
 
 const CreatePost = () => {
   const navigate = useNavigate();
@@ -100,7 +101,7 @@ const CreatePost = () => {
                 <div className="relative">
                   {user?.avatar ? (
                     <img
-                      src={user.avatar}
+                      src={getAvatarUrl(user.avatar)}
                       alt={user?.username}
                       className="w-12 h-12 rounded-xl object-cover ring-2 ring-blue-100 dark:ring-gray-700"
                       onError={(e) => {

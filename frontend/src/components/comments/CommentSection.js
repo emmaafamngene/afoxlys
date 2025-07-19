@@ -4,6 +4,7 @@ import { commentsAPI, likesAPI } from '../../services/api';
 import { FiMessageCircle, FiHeart, FiTrash2, FiSend, FiEdit2 } from 'react-icons/fi';
 import { DefaultAvatar } from '../layout/AFEXLogo';
 import { Link } from 'react-router-dom';
+import { getAvatarUrl } from '../../utils/avatarUtils';
 
 const CommentSection = ({ postId, commentCount, onCommentCountChange }) => {
   const { user } = useAuth();
@@ -152,7 +153,7 @@ const CommentSection = ({ postId, commentCount, onCommentCountChange }) => {
         {user?.avatar ? (
           <div className="relative flex-shrink-0">
             <img
-              src={user?.avatar}
+              src={getAvatarUrl(user?.avatar)}
               alt={user?.username || 'User'}
               className="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-800 shadow-lg"
               onError={(e) => {
@@ -211,7 +212,7 @@ const CommentSection = ({ postId, commentCount, onCommentCountChange }) => {
                 {comment.author.avatar ? (
                   <div className="relative">
                     <img
-                      src={comment.author.avatar}
+                      src={getAvatarUrl(comment.author.avatar)}
                       alt={comment.author.username}
                       className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover border-2 border-white dark:border-gray-800 shadow-lg"
                       onError={(e) => {

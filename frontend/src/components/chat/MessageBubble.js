@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import DefaultAvatar from '../DefaultAvatar';
+import { getAvatarUrl } from '../../utils/avatarUtils';
 
 export default function MessageBubble({ 
   message, 
@@ -86,7 +87,7 @@ export default function MessageBubble({
           {sender?.avatar ? (
             <div className="relative">
               <img
-                src={sender.avatar}
+                src={getAvatarUrl(sender.avatar)}
                 alt={sender.username || 'User'}
                 className="w-6 h-6 rounded-full object-cover border border-gray-200 dark:border-gray-700"
                 onError={(e) => {

@@ -6,6 +6,7 @@ import { FiHeart, FiMessageCircle, FiShare, FiPlay, FiEye, FiClock, FiPause } fr
 import { FaHeart } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { DefaultAvatar } from '../layout/AFEXLogo';
+import { getAvatarUrl } from '../../utils/avatarUtils';
 
 const ClipCard = ({ clip, onUpdate, compact = false }) => {
   const { user } = useAuth();
@@ -162,7 +163,7 @@ const ClipCard = ({ clip, onUpdate, compact = false }) => {
               {clip.author.avatar ? (
                 <div className="relative">
                   <img
-                    src={clip.author.avatar}
+                    src={getAvatarUrl(clip.author.avatar)}
                     alt={clip.author.username}
                     className={`${compact ? 'w-8 h-8' : 'w-12 h-12'} rounded-full object-cover border-2 border-white dark:border-gray-800 shadow-lg group-hover:scale-110 transition-transform duration-300`}
                     onError={(e) => {

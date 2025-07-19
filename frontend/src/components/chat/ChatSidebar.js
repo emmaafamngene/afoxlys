@@ -1,5 +1,6 @@
 import React from 'react';
 import { DefaultAvatar } from '../layout/AFEXLogo';
+import { getAvatarUrl } from '../../utils/avatarUtils';
 
 export default function ChatSidebar({ conversations = [], selectedConversationId, onSelectConversation, onNewChat }) {
   // Add defensive check for onSelectConversation
@@ -104,7 +105,7 @@ export default function ChatSidebar({ conversations = [], selectedConversationId
                   {other?.avatar ? (
                     <div className="relative flex-shrink-0">
                       <img
-                        src={other.avatar}
+                        src={getAvatarUrl(other.avatar)}
                         alt={other.username || 'User'}
                         className="w-12 h-12 rounded-full object-cover border-2 border-white dark:border-gray-800 shadow-sm"
                         onError={(e) => {

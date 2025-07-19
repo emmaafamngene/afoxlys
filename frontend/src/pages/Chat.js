@@ -246,7 +246,8 @@ export default function Chat() {
       const payload = {
         content: content.trim(),
         recipient,
-        conversationId
+        conversationId,
+        sender: currentUserId // <-- Added sender field
       };
       console.log('Sending message payload:', payload);
       const response = await chatAPI.sendMessage(payload);

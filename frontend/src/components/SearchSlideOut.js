@@ -7,6 +7,7 @@ import ClipCard from './clips/ClipCard';
 import { FiSearch, FiUsers, FiFileText, FiVideo, FiX } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import DefaultAvatar from './DefaultAvatar';
+import { getAvatarUrl } from '../utils/avatarUtils';
 
 const SearchSlideOut = ({ isOpen, onClose }) => {
   const { user: currentUser } = useAuth();
@@ -115,7 +116,7 @@ const SearchSlideOut = ({ isOpen, onClose }) => {
         <div className="relative">
           {user.avatar ? (
             <img
-              src={user.avatar}
+              src={getAvatarUrl(user.avatar)}
               alt={user.username}
               className="w-12 h-12 rounded-full object-cover border-2 border-white dark:border-gray-700 shadow-md"
               onError={(e) => {

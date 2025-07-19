@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { FiBell, FiX, FiMessageCircle, FiUserPlus, FiHeart, FiVideo } from 'react-icons/fi';
 import { notificationService } from '../../services/notificationService';
 import { DefaultAvatar } from '../layout/AFEXLogo';
+import { getAvatarUrl } from '../../utils/avatarUtils';
 
 const NotificationMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -263,7 +264,7 @@ const NotificationMenu = () => {
                     {notification.sender?.avatar ? (
                       <div className="relative flex-shrink-0">
                         <img
-                          src={notification.sender.avatar}
+                          src={getAvatarUrl(notification.sender.avatar)}
                           alt="Avatar"
                           className="w-10 h-10 rounded-full object-cover border border-white dark:border-gray-800 shadow-sm"
                           onError={(e) => {
